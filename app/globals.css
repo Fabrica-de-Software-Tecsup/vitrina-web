@@ -1,0 +1,9 @@
+@import "tailwindcss";
+
+@theme {
+  --color-tecsup-cyan: #00B3E0;
+  --color-tecsup-green: #87D328;
+  --color-tecsup-purple: #7F44D8;
+  --color-tecsup-dark: #0F0F0F;
+  --color-tecsup-gray: #F5F5F5;
+}
