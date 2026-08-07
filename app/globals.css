@@ -7,6 +7,12 @@
   --color-tecsup-purple: #7F44D8;
   --color-tecsup-dark: #0F0F0F;
   --color-tecsup-gray: #F5F5F5;
+
+  
+  /* Color para el Header y estados */
+  --color-tecsup-blue: #0082CE;
+  --color-tecsup-red: #DC2626;
+  --color-tecsup-info: #3B82F6;
 }
 
 body {
