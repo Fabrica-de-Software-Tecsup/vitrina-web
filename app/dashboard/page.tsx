@@ -5,20 +5,27 @@ import Image from "next/image";
 import Header from "@/components/layout/Header";
 import Badge from "@/components/ui/Badge";
 
-// Datos de prueba del panel del alumno
-const myProjects = [
+// Datos de prueba (combinados)
+const allProjects = [
   { id: "1", name: "RivVirtual", course: "Desarrollo Web", status: "Publicado" as const, views: "1,245", cycle: "2026-I", members: 3, image: "/images/projects/RivVirtual-1.png" },
   { id: "2", name: "Kanban Pro", course: "Desarrollo Web", status: "Publicado" as const, views: "832", cycle: "2026-I", members: 3, image: "/images/projects/KanbanPro-1.png" },
   { id: "3", name: "EcoRiego", course: "Internet de las Cosas", status: "En Desarrollo" as const, views: "0", cycle: "2026-I", members: 3, image: "/images/projects/AquaSense-1.png" },
-   {id: "4", name: "SafeBus", course: "Redes y Comunicaciones", status: "Bloqueado" as const, views: "311", cycle: "2026-I", members: 3, image: "/images/projects/SafeBus-1.png" },
+  { id: "4", name: "SafeBus", course: "Redes y Comunicaciones", status: "Bloqueado" as const, views: "311", cycle: "2026-I", members: 3, image: "/images/projects/SafeBus-1.png" },
   { id: "5", name: "NutriScan", course: "Inteligencia Artificial", status: "Publicado" as const, views: "540", cycle: "2026-I", members: 3, image: "/images/projects/NutriScan-1.png" },
 ];
 
-const tabs = [
+const studentTabs = [
   { name: "Todos", count: 8, status: "all" },
   { name: "Publicados", count: 5, status: "Publicado" },
   { name: "Borradores", count: 2, status: "En Desarrollo" },
-  { name: "Ocultos", count: 1, status: "Oculto" },
+  { name: "Bloqueados", count: 1, status: "Bloqueado" },
+];
+
+const teacherTabs = [
+  { name: "Todos", count: 12, status: "all" },
+  { name: "Publicados", count: 5, status: "Publicado" },
+  { name: "Por Revisar", count: 4, status: "Por Revisar" },
+  { name: "En Desarrollo", count: 3, status: "En Desarrollo" },
 ];
 
 const stats = [
@@ -29,40 +36,65 @@ const stats = [
 ];
 
 export default function DashboardPage() {
+  // ⬇️ SWITCH DE PRUEBAS: Cambia false a true para ver la vista del docente
+  const isTeacherView = false; 
   const [activeTab, setActiveTab] = useState("all");
 
+  const currentTabs = isTeacherView ? teacherTabs : studentTabs;
+  
   const filteredProjects = activeTab === "all" 
-    ? myProjects 
-    : myProjects.filter(p => p.status === activeTab);
+    ? allProjects 
+    : allProjects.filter(p => p.status === activeTab);
 
   return (
     <div className="bg-tecsup-gray min-h-full">
-      {/* Usamos el Header real aquí, porque el dashboard no está en (public) */}
-      <Header role="student" />
+      {/* Header dinámico según el switch */}
+      <Header role={isTeacherView ? "teacher" : "student"} />
 
       <div className="max-w-7xl mx-auto px-6 py-8">
         
-        {/* Banner de aviso amarillo */}
-        <div className="bg-amber-50 border border-amber-200 rounded-xl p-4 mb-8 flex items-center gap-3">
-          <span className="text-2xl">🟠</span>
-          <p className="text-sm text-amber-800 font-medium">
-            Ventana de edición abierta hasta el 15/08/2026 — después tus proyectos del ciclo pasan a solo lectura.
-          </p>
+        {/* Switch visual (Solo para el prototipo) */}
+        <div className="mb-6 p-4 bg-white rounded-lg border-2 border-dashed border-gray-300 flex items-center justify-between">
+          <span className="text-xs font-bold text-gray-500 uppercase">Modo Prototipo (Vista):</span>
+          <div className="flex gap-2">
+            <button className={`px-3 py-1 text-xs font-bold rounded ${!isTeacherView ? "bg-tecsup-blue text-white" : "bg-gray-200 text-gray-600"}`}>Alumno</button>
+            <button className={`px-3 py-1 text-xs font-bold rounded ${isTeacherView ? "bg-tecsup-blue text-white" : "bg-gray-200 text-gray-600"}`}>Docente</button>
+          </div>
+          <p className="text-[10px] text-gray-400">Cambia <code className="bg-gray-100 px-1 rounded">isTeacherView</code> a true en la línea 32</p>
         </div>
+
+        {/* Banner de aviso (Cambia según el rol) */}
+        {isTeacherView ? (
+          <div className="bg-tecsup-info/10 border border-tecsup-info/20 rounded-xl p-4 mb-8 flex items-center gap-3">
+            <span className="text-2xl">ℹ️</span>
+            <p className="text-sm text-tecsup-info font-medium">
+              Gestión de proyectos del ciclo 2026-I — Puedes aperturar o bloquear la edición de entregas para los estudiantes.
+            </p>
+          </div>
+        ) : (
+          <div className="bg-amber-50 border border-amber-200 rounded-xl p-4 mb-8 flex items-center gap-3">
+            <span className="text-2xl">🟠</span>
+            <p className="text-sm text-amber-800 font-medium">
+              Ventana de edición abierta hasta el 15/08/2026 — después tus proyectos del ciclo pasan a solo lectura.
+            </p>
+          </div>
+        )}
 
         {/* Saludo */}
         <div className="mb-8">
-          <h1 className="text-2xl font-bold text-tecsup-dark">Hola, Maria</h1>
+          <h1 className="text-2xl font-bold text-tecsup-dark">
+            {isTeacherView ? "Panel de Gestión" : "Hola, Maria"}
+          </h1>
           <p className="text-gray-500 text-sm mt-1">
-            Tienes 2 borradores sin publicar. Un proyecto documentado es un proyecto que existe.
+            {isTeacherView 
+              ? "Administra y evalúa los proyectos asignados a tus cursos este ciclo." 
+              : "Tienes 2 borradores sin publicar. Un proyecto documentado es un proyecto que existe."}
           </p>
         </div>
 
-        {/* ⚠️ SIN BOTÓN "NUEVO PROYECTO" AQUÍ (Regla de negocio) */}
-
         {/* Tabs de filtro */}
         <div className="flex gap-2 mb-6">
-          {tabs.map((tab) => (
+          {currentTabs.map((tab) => (
             <button
               key={tab.status}
               onClick={() => setActiveTab(tab.status)}
@@ -95,7 +127,7 @@ export default function DashboardPage() {
                   <td className="px-6 py-4">
                     <div className="flex items-center gap-3">
                       <div className="w-10 h-10 rounded-lg overflow-hidden bg-gray-100 shrink-0 relative">
-                        <Image src={project.image} alt={project.name} fill className="object-cover" />
+                        <Image src={project.image} alt={project.name} fill sizes="40px" className="object-cover" />
                       </div>
                       <div>
                         <p className="font-semibold text-tecsup-dark">{project.name}</p>
@@ -109,10 +141,19 @@ export default function DashboardPage() {
                   </td>
                   <td className="px-6 py-4 text-gray-500">{project.views}</td>
                   <td className="px-6 py-4 text-right">
-                    {/* Solo botón editar para el alumno */}
-                    <button className="text-tecsup-cyan hover:text-tecsup-cyan/80 font-medium text-sm cursor-pointer">
-                      Editar
-                    </button>
+                    {isTeacherView ? (
+                      <div className="flex items-center justify-end gap-2">
+                        <button className="text-tecsup-blue hover:text-tecsup-blue/80 font-medium text-sm cursor-pointer">Ver</button>
+                        <button className="text-tecsup-cyan hover:text-tecsup-cyan/80 font-medium text-sm cursor-pointer">Editar</button>
+                        <button className="text-gray-400 hover:text-gray-600 cursor-pointer">
+                          <svg className="w-5 h-5" fill="currentColor" viewBox="0 0 20 20"><path d="M10 6a2 2 0 110-4 2 2 0 010 4zM10 12a2 2 0 110-4 2 2 0 010 4zM10 18a2 2 0 110-4 2 2 0 010 4z" /></svg>
+                        </button>
+                      </div>
+                    ) : (
+                        <button className="text-tecsup-cyan hover:text-tecsup-cyan/80 font-medium text-sm cursor-pointer">
+                          Editar
+                        </button>
+                      )}
                   </td>
                 </tr>
               ))}
