@@ -132,14 +132,13 @@ export default function EditProjectPage() {
     return pattern.test(url.trim());
   };
 
+  // ⚡ STEPPER INTELIGENTE
   useEffect(() => {
     if (step === 1 && longDesc.length > 20 && technologies.length > 0) {
       setStep(2);
-    }
-    if (step === 2 && teamMembers.length > 1) {
+    } else if (step === 2 && teamMembers.length > 1) {
       setStep(3);
-    }
-    if (step === 3 && images.length >= 5 && zipFile) {
+    } else if (step === 3 && images.length >= 5 && zipFile) {
       setStep(4);
     }
   }, [

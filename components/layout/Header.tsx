@@ -12,7 +12,6 @@ export default function Header({ role = "public" }: HeaderProps) {
   return (
     <header className="sticky top-0 z-50 bg-tecsup-blue text-white shadow-lg">
       <div className="max-w-7xl mx-auto px-6 h-14 flex items-center justify-between">
-        
         {/* Logo Izquierdo */}
         <Link href="/" className="flex items-center gap-2.5 group">
           <div className="w-7 h-7 relative">
@@ -28,26 +27,41 @@ export default function Header({ role = "public" }: HeaderProps) {
         <nav className="hidden md:flex items-center gap-1">
           {(role === "public" || role === "student" || role === "teacher") && (
             <>
-              <Link href="/" className="px-3 py-1.5 text-sm font-medium text-white/80 hover:text-white rounded-md hover:bg-white/10 transition-colors">
-                Explorar
+              <Link
+                href="/"
+                className="px-3 py-1.5 text-sm font-medium text-white/80 hover:text-white rounded-md hover:bg-white/10 transition-colors"
+              >
+                Proyectos
               </Link>
-              <Link href="#" className="px-3 py-1.5 text-sm font-medium text-white/80 hover:text-white rounded-md hover:bg-white/10 transition-colors">
+              <Link
+                href="/estudiantes"
+                className="px-3 py-1.5 text-sm font-medium text-white/80 hover:text-white rounded-md hover:bg-white/10 transition-colors"
+              >
                 Estudiantes
               </Link>
-              <Link href="#" className="px-3 py-1.5 text-sm font-medium text-white/80 hover:text-white rounded-md hover:bg-white/10 transition-colors">
+              <Link
+                href="#"
+                className="px-3 py-1.5 text-sm font-medium text-white/80 hover:text-white rounded-md hover:bg-white/10 transition-colors"
+              >
                 Cursos
               </Link>
             </>
           )}
-          
+
           {role === "student" && (
-            <Link href="/dashboard" className="px-3 py-1.5 text-sm font-semibold text-white bg-white/20 rounded-md">
+            <Link
+              href="/dashboard"
+              className="px-3 py-1.5 text-sm font-semibold text-white bg-white/20 rounded-md"
+            >
               Mis Proyectos
             </Link>
           )}
 
           {role === "teacher" && (
-            <Link href="/dashboard" className="px-3 py-1.5 text-sm font-semibold text-white bg-tecsup-green rounded-md hover:bg-tecsup-green/90 transition-colors">
+            <Link
+              href="/dashboard"
+              className="px-3 py-1.5 text-sm font-semibold text-white bg-tecsup-green rounded-md hover:bg-tecsup-green/90 transition-colors"
+            >
               + Nuevo Proyecto
             </Link>
           )}
@@ -65,14 +79,17 @@ export default function Header({ role = "public" }: HeaderProps) {
           ) : (
             <div className="flex items-center gap-3 cursor-pointer group">
               <div className="text-right hidden sm:block">
-                <p className="text-sm font-semibold text-white leading-tight">Maria</p>
-                <p className="text-[10px] text-white/60 uppercase">{role === "student" ? "Alumno" : "Docente"}</p>
+                <p className="text-sm font-semibold text-white leading-tight">
+                  Maria
+                </p>
+                <p className="text-[10px] text-white/60 uppercase">
+                  {role === "student" ? "Alumno" : "Docente"}
+                </p>
               </div>
               <Avatar name={userName} size="md" />
             </div>
           )}
         </div>
-
       </div>
     </header>
   );
