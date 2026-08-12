@@ -10,12 +10,26 @@ export interface Project {
   cycle: string;
   category: string;
   description: string;
+  descriptionLong: string;
   technologies: string[];
   team: TeamMember[];
-  images: string[]; 
+  images: string[];
   views: number;
-  status: "Publicado" | "En Desarrollo" | "Oculto";
+  shares: number;
+  status: "Publicado" | "En Desarrollo" | "Por Revisar" | "Bloqueado";
+  links: {
+    github: string;
+    demo: string;
+    figma: string;
+  };
+  youtubeId: string;
 }
+
+// ─── Cuando el backend esté listo, reemplaza esto por:
+// export async function getProjects(): Promise<Project[]> {
+//   const res = await fetch("/api/v1/projects?status=Publicado");
+//   return res.json();
+// }
 
 export const projects: Project[] = [
   {
@@ -24,49 +38,98 @@ export const projects: Project[] = [
     course: "Desarrollo de Aplicaciones Web",
     cycle: "Ciclo VI",
     category: "DAW",
-    description: "Proyecto que busca reciclar botellas de plástico y a cambio te da una recompensa económica, fomentando la economía circular en la ciudad.",
-    technologies: ["React", "Node.js", "PostgreSQL", "Stripe"],
+    description:
+      "Proyecto que busca reciclar botellas de plástico y dar una recompensa económica a cambio, fomentando la sostenibilidad en la comunidad universitaria.",
+    descriptionLong:
+      "Desarrollamos EcoCajero pensando en la economía circular. Utilizamos React para el frontend debido a su ecosistema robusto, y Node.js para el backend garantizando una API escalable. La integración con sensores IoT fue uno de los retos más grandes, pero logramos implementar una solución que conecta el hardware con la aplicación en tiempo real.",
+    technologies: ["React", "TypeScript", "Node.js", "PostgreSQL", "Tailwind"],
     team: [
-      { name: "Maria Mamani", role: "Líder" },
-      { name: "Carlos Quispe", role: "Desarrollador" },
-      { name: "Ana Torres", role: "Diseñadora" },
+      { name: "María Cáceres", role: "Líder" },
+      { name: "Carlos Quispe", role: "Desarrollador Frontend" },
+      { name: "Ana Torres", role: "Diseñadora UX/UI" },
     ],
-    images: [ "/images/projects/EcoCajero-1.png", "/images/projects/EcoCajero-2.png", "/images/projects/EcoCajero-3.png", "/images/projects/EcoCajero-4.png", "/images/projects/EcoCajero-5.png" ],
+    images: [
+      "/images/projects/EcoCajero-1.png",
+      "/images/projects/EcoCajero-2.png",
+      "/images/projects/EcoCajero-3.png",
+      "/images/projects/EcoCajero-4.png",
+      "/images/projects/EcoCajero-5.png",
+    ],
     views: 1245,
+    shares: 38,
     status: "Publicado",
+    links: {
+      github: "https://github.com",
+      demo: "https://example.com",
+      figma: "https://figma.com",
+    },
+    youtubeId: "rqJX77MKgrQ",
   },
   {
     id: "2",
     name: "RivVirtual — Simulador de maquinaria pesada",
-    course: "Internet de las Cosas",
-    cycle: "Ciclo V",
-    category: "IOT",
-    description: "Simulador virtual inmersivo que permite a los estudiantes practicar el manejo de maquinaria pesada sin riesgos, usando tecnología VR.",
-    technologies: ["Unity", "C#", "Bluetooth", "Firebase"],
-    team: [
-      { name: "Diego Huamán", role: "Líder" },
-      { name: "Lucia Flores", role: "Desarrolladora" },
-      { name: "Pedro Gutiérrez", role: "Diseño 3D" },
-    ],
-    images: [ "/images/projects/RivVirtual-1.png", "/images/projects/RivVirtual-2.png", "/images/projects/RivVirtual-3.png", "/images/projects/RivVirtual-4.png", "/images/projects/RivVirtual-5.png" ],
-    views: 876,
-    status: "Publicado",
-  },
-  {
-    id: "3",
-    name: "Wayki — Tutoría entre pares",
     course: "Desarrollo de Aplicaciones Web",
     cycle: "Ciclo VI",
     category: "DAW",
-    description: "Plataforma que conecta estudiantes que necesitan ayuda con estudiantes avanzados que ofrecen tutorías sobre temas específicos de la carrera.",
-    technologies: ["Next.js", "TypeScript", "Prisma", "Socket.io"],
+    description:
+      "Simulador virtual inmersivo para entrenamiento en maquinaria pesada usando realidad virtual.",
+    descriptionLong:
+      "RivVirtual nació de la necesidad de entrenar operadores de maquinaria pesada sin los costos y riesgos del entrenamiento en campo. Usamos Three.js para renderizar los modelos 3D y WebRTC para la comunicación en tiempo real entre el instructor y el operador en VR.",
+    technologies: ["React", "Three.js", "Node.js", "WebRTC"],
     team: [
-      { name: "Valeria Cáceres", role: "Líder" },
+      { name: "Diego Huamán", role: "Líder" },
+      { name: "María Cáceres", role: "Desarrolladora" },
+      { name: "Pedro Gutiérrez", role: "Modelado 3D" },
+    ],
+    images: [
+      "/images/projects/RivVirtual-1.png",
+      "/images/projects/RivVirtual-2.png",
+      "/images/projects/RivVirtual-3.png",
+      "/images/projects/RivVirtual-4.png",
+      "/images/projects/RivVirtual-5.png",
+    ],
+    views: 876,
+    shares: 22,
+    status: "Publicado",
+    links: {
+      github: "https://github.com",
+      demo: "https://example.com",
+      figma: "https://figma.com",
+    },
+    youtubeId: "r4gFhR0z1dQ",
+  },
+  {
+    id: "3",
+    name: "Wayki — Tutoría entre estudiantes",
+    course: "Desarrollo de Aplicaciones Web",
+    cycle: "Ciclo V",
+    category: "DAW",
+    description:
+      "Plataforma que conecta estudiantes que necesitan ayuda con aquellos que dominan un tema.",
+    descriptionLong:
+      "Wayki significa 'hermano' en quechua, y ese fue el espíritu del proyecto. Construimos un sistema de matching automático basado en las habilidades de cada estudiante y los temas en los que necesitan ayuda. Usamos Prisma para la gestión de datos y PostgreSQL para almacenar las sesiones de tutoría.",
+    technologies: ["Next.js", "TypeScript", "Prisma", "PostgreSQL"],
+    team: [
+      { name: "Lucia Flores", role: "Líder" },
+      { name: "María Cáceres", role: "Miembro" },
       { name: "Jorge Rojas", role: "Desarrollador" },
     ],
-    images: [ "/images/projects/Wayki-1.png", "/images/projects/Wayki-2.png", "/images/projects/Wayki-3.png", "/images/projects/Wayki-4.png", "/images/projects/Wayki-5.png" ],
-    views: 2103,
+    images: [
+      "/images/projects/Wayki-1.png",
+      "/images/projects/Wayki-2.png",
+      "/images/projects/Wayki-3.png",
+      "/images/projects/Wayki-4.png",
+      "/images/projects/Wayki-5.png",
+    ],
+    views: 432,
+    shares: 15,
     status: "Publicado",
+    links: {
+      github: "https://github.com",
+      demo: "https://example.com",
+      figma: "https://figma.com",
+    },
+    youtubeId: "JJwaE6TWORk",
   },
   {
     id: "4",
@@ -74,79 +137,229 @@ export const projects: Project[] = [
     course: "Internet de las Cosas",
     cycle: "Ciclo V",
     category: "IOT",
-    description: "Sistema de rastreo en tiempo real para el transporte público de Arequipa, permitiendo a los usuarios saber exactamente dónde va su bus.",
-    technologies: ["ESP32", "GPS", "React", "Node.js"],
+    description:
+      "Sistema de rastreo en tiempo real para transporte urbano de Arequipa.",
+    descriptionLong:
+      "SafeBus conecta sensores GPS ESP32 instalados en buses urbanos de Arequipa con una aplicación web que muestra la ubicación en tiempo real. Los pasajeros pueden ver cuánto falta para que llegue su bus, y las empresas pueden optimizar sus rutas según los datos de uso.",
+    technologies: ["ESP32", "React", "Python", "MQTT"],
     team: [
-      { name: "Raúl Paredes", role: "Líder" },
-      { name: "Sofia Vargas", role: "Desarrolladora" },
-      { name: "Miguel Ángel", role: "Hardware" },
+      { name: "Pedro Gutiérrez", role: "Líder" },
+      { name: "María Cáceres", role: "Desarrolladora" },
+      { name: "Carlos Quispe", role: "Hardware" },
     ],
-    images: [ "/images/projects/SafeBus-1.png", "/images/projects/SafeBus-2.png", "/images/projects/SafeBus-3.png", "/images/projects/SafeBus-4.png", "/images/projects/SafeBus-5.png" ],
-    views: 654,
+    images: [
+      "/images/projects/SafeBus-1.png",
+      "/images/projects/SafeBus-2.png",
+      "/images/projects/SafeBus-3.png",
+      "/images/projects/SafeBus-4.png",
+      "/images/projects/SafeBus-5.png",
+    ],
+    views: 567,
+    shares: 29,
     status: "Publicado",
+    links: {
+      github: "https://github.com",
+      demo: "https://example.com",
+      figma: "https://figma.com",
+    },
+    youtubeId: "fOCkoQUGPDM",
   },
   {
     id: "5",
     name: "NutriScan — Scanner nutricional con IA",
-    course: "Desarrollo de Aplicaciones Web",
-    cycle: "Ciclo IV",
-    category: "DAW",
-    description: "Aplicación que usa la cámara del celular para escanear etiquetas de alimentos y analizar su valor nutricional mediante inteligencia artificial.",
-    technologies: ["React Native", "Python", "TensorFlow", "FastAPI"],
+    course: "Inteligencia Artificial",
+    cycle: "Ciclo VI",
+    category: "IOT",
+    description:
+      "Scanner con IA que lee etiquetas de alimentos con un fin nutricional.",
+    descriptionLong:
+      "NutriScan usa un modelo de TensorFlow entrenado con miles de imágenes de etiquetas nutricionales peruanas. El usuario apunta su celular a la etiqueta, la IA extrae la información y genera un análisis nutricional personalizado según las necesidades del usuario.",
+    technologies: ["Python", "TensorFlow", "React", "FastAPI"],
     team: [
-      { name: "Camila Ramos", role: "Líder" },
-      { name: "Fernando Díaz", role: "Desarrollador" },
+      { name: "María Cáceres", role: "Líder" },
+      { name: "Jorge Rojas", role: "Desarrollador" },
+      { name: "Ana Torres", role: "Diseñadora" },
     ],
-    images: [ "/images/projects/NutriScan-1.png", "/images/projects/NutriScan-2.png", "/images/projects/NutriScan-3.png", "/images/projects/NutriScan-4.png", "/images/projects/NutriScan-5.png" ],
-    views: 432,
-    status: "En Desarrollo",
+    images: [
+      "/images/projects/NutriScan-1.png",
+      "/images/projects/NutriScan-2.png",
+      "/images/projects/NutriScan-3.png",
+      "/images/projects/NutriScan-4.png",
+      "/images/projects/NutriScan-5.png",
+    ],
+    views: 540,
+    shares: 18,
+    status: "Publicado",
+    links: {
+      github: "https://github.com",
+      demo: "https://example.com",
+      figma: "https://figma.com",
+    },
+    youtubeId: "_3eKies99Jo",
   },
   {
     id: "6",
-    name: "Kanban Pro — Gestión áil de tareas",
+    name: "Kanban Pro — Gestión ágil de tareas",
     course: "Desarrollo de Aplicaciones Web",
-    cycle: "Ciclo VI",
+    cycle: "Ciclo IV",
     category: "DAW",
-    description: "Herramienta web para la gestión ágil de proyectos en equipo, con tableros Kanban personalizables y métricas de productividad.",
-    technologies: ["Next.js", "TypeScript", "Prisma", "PostgreSQL"],
+    description:
+      "Herramienta de gestión ágil en tareas en equipo con tableros Kanban personalizables.",
+    descriptionLong:
+      "Kanban Pro nació como un proyecto de curso y se convirtió en una herramienta que usamos internamente. Soporta drag & drop, etiquetas, fechas límite, asignación de miembros y notificaciones en tiempo real. El backend está en Node.js con PostgreSQL.",
+    technologies: ["React", "Node.js", "PostgreSQL", "Tailwind"],
     team: [
-      { name: "Andrés Mendoza", role: "Líder" },
-      { name: "Gabriela Huanca", role: "Desarrolladora" },
+      { name: "Ana Torres", role: "Líder" },
+      { name: "María Cáceres", role: "Miembro" },
     ],
-    images: [ "/images/projects/KanbanPro-1.png", "/images/projects/KanbanPro-2.png", "/images/projects/KanbanPro-3.png", "/images/projects/KanbanPro-4.png", "/images/projects/KanbanPro-5.png" ],
-    views: 287,
+    images: [
+      "/images/projects/KanbanPro-1.png",
+      "/images/projects/KanbanPro-2.png",
+      "/images/projects/KanbanPro-3.png",
+      "/images/projects/KanbanPro-4.png",
+      "/images/projects/KanbanPro-5.png",
+    ],
+    views: 321,
+    shares: 11,
     status: "Publicado",
+    links: {
+      github: "https://github.com",
+      demo: "https://example.com",
+      figma: "https://figma.com",
+    },
+    youtubeId: "CfROfwnQgps",
   },
   {
     id: "7",
-    name: "Turnify — Reserva de citas para PyMEs",
+    name: "Turnify — Reserva de citas para pymes",
     course: "Desarrollo de Aplicaciones Web",
-    cycle: "Ciclo VI",
+    cycle: "Ciclo V",
     category: "DAW",
-    description: "Sistema de reservas en línea diseñado para pequeñas y medianas empresas, facilitando la gestión de citas de sus clientes.",
-    technologies: ["React", "Node.js", "MongoDB", "Twilio"],
+    description:
+      "Sistema de reserva de citas en línea diseñado para pequeñas y medianas empresas.",
+    descriptionLong:
+      "Turnify permite a las pymes configurar sus servicios, horarios disponibles y recibir reservas automáticas. Integramos Stripe para pagos por adelantado y un sistema de recordatorios por correo. La interfaz fue diseñada para ser usada por personas no técnicas.",
+    technologies: ["Next.js", "Prisma", "Stripe", "Tailwind"],
     team: [
-      { name: "Isabella Castro", role: "Líder" },
-      { name: "Diego Torres", role: "Desarrollador" },
+      { name: "María Cáceres", role: "Líder" },
+      { name: "Lucia Flores", role: "Desarrolladora" },
     ],
-    images: [ "/images/projects/Turnify-1.png", "/images/projects/Turnify-2.png", "/images/projects/Turnify-3.png", "/images/projects/Turnify-4.png", "/images/projects/Turnify-5.png" ],
-    views: 189,
-    status: "En Desarrollo",
+    images: [
+      "/images/projects/Turnify-1.png",
+      "/images/projects/Turnify-2.png",
+      "/images/projects/Turnify-3.png",
+      "/images/projects/Turnify-4.png",
+      "/images/projects/Turnify-5.png",
+    ],
+    views: 198,
+    shares: 7,
+    status: "Publicado",
+    links: {
+      github: "https://github.com",
+      demo: "https://example.com",
+      figma: "https://figma.com",
+    },
+    youtubeId: "JOcAvV5bZX0",
   },
   {
     id: "8",
     name: "AquaSense — Calidad del agua en tiempo real",
     course: "Internet de las Cosas",
-    cycle: "Ciclo V",
+    cycle: "Ciclo VI",
     category: "IOT",
-    description: "Red de sensores IoT que monitorea la calidad del agua en tiempo real (pH, turbidez, temperatura) y envía alertas a las autoridades.",
-    technologies: ["ESP32", "LoRa", "React", "InfluxDB"],
+    description:
+      "Sensor que indica la calidad del agua en tiempo real usando IoT.",
+    descriptionLong:
+      "AquaSense usa sensores de pH, turbidez y temperatura conectados a un ESP32 que envía datos vía MQTT a un servidor Node.js. El dashboard web muestra mapas de calor de la calidad del agua en diferentes zonas de la ciudad, con alertas automáticas cuando los niveles superan los límites permisibles.",
+    technologies: ["ESP32", "Python", "MQTT", "React"],
     team: [
-      { name: "Sebastián Ávila", role: "Líder" },
-      { name: "Daniela Quispe", role: "Desarrolladora" },
+      { name: "Diego Huamán", role: "Líder" },
+      { name: "María Cáceres", role: "Desarrolladora" },
+      { name: "Pedro Gutiérrez", role: "Hardware" },
     ],
-    images: [ "/images/projects/AquaSense-1.png", "/images/projects/AquaSense-2.png", "/images/projects/AquaSense-3.png", "/images/projects/AquaSense-4.png", "/images/projects/AquaSense-5.png" ],
-    views: 521,
+    images: [
+      "/images/projects/AquaSense-1.png",
+      "/images/projects/AquaSense-2.png",
+      "/images/projects/AquaSense-3.png",
+      "/images/projects/AquaSense-4.png",
+      "/images/projects/AquaSense-5.png",
+    ],
+    views: 654,
+    shares: 25,
     status: "Publicado",
+    links: {
+      github: "https://github.com",
+      demo: "https://example.com",
+      figma: "https://figma.com",
+    },
+    youtubeId: "xsVqdYTeHyw",
   },
 ];
+
+/** Primeros 4 para la sección "Destacados" */
+export const featuredProjects = projects.slice(0, 4);
+
+/** Últimos 4 para la sección "Recientes" */
+export const recentProjects = projects.slice(4, 8);
+
+// ─── Funciones utilitarias ────────────────────────────────────────
+
+/** Extrae las dos primeras iniciales de un nombre */
+export function getInitials(name: string): string {
+  return name
+    .split(" ")
+    .filter((part) => part.length > 0)
+    .map((part) => part[0])
+    .join("")
+    .toUpperCase()
+    .slice(0, 2);
+}
+
+/** Paleta de colores para avatares */
+const AVATAR_PALETTE = [
+  "bg-tecsup-cyan",
+  "bg-tecsup-purple",
+  "bg-tecsup-green",
+  "bg-amber-500",
+  "bg-rose-500",
+  "bg-indigo-500",
+  "bg-teal-500",
+  "bg-orange-500",
+];
+
+/** Asigna un color consistente según el nombre */
+export function getAvatarColor(name: string): string {
+  let hash = 0;
+  for (let i = 0; i < name.length; i++) {
+    hash = name.charCodeAt(i) + ((hash << 5) - hash);
+  }
+  return AVATAR_PALETTE[Math.abs(hash) % AVATAR_PALETTE.length];
+}
+
+/** Genera un slug URL-safe */
+export function slugify(text: string): string {
+  return text
+    .toLowerCase()
+    .normalize("NFD")
+    .replace(/[\u0300-\u036f]/g, "")
+    .replace(/[^a-z0-9]+/g, "-")
+    .replace(/^-+|-+$/g, "");
+}
+
+/** Busca un proyecto por slug del nombre completo */
+export function getProjectBySlug(slug: string): Project | undefined {
+  return projects.find((p) => slugify(p.name) === slug);
+}
+
+/** Busca un proyecto por ID numérico O por slug corto */
+export function getProjectByIdentifier(
+  identifier: string,
+): Project | undefined {
+  const byId = projects.find((p) => p.id === identifier);
+  if (byId) return byId;
+
+  const byFullSlug = projects.find((p) => slugify(p.name) === identifier);
+  if (byFullSlug) return byFullSlug;
+
+  return projects.find((p) => slugify(p.name.split(" — ")[0]) === identifier);
+}

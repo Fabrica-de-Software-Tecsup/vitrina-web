@@ -6,112 +6,41 @@ import Link from "next/link";
 import Header from "@/components/layout/Header";
 import Avatar from "@/components/ui/Avatar";
 import Badge from "@/components/ui/Badge";
+import { projects as mockProjects, type Project } from "@/lib/mock-data";
 
-const allProjects = [
-  {
-    id: "1",
-    name: "RivVirtual",
-    course: "Desarrollo Web",
-    status: "Publicado" as const,
-    views: "1,245",
-    cycle: "2026-I",
-    team: [
-      { name: "María Cáceres", role: "Líder" },
-      { name: "Carlos Quispe", role: "Dev" },
-      { name: "Ana Torres", role: "Diseño" },
-    ],
-    image: "/images/projects/RivVirtual-1.png",
-  },
-  {
-    id: "2",
-    name: "Kanban Pro",
-    course: "Desarrollo Web",
-    status: "Publicado" as const,
-    views: "832",
-    cycle: "2026-I",
-    team: [
-      { name: "María Cáceres", role: "Líder" },
-      { name: "Pedro Gutiérrez", role: "Dev" },
-    ],
-    image: "/images/projects/KanbanPro-1.png",
-  },
-  {
-    id: "3",
-    name: "EcoRiego",
-    course: "Internet de las Cosas",
-    status: "En Desarrollo" as const,
-    views: "0",
-    cycle: "2026-I",
-    team: [
-      { name: "Diego Huamán", role: "Líder" },
-      { name: "María Cáceres", role: "Dev" },
-    ],
-    image: "/images/projects/AquaSense-1.png",
-  },
-  {
-    id: "4",
-    name: "SafeBus",
-    course: "Redes y Comunicaciones",
-    status: "Bloqueado" as const,
-    views: "311",
-    cycle: "2026-I",
-    team: [
-      { name: "Lucia Flores", role: "Líder" },
-      { name: "María Cáceres", role: "Dev" },
-    ],
-    image: "/images/projects/SafeBus-1.png",
-  },
-  {
-    id: "5",
-    name: "NutriScan",
-    course: "Inteligencia Artificial",
-    status: "Publicado" as const,
-    views: "540",
-    cycle: "2026-I",
-    team: [
-      { name: "María Cáceres", role: "Líder" },
-      { name: "Jorge Rojas", role: "Dev" },
-    ],
-    image: "/images/projects/NutriScan-1.png",
-  },
-  {
-    id: "6",
-    name: "EcoCajero",
-    course: "Desarrollo Web",
-    status: "Publicado" as const,
-    views: "2,103",
-    cycle: "2025-II",
-    team: [
-      { name: "María Cáceres", role: "Líder" },
-      { name: "Carlos Quispe", role: "Dev" },
-      { name: "Ana Torres", role: "Diseño" },
-    ],
-    image: "/images/projects/EcoCajero-1.png",
-  },
-  {
-    id: "7",
-    name: "Wayki",
-    course: "Desarrollo Web",
-    status: "En Desarrollo" as const,
-    views: "0",
-    cycle: "2026-I",
-    team: [{ name: "María Cáceres", role: "Líder" }],
-    image: "/images/projects/Wayki-1.png",
-  },
-  {
-    id: "8",
-    name: "Turnify",
-    course: "Desarrollo Web",
-    status: "Publicado" as const,
-    views: "432",
-    cycle: "2025-II",
-    team: [
-      { name: "María Cáceres", role: "Miembro" },
-      { name: "Lucia Flores", role: "Líder" },
-    ],
-    image: "/images/projects/Turnify-1.png",
-  },
-];
+/**
+ * Sobreescribimos los estados para el prototipo (mock-data tiene todos "Publicado").
+ * Esto permite probar las pestañas sin tocar la fuente de datos real.
+ */
+const PROTOTYPE_STATUS: Record<string, Project["status"]> = {
+  "1": "Publicado", // EcoCajero
+  "2": "Publicado", // RivVirtual
+  "3": "En Desarrollo", // Wayki
+  "4": "Bloqueado", // SafeBus
+  "5": "Por Revisar", // NutriScan
+  "6": "Publicado", // Kanban Pro
+  "7": "Publicado", // Turnify
+  "8": "Por Revisar", // AquaSense
+};
+
+/** Mapeo de cursos completos → nombre corto para la tabla */
+const SHORT_COURSE: Record<string, string> = {
+  "Desarrollo de Aplicaciones Web": "Desarrollo Web",
+  "Internet de las Cosas": "Internet de las Cosas",
+  "Inteligencia Artificial": "Inteligencia Artificial",
+  "Redes y Comunicaciones": "Redes y Comunicaciones",
+};
+
+const allProjects = mockProjects.map((p) => ({
+  id: p.id,
+  name: p.name.split(" — ")[0],
+  course: SHORT_COURSE[p.course] ?? p.course,
+  status: PROTOTYPE_STATUS[p.id] ?? p.status,
+  views: p.views.toLocaleString(),
+  cycle: p.cycle,
+  team: p.team,
+  image: p.images[0],
+}));
 
 const studentTabs = [
   { name: "Todos", status: "all" },
@@ -150,7 +79,7 @@ export default function DashboardPage() {
     "En Desarrollo": allProjects.filter((p) => p.status === "En Desarrollo")
       .length,
     Bloqueado: allProjects.filter((p) => p.status === "Bloqueado").length,
-    "Por Revisar": 0,
+    "Por Revisar": allProjects.filter((p) => p.status === "Por Revisar").length,
   };
 
   return (
@@ -323,9 +252,14 @@ export default function DashboardPage() {
                   <div className="col-span-1 text-right">
                     {isTeacherView ? (
                       <div className="flex items-center justify-end gap-3">
-                        <button className="text-tecsup-cyan hover:text-tecsup-cyan/80 font-medium text-sm cursor-pointer">
-                          Ver
-                        </button>
+                        {project.status === "Por Revisar" && (
+                          <Link
+                            href={"/dashboard/revision/" + project.id}
+                            className="text-tecsup-cyan hover:text-tecsup-cyan/80 font-medium text-sm cursor-pointer"
+                          >
+                            Ver
+                          </Link>
+                        )}
                         <button className="text-gray-400 hover:text-gray-600 cursor-pointer">
                           <svg
                             className="w-5 h-5"
@@ -336,9 +270,9 @@ export default function DashboardPage() {
                           </svg>
                         </button>
                       </div>
-                    ) : (
+                    ) : project.status === "En Desarrollo" ? (
                       <Link
-                        href={`/dashboard/editar-proyecto/${project.id}`}
+                        href={"/dashboard/editar-proyecto/" + project.id}
                         className="inline-flex items-center gap-1.5 px-3 py-1.5 text-xs font-semibold text-tecsup-cyan hover:bg-tecsup-cyan/10 rounded-lg transition-colors"
                       >
                         <svg
@@ -356,6 +290,8 @@ export default function DashboardPage() {
                         </svg>
                         Editar
                       </Link>
+                    ) : (
+                      <span className="text-xs text-gray-300">—</span>
                     )}
                   </div>
                 </div>

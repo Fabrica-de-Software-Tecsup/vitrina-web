@@ -1,19 +1,8 @@
 import Badge from "./Badge";
 import Avatar from "./Avatar";
-
-interface Project {
-  id: string;
-  name: string;
-  course: string;
-  cycle: string;
-  category: string;
-  description: string;
-  technologies: string[];
-  team: { name: string; role: string }[];
-  coverImage: string;
-  views: number;
-  status: string;
-}
+import Link from "next/link";
+import { slugify } from "@/lib/utils";
+import type { Project } from "@/lib/mock-data";
 
 const categoryVariantMap: Record<string, "daw" | "iot" | "otro"> = {
   DAW: "daw",
@@ -28,10 +17,13 @@ export default function ProjectCard({ project }: ProjectCardProps) {
   const badgeVariant = categoryVariantMap[project.category] || "otro";
 
   return (
-    <article className="group bg-white rounded-xl border border-gray-100 overflow-hidden shadow-sm hover:shadow-lg transition-all duration-300 hover:-translate-y-1">
+    <Link
+      href={"/proyectos/" + slugify(project.name)}
+      className="group block bg-white rounded-xl border border-gray-100 overflow-hidden shadow-sm hover:shadow-2xl hover:scale-[1.03] hover:-translate-y-2 transition-all duration-300"
+    >
       <div className="relative aspect-[16/10] overflow-hidden">
         <img
-          src={project.coverImage}
+          src={project.images[0]}
           alt={project.name}
           className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500"
         />
@@ -76,6 +68,6 @@ export default function ProjectCard({ project }: ProjectCardProps) {
           </span>
         </div>
       </div>
-    </article>
+    </Link>
   );
 }

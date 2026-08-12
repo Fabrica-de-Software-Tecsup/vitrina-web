@@ -1,167 +1,118 @@
 "use client";
 
 import { useState } from "react";
+import { useParams } from "next/navigation";
 import Avatar from "@/components/ui/Avatar";
+import Badge from "@/components/ui/Badge";
 import ProjectCard from "@/components/ui/ProjectCard";
+import { projects } from "@/lib/mock-data";
+import { slugify } from "@/lib/utils";
 
-const student = {
-  name: "Maria Mamani Quispe",
-  career: "Diseño y Desarrollo de Software",
-  location: "Arequipa, Perú",
-  bio: "Apasionada por crear productos digitales que resuelvan problemas reales. Especializada en frontend y experiencia de usuario. Busco siempre aprender nuevas tecnologías y aplicarlas en proyectos con impacto social.",
-  technologies: [
-    { name: "React", projects: 8 },
-    { name: "TypeScript", projects: 7 },
-    { name: "Node.js", projects: 6 },
-    { name: "Tailwind", projects: 6 },
-    { name: "PostgreSQL", projects: 5 },
-    { name: "Figma", projects: 4 },
-  ],
-  projectCount: 12,
-};
-
-const projects = [
+// ─── Datos de estudiantes (cuando el backend esté listo vendrán de API) ───
+const students = [
   {
-    id: "1",
-    name: "EcoCajero — Recompensas por reciclaje",
-    course: "Desarrollo de Aplicaciones Web",
-    cycle: "Ciclo VI",
-    category: "DAW",
-    description:
-      "Proyecto que busca reciclar botellas de plástico y dar una recompensa económica a cambio.",
-    technologies: ["React", "Node.js", "PostgreSQL", "Tailwind"],
-    team: [
-      { name: "Maria Mamani", role: "Líder" },
-      { name: "Carlos Quispe", role: "Desarrollador" },
-    ],
-    coverSeed: 180,
-    views: 1245,
-    status: "Publicado" as const,
+    slug: "maria-mamani-quispe",
+    name: "Maria Mamani Quispe",
+    career: "Diseño y Desarrollo de Software",
+    location: "Arequipa, Perú",
+    bio: "Apasionada por crear productos digitales que resuelvan problemas reales. Especializada en frontend y experiencia de usuario.",
+    github: "https://github.com/mariamamani",
+    linkedin: "https://linkedin.com/in/mariamamani",
+    email: "mmamani@tecsup.edu.pe",
   },
   {
-    id: "2",
-    name: "RivVirtual — Simulador de maquinaria pesada",
-    course: "Desarrollo de Aplicaciones Web",
-    cycle: "Ciclo VI",
-    category: "DAW",
-    description:
-      "Simulador virtual inmersivo para entrenamiento en maquinaria pesada usando realidad virtual.",
-    technologies: ["React", "Three.js", "Node.js", "WebRTC"],
-    team: [
-      { name: "Maria Mamani", role: "Líder" },
-      { name: "Diego Huamán", role: "Desarrollador" },
-    ],
-    coverSeed: 190,
-    views: 876,
-    status: "Publicado" as const,
+    slug: "diego-human-poma",
+    name: "Diego Huamán Poma",
+    career: "Diseño y Desarrollo de Software",
+    location: "Arequipa, Perú",
+    bio: "Especialista en IoT y sistemas embebidos. Me gusta conectar el hardware con el software para crear soluciones reales.",
+    github: "https://github.com/diegohuaman",
+    linkedin: "https://linkedin.com/in/diegohuaman",
+    email: "dhuaman@tecsup.edu.pe",
   },
   {
-    id: "3",
-    name: "Wayki — Tutoría entre estudiantes",
-    course: "Desarrollo de Aplicaciones Web",
-    cycle: "Ciclo V",
-    category: "DAW",
-    description:
-      "Plataforma que conecta estudiantes que necesitan ayuda con aquellos que dominan un tema.",
-    technologies: ["Next.js", "TypeScript", "Prisma", "PostgreSQL"],
-    team: [
-      { name: "Maria Mamani", role: "Miembro" },
-      { name: "Lucia Flores", role: "Líder" },
-    ],
-    coverSeed: 200,
-    views: 432,
-    status: "Publicado" as const,
+    slug: "valeria-caceres-camacho",
+    name: "Valeria Cáceres Camacho",
+    career: "Diseño y Desarrollo de Software",
+    location: "Arequipa, Perú",
+    bio: "Desarrolladora full-stack con interés en aplicaciones de impacto social. Experiencia en React, Next.js y Firebase.",
+    github: "https://github.com/valeriacaceres",
+    linkedin: "https://linkedin.com/in/valeriacaceres",
+    email: "vcaceres@tecsup.edu.pe",
   },
   {
-    id: "4",
-    name: "SafeBus — Rastreo de transporte urbano",
-    course: "Internet de las Cosas",
-    cycle: "Ciclo V",
-    category: "IOT",
-    description:
-      "Sistema de rastreo en tiempo real para transporte urbano de Arequipa.",
-    technologies: ["ESP32", "React", "Python", "MQTT"],
-    team: [
-      { name: "Maria Mamani", role: "Desarrolladora" },
-      { name: "Pedro Gutiérrez", role: "Líder" },
-    ],
-    coverSeed: 210,
-    views: 567,
-    status: "Publicado" as const,
+    slug: "lucia-flores-torres",
+    name: "Lucia Flores Torres",
+    career: "Diseño y Desarrollo de Software",
+    location: "Lima, Perú",
+    bio: "Apasionada por datos y visualización. Combino habilidades de desarrollo con análisis de datos para contar historias.",
+    github: "https://github.com/luciaflores",
+    linkedin: "https://linkedin.com/in/luciaflores",
+    email: "lflores@tecsup.edu.pe",
   },
   {
-    id: "5",
-    name: "NutriScan — Scanner nutricional con IA",
-    course: "Inteligencia Artificial",
-    cycle: "Ciclo VI",
-    category: "IOT",
-    description:
-      "Scanner con IA que lee etiquetas de alimentos con un fin nutricional.",
-    technologies: ["Python", "TensorFlow", "React", "FastAPI"],
-    team: [
-      { name: "Maria Mamani", role: "Líder" },
-      { name: "Jorge Rojas", role: "Desarrollador" },
-    ],
-    coverSeed: 220,
-    views: 540,
-    status: "Publicado" as const,
+    slug: "carlos-quispe-rojas",
+    name: "Carlos Quispe Rojas",
+    career: "Diseño y Desarrollo de Software",
+    location: "Arequipa, Perú",
+    bio: "Backend developer enfocado en APIs escalables y bases de datos optimizadas. Fan de PostgreSQL y Docker.",
+    github: "https://github.com/carlosquispe",
+    linkedin: "https://linkedin.com/in/carlosquispe",
+    email: "cquispe@tecsup.edu.pe",
   },
   {
-    id: "6",
-    name: "Kanban Pro — Gestión ágil de tareas",
-    course: "Desarrollo de Aplicaciones Web",
-    cycle: "Ciclo IV",
-    category: "DAW",
-    description:
-      "Herramienta de gestión áril en tareas en equipo con tableros Kanban personalizables.",
-    technologies: ["React", "Node.js", "PostgreSQL", "Tailwind"],
-    team: [
-      { name: "Maria Mamani", role: "Miembro" },
-      { name: "Ana Torres", role: "Líder" },
-    ],
-    coverSeed: 230,
-    views: 321,
-    status: "Publicado" as const,
+    slug: "ana-torres-mendoza",
+    name: "Ana Torres Mendoza",
+    career: "Diseño y Desarrollo de Software",
+    location: "Cusco, Perú",
+    bio: "Diseñadora UX/UI que escribe código. Puente entre diseño y desarrollo, amo crear interfaces que la gente disfruta usar.",
+    github: "https://github.com/anatorres",
+    linkedin: "https://linkedin.com/in/anatorres",
+    email: "atorres@tecsup.edu.pe",
   },
   {
-    id: "7",
-    name: "Turnify — Reserva de citas para pymes",
-    course: "Desarrollo de Aplicaciones Web",
-    cycle: "Ciclo V",
-    category: "DAW",
-    description:
-      "Sistema de reserva de citas en línea diseñado para pequeñas y medianas empresas.",
-    technologies: ["Next.js", "Prisma", "Stripe", "Tailwind"],
-    team: [
-      { name: "Maria Mamani", role: "Líder" },
-      { name: "Lucia Flores", role: "Desarrolladora" },
-    ],
-    coverSeed: 240,
-    views: 198,
-    status: "Publicado" as const,
+    slug: "pedro-gutierrez-salas",
+    name: "Pedro Gutiérrez Salas",
+    career: "Diseño y Desarrollo de Software",
+    location: "Arequipa, Perú",
+    bio: "Hardware y software, todo junto. Trabajo con ESP32, Python y TensorFlow para construir soluciones IoT inteligentes.",
+    github: "https://github.com/pedrogutierrez",
+    linkedin: "https://linkedin.com/in/pedrogutierrez",
+    email: "pgutierrez@tecsup.edu.pe",
   },
   {
-    id: "8",
-    name: "AquaSense — Calidad del agua en tiempo real",
-    course: "Internet de las Cosas",
-    cycle: "Ciclo VI",
-    category: "IOT",
-    description:
-      "Sensor que indica la calidad del agua en tiempo real usando IoT.",
-    technologies: ["ESP32", "Python", "MQTT", "React"],
-    team: [
-      { name: "Maria Mamani", role: "Desarrolladora" },
-      { name: "Diego Huamán", role: "Líder" },
-    ],
-    coverSeed: 250,
-    views: 654,
-    status: "Publicado" as const,
+    slug: "jorge-rojas-huanca",
+    name: "Jorge Rojas Huanca",
+    career: "Diseño y Desarrollo de Software",
+    location: "Arequipa, Perú",
+    bio: "Desarrollador backend con experiencia en Java y Spring Boot. Actualmente explorando el ecosistema de Node.js.",
+    github: "https://github.com/jorgerojas",
+    linkedin: "https://linkedin.com/in/jorgerojas",
+    email: "jrojas@tecsup.edu.pe",
   },
 ];
 
-export default function ProfilePage() {
+export default function StudentProfilePage() {
+  const params = useParams();
+  const slug = params.slug as string;
   const [copied, setCopied] = useState(false);
-  const maxProjects = Math.max(...student.technologies.map((t) => t.projects));
+
+  const student = students.find((s) => s.slug === slug);
+
+  // Filtrar proyectos donde el estudiante es miembro del equipo
+  const studentProjects = student
+    ? projects.filter((p) => p.team.some((m) => m.name === student.name))
+    : [];
+
+  // Calcular tecnologías dominadas desde los proyectos
+  const techCount: Record<string, number> = {};
+  studentProjects.forEach((p) => {
+    p.technologies.forEach((t) => {
+      techCount[t] = (techCount[t] || 0) + 1;
+    });
+  });
+  const sortedTechs = Object.entries(techCount).sort((a, b) => b[1] - a[1]);
+  const maxCount = sortedTechs.length > 0 ? sortedTechs[0][1] : 1;
 
   const handleCopyLink = () => {
     navigator.clipboard.writeText(window.location.href);
@@ -169,145 +120,180 @@ export default function ProfilePage() {
     setTimeout(() => setCopied(false), 2000);
   };
 
+  if (!student) {
+    return (
+      <div className="bg-tecsup-gray min-h-screen flex items-center justify-center">
+        <div className="text-center">
+          <p className="text-6xl mb-4">🔍</p>
+          <h1 className="text-2xl font-bold text-tecsup-dark">
+            Estudiante no encontrado
+          </h1>
+          <a
+            href="/"
+            className="mt-4 inline-block text-sm text-tecsup-cyan hover:underline"
+          >
+            Volver a la Landing
+          </a>
+        </div>
+      </div>
+    );
+  }
+
   return (
     <div className="bg-tecsup-gray min-h-screen">
-      {/* Banner */}
-      <div className="h-40 bg-gradient-to-r from-[#071422] via-[#0c2240] to-[#091a30] relative">
-        <div className="absolute -top-20 -right-20 w-64 h-64 bg-tecsup-cyan/10 rounded-full blur-[80px]" />
-      </div>
-
-      {/* Info del perfil */}
-      <div className="max-w-7xl mx-auto px-6 -mt-12 relative z-10">
-        <div className="flex flex-col md:flex-row md:items-end gap-4 mb-8">
+      {/* ─── Banner ─── */}
+      <div className="h-40 bg-gradient-to-r from-tecsup-cyan/30 via-tecsup-purple/20 to-tecsup-cyan/10 relative">
+        <div className="absolute -bottom-12 left-8">
           <Avatar
             name={student.name}
             size="xl"
-            className="border-4 border-white shadow-xl"
+            className="border-4 border-white shadow-lg"
           />
-          <div className="flex-1">
-            <h1 className="text-2xl font-extrabold text-tecsup-dark">
-              {student.name}
-            </h1>
-            <p className="text-sm text-gray-500 mt-0.5">{student.career}</p>
-            <p className="text-xs text-gray-400 flex items-center gap-1 mt-1">
-              <svg
-                className="w-3.5 h-3.5"
-                fill="none"
-                stroke="currentColor"
-                viewBox="0 0 24 24"
+        </div>
+      </div>
+
+      <div className="max-w-7xl mx-auto px-6 py-8">
+        {/* ─── Info personal ─── */}
+        <div className="pt-14 mb-8">
+          <div className="flex flex-col lg:flex-row lg:items-start lg:justify-between gap-4">
+            {/* Links sociales (izquierda) */}
+            <div className="flex items-center gap-2 order-2 lg:order-1">
+              <a
+                href={student.github}
+                target="_blank"
+                className="w-9 h-9 rounded-full bg-white border border-gray-200 flex items-center justify-center text-gray-500 hover:text-tecsup-dark hover:border-gray-400 transition-colors"
+                title="GitHub"
               >
-                <path
-                  strokeLinecap="round"
-                  strokeLinejoin="round"
-                  strokeWidth={2}
-                  d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z"
-                />
-                <path
-                  strokeLinecap="round"
-                  strokeLinejoin="round"
-                  strokeWidth={2}
-                  d="M15 11a3 3 0 11-6 0 3 3 0 016 0z"
-                />
-              </svg>
-              {student.location}
-            </p>
-          </div>
-          <div className="flex gap-2 shrink-0">
-            <button
-              onClick={handleCopyLink}
-              className="flex items-center gap-2 px-4 py-2 border border-gray-200 bg-white text-gray-600 text-xs font-semibold rounded-full hover:bg-gray-50 transition-colors"
-            >
-              {copied ? (
-                "✅ Copiado"
-              ) : (
-                <>
-                  <svg
-                    className="w-4 h-4"
-                    fill="none"
-                    stroke="currentColor"
-                    viewBox="0 0 24 24"
-                  >
-                    <path
-                      strokeLinecap="round"
-                      strokeLinejoin="round"
-                      strokeWidth={2}
-                      d="M8 5H6a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2v-1M8 5a2 2 0 002 2h2a2 2 0 002-2M8 5a2 2 0 012-2h2a2 2 0 012 2m0 0h2a2 2 0 012 2v3m2 4H10m0 0l3-3m-3 3l3 3"
-                    />
-                  </svg>
-                  Compartir perfil
-                </>
-              )}
-            </button>
-            <button className="flex items-center gap-2 px-4 py-2 bg-tecsup-dark text-white text-xs font-semibold rounded-full hover:bg-tecsup-dark/85 transition-colors">
-              <svg
-                className="w-4 h-4"
-                fill="none"
-                stroke="currentColor"
-                viewBox="0 0 24 24"
+                <svg
+                  className="w-4 h-4"
+                  fill="currentColor"
+                  viewBox="0 0 24 24"
+                >
+                  <path d="M12 0c-6.626 0-12 5.373-12 12 0 5.302 3.438 9.8 8.207 11.387.599.111.793-.261.793-.577v-2.234c-3.338.726-4.033-1.416-4.033-1.416-.546-1.387-1.333-1.756-1.333-1.756-1.089-.745.083-.729.083-.729 1.205.084 1.839 1.237 1.839 1.237 1.07 1.834 2.807 1.304 3.492.997.107-.775.418-1.305.762-1.604-2.665-.305-5.467-1.334-5.467-5.931 0-1.311.469-2.381 1.236-3.221-.124-.303-.535-1.524.117-3.176 0 0 1.008-.322 3.301 1.23.957-.266 1.983-.399 3.003-.404 1.02.005 2.047.138 3.006.404 2.291-1.552 3.297-1.23 3.297-1.23.645 1.653.242 2.874.118 3.176.77.84 1.235 1.911 1.235 3.221 0 4.609-2.807 5.624-5.479 5.921.43.372.823 1.102.823 2.222v3.293c0 .319.192.694.801.576 4.765-1.589 6.705-6.206 6.705-12.205 0-18.546-2.057-24.401-5.467-6.602-2.41-12.401-6.705-12.401-12.205 0-2.628.934-5.06 2.452-6.948-.254-.608-.594-1.568.114-2.322 0 0 1.018-.308 3.296 1.278a11.494 11.494 0 013.368-.49c1.148.085 2.258.128 3.368.128 1.11 0 2.22-.043 3.368-.128 1.14-.614 2.367-1.278 3.368-1.278 1.708 1.586 2.368 1.714 2.368 1.714.708 2.014 1.236 3.222 1.236 4.609 0 8.4-2.096 8.4-5.921 0-1.311-.469-2.381-1.236-3.221.124-.303.535-1.524.117-3.176 0 0-1.008-.322-3.301-1.23-.957.266-1.983.399-3.003.404-1.02.005-2.047-.138-3.006-.404-2.291 1.552-3.297 1.23-3.297 1.23-.645 1.653-.242 2.874-.118 3.176.77.84 1.235 1.911 1.235 3.221 0 4.609-2.807 5.624-5.479 5.921.43.372.823 1.102.823 2.222v3.293c0 .319-.192.694-.801.576-4.765-1.589-6.759-6.206-6.759-12.205 0-6.626 5.373-12 12-12z" />
+                </svg>
+              </a>
+              <a
+                href={student.linkedin}
+                target="_blank"
+                className="w-9 h-9 rounded-full bg-white border border-gray-200 flex items-center justify-center text-gray-500 hover:text-[#0A66C2] hover:border-[#0A66C2]/40 transition-colors"
+                title="LinkedIn"
               >
-                <path
-                  strokeLinecap="round"
-                  strokeLinejoin="round"
-                  strokeWidth={2}
-                  d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"
-                />
-              </svg>
-              Descargar CV
-            </button>
+                <svg
+                  className="w-4 h-4"
+                  fill="currentColor"
+                  viewBox="0 0 24 24"
+                >
+                  <path d="M20.447 20.452h-3.554v-5.569c0-1.328-.027-3.037-1.852-3.037-1.853 0-2.136 1.445-2.136 2.939v5.667H9.351V9h3.414v1.561h.046c.477-.9 1.637-1.85 3.37-1.85 3.601 0 4.267 2.37 4.267 5.455v6.286zM5.337 7.433a2.062 2.062 0 01-2.063-2.065 2.064 2.064 0 112.063 2.065zm1.782 13.019H3.555V9h3.564v11.452zM22.225 0H1.771C.792 0 0 .774 0 1.729v20.542C0 23.227.792 24 1.771 24h20.451C23.2 24 24 23.227 24 22.271V1.729C24 .774 23.2 0 22.222 0h.003z" />
+                </svg>
+              </a>
+              <a
+                href={"mailto:" + student.email}
+                className="w-9 h-9 rounded-full bg-white border border-gray-200 flex items-center justify-center text-gray-500 hover:text-tecsup-cyan hover:border-tecsup-cyan/40 transition-colors"
+                title="Correo"
+              >
+                <svg
+                  className="w-4 h-4"
+                  fill="none"
+                  stroke="currentColor"
+                  viewBox="0 0 24 24"
+                >
+                  <path
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                    strokeWidth={2}
+                    d="M3 8l7.89 5.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z"
+                  />
+                </svg>
+              </a>
+            </div>
+
+            {/* Nombre y datos (centro) */}
+            <div className="order-1 lg:order-2">
+              <h1 className="text-2xl font-bold text-tecsup-dark">
+                {student.name}
+              </h1>
+              <p className="text-sm text-gray-500 mt-0.5">{student.career}</p>
+              <p className="text-xs text-gray-400 flex items-center gap-1 mt-1">
+                <svg
+                  className="w-3.5 h-3.5"
+                  fill="none"
+                  stroke="currentColor"
+                  viewBox="0 0 24 24"
+                >
+                  <path
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                    strokeWidth={2}
+                    d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z"
+                  />
+                  <path
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                    strokeWidth={2}
+                    d="M15 11a3 3 0 11-6 0 3 3 0 016 0z"
+                  />
+                </svg>
+                {student.location}
+              </p>
+              <p className="text-sm text-gray-500 mt-3 max-w-lg leading-relaxed">
+                {student.bio}
+              </p>
+            </div>
+
+            {/* Botones (derecha) */}
+            <div className="flex items-center gap-2 shrink-0 order-3">
+              <button
+                onClick={handleCopyLink}
+                className="px-4 py-2 border border-gray-200 bg-white text-gray-600 text-xs font-semibold rounded-full hover:bg-gray-50 transition-colors"
+              >
+                {copied ? "✅ Copiado" : "Compartir perfil"}
+              </button>
+              <button className="px-4 py-2 bg-tecsup-dark text-white text-xs font-semibold rounded-full hover:bg-tecsup-dark/85 transition-colors">
+                Descargar CV
+              </button>
+            </div>
           </div>
         </div>
 
-        {/* Bio */}
-        <p className="text-sm text-gray-600 leading-relaxed max-w-2xl mb-8">
-          {student.bio}
-        </p>
-
-        {/* Layout 2 columnas */}
-        <div className="grid grid-cols-1 lg:grid-cols-3 gap-8 pb-12">
+        {/* ─── Layout 2 columnas ─── */}
+        <div className="grid grid-cols-1 lg:grid-cols-3 gap-8 lg:items-start">
           {/* Izquierda: Proyectos */}
           <div className="lg:col-span-2">
-            <div className="flex items-center justify-between mb-6">
-              <h2 className="text-lg font-bold text-tecsup-dark">
-                Proyectos ({student.projectCount})
-              </h2>
-              <button className="text-xs text-tecsup-cyan font-semibold hover:underline cursor-pointer">
-                Destacados primero
-              </button>
-            </div>
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-6">
-              {projects.map((project) => (
-                <ProjectCard key={project.id} project={project} />
-              ))}
-            </div>
+            <h2 className="text-lg font-bold text-tecsup-dark mb-6">
+              Proyectos ({studentProjects.length})
+            </h2>
+            {studentProjects.length > 0 ? (
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-6">
+                {studentProjects.map((project) => (
+                  <ProjectCard key={project.id} project={project} />
+                ))}
+              </div>
+            ) : (
+              <div className="bg-white rounded-xl border border-gray-200 p-12 text-center">
+                <p className="text-4xl mb-3">📋</p>
+                <p className="text-sm text-gray-400">
+                  Este estudiante aún no tiene proyectos publicados.
+                </p>
+              </div>
+            )}
           </div>
 
           {/* Derecha: Sidebar */}
-          <div className="space-y-6">
+          <div className="lg:sticky lg:top-20 space-y-6">
             {/* Mapa de crecimiento */}
             <div className="bg-white rounded-xl border border-gray-200 p-6">
               <h3 className="text-sm font-bold text-tecsup-dark mb-2">
                 Mapa de crecimiento
               </h3>
-              <p className="text-xs text-gray-400 mb-4">
-                Según los {student.projectCount} proyectos documentados
+              <p className="text-[11px] text-gray-400 mb-4">
+                Según los {studentProjects.length} proyectos documentados
               </p>
               <div className="aspect-square border-2 border-dashed border-gray-200 rounded-xl flex items-center justify-center">
                 <div className="text-center">
-                  <svg
-                    className="w-12 h-12 text-gray-300 mx-auto"
-                    fill="none"
-                    stroke="currentColor"
-                    viewBox="0 0 24 24"
-                  >
-                    <path
-                      strokeLinecap="round"
-                      strokeLinejoin="round"
-                      strokeWidth={1.5}
-                      d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z"
-                    />
-                  </svg>
-                  <p className="text-[11px] text-gray-400 mt-2 font-medium">
-                    Gráfico radar
+                  <p className="text-3xl mb-1">📊</p>
+                  <p className="text-[11px] text-gray-400">Gráfico radar</p>
+                  <p className="text-[10px] text-gray-300 mt-1">
+                    (Próximamente)
                   </p>
                 </div>
               </div>
@@ -318,28 +304,32 @@ export default function ProfilePage() {
               <h3 className="text-sm font-bold text-tecsup-dark mb-4">
                 Tecnologías dominadas
               </h3>
-              <div className="space-y-3">
-                {student.technologies.map((tech) => (
-                  <div key={tech.name}>
-                    <div className="flex items-center justify-between mb-1">
-                      <span className="text-xs font-medium text-gray-600">
-                        {tech.name}
-                      </span>
-                      <span className="text-[10px] text-gray-400">
-                        {tech.projects} proyectos
-                      </span>
+              {sortedTechs.length > 0 ? (
+                <div className="space-y-3">
+                  {sortedTechs.map(([tech, count]) => (
+                    <div key={tech}>
+                      <div className="flex items-center justify-between mb-1">
+                        <span className="text-xs font-medium text-gray-600">
+                          {tech}
+                        </span>
+                        <span className="text-[10px] text-gray-400">
+                          {count} proyecto{count > 1 ? "s" : ""}
+                        </span>
+                      </div>
+                      <div className="w-full bg-tecsup-gray h-3 rounded-full overflow-hidden">
+                        <div
+                          className="h-full bg-tecsup-cyan rounded-full transition-all duration-500"
+                          style={{ width: (count / maxCount) * 100 + "%" }}
+                        ></div>
+                      </div>
                     </div>
-                    <div className="w-full h-2 bg-gray-100 rounded-full overflow-hidden">
-                      <div
-                        className="h-full bg-tecsup-cyan rounded-full transition-all duration-500"
-                        style={{
-                          width: `${(tech.projects / maxProjects) * 100}%`,
-                        }}
-                      />
-                    </div>
-                  </div>
-                ))}
-              </div>
+                  ))}
+                </div>
+              ) : (
+                <p className="text-xs text-gray-400 text-center py-4">
+                  Sin datos aún
+                </p>
+              )}
             </div>
           </div>
         </div>
