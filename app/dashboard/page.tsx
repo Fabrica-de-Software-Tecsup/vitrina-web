@@ -8,20 +8,6 @@ import Avatar from "@/components/ui/Avatar";
 import Badge from "@/components/ui/Badge";
 import { projects as mockProjects, type Project } from "@/lib/mock-data";
 
-/**
- * Sobreescribimos los estados para el prototipo (mock-data tiene todos "Publicado").
- * Esto permite probar las pestañas sin tocar la fuente de datos real.
- */
-const PROTOTYPE_STATUS: Record<string, Project["status"]> = {
-  "1": "Publicado", // EcoCajero
-  "2": "Publicado", // RivVirtual
-  "3": "En Desarrollo", // Wayki
-  "4": "Oculto", // SafeBus
-  "5": "Por Revisar", // NutriScan
-  "6": "Publicado", // Kanban Pro
-  "7": "Publicado", // Turnify
-  "8": "Por Revisar", // AquaSense
-};
 
 /** Mapeo de cursos completos → nombre corto para la tabla */
 const SHORT_COURSE: Record<string, string> = {
@@ -35,7 +21,7 @@ const allProjects = mockProjects.map((p) => ({
   id: p.id,
   name: p.name.split(" — ")[0],
   course: SHORT_COURSE[p.course] ?? p.course,
-  status: PROTOTYPE_STATUS[p.id] ?? p.status,
+  status: p.status,
   views: p.views.toLocaleString(),
   cycle: p.cycle,
   team: p.team,
