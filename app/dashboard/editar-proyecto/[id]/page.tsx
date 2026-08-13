@@ -239,7 +239,7 @@ export default function EditProjectPage() {
         <div className="max-w-6xl mx-auto px-6 py-8">
           {/* Cabecera y Aviso Crítico */}
           <div className="mb-6">
-            <div className="flex items-center justify-between mb-4">
+            <div className="mb-4">
               <div>
                 <h1 className="text-2xl font-bold text-tecsup-dark">
                   Editando: EcoCajero
@@ -248,9 +248,6 @@ export default function EditProjectPage() {
                   Campos bloqueados asignados por el docente
                 </p>
               </div>
-              <button className="px-5 py-2.5 bg-tecsup-cyan text-white text-sm font-semibold rounded-full hover:bg-tecsup-cian/85 shadow-sm">
-                Guardar Cambios
-              </button>
             </div>
 
             <div className="bg-amber-50 border border-amber-200 rounded-lg p-3 flex items-center gap-2">
