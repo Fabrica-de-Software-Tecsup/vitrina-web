@@ -1,3 +1,4 @@
+import Link from "next/link";
 import Avatar from "./Avatar";
 
 interface StudentCardProps {
@@ -6,6 +7,7 @@ interface StudentCardProps {
   location: string;
   technologies: string[];
   projectCount: number;
+  slug: string;
 }
 
 export default function StudentCard({
@@ -14,6 +16,7 @@ export default function StudentCard({
   location,
   technologies,
   projectCount,
+  slug,
 }: StudentCardProps) {
   return (
     <article className="group bg-white rounded-xl border border-gray-100 overflow-hidden shadow-sm hover:shadow-2xl hover:scale-[1.03] hover:-translate-y-2 transition-all duration-300">
@@ -76,9 +79,12 @@ export default function StudentCard({
           <span className="text-[10px] text-gray-400 font-medium">
             {projectCount} proyectos
           </span>
-          <span className="text-xs font-semibold text-tecsup-cyan group-hover:underline cursor-pointer">
+          <Link
+            href={`/perfiles/${slug}`}
+            className="text-xs font-semibold text-tecsup-cyan group-hover:underline"
+          >
             Ver perfil →
-          </span>
+          </Link>
         </div>
       </div>
     </article>

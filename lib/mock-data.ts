@@ -44,9 +44,9 @@ export const projects: Project[] = [
       "Desarrollamos EcoCajero pensando en la economía circular. Utilizamos React para el frontend debido a su ecosistema robusto, y Node.js para el backend garantizando una API escalable. La integración con sensores IoT fue uno de los retos más grandes, pero logramos implementar una solución que conecta el hardware con la aplicación en tiempo real.",
     technologies: ["React", "TypeScript", "Node.js", "PostgreSQL", "Tailwind"],
     team: [
-      { name: "María Cáceres", role: "Líder" },
-      { name: "Carlos Quispe", role: "Desarrollador Frontend" },
-      { name: "Ana Torres", role: "Diseñadora UX/UI" },
+      { name: "Maria Mamani Quispe", role: "Líder" },
+      { name: "Carlos Quispe Rojas", role: "Desarrollador Backend" },
+      { name: "Ana Torres Mendoza", role: "Diseñadora UX/UI" },
     ],
     images: [
       "/images/projects/EcoCajero-1.png",
@@ -77,9 +77,9 @@ export const projects: Project[] = [
       "RivVirtual nació de la necesidad de entrenar operadores de maquinaria pesada sin los costos y riesgos del entrenamiento en campo. Usamos Three.js para renderizar los modelos 3D y WebRTC para la comunicación en tiempo real entre el instructor y el operador en VR.",
     technologies: ["React", "Three.js", "Node.js", "WebRTC"],
     team: [
-      { name: "Diego Huamán", role: "Líder" },
-      { name: "María Cáceres", role: "Desarrolladora" },
-      { name: "Pedro Gutiérrez", role: "Modelado 3D" },
+      { name: "Carlos Quispe Rojas", role: "Líder" },
+      { name: "Maria Mamani Quispe", role: "Desarrolladora Frontend" },
+      { name: "Pedro Gutiérrez Salas", role: "Modelado 3D / IoT" },
     ],
     images: [
       "/images/projects/RivVirtual-1.png",
@@ -110,9 +110,9 @@ export const projects: Project[] = [
       "Wayki significa 'hermano' en quechua, y ese fue el espíritu del proyecto. Construimos un sistema de matching automático basado en las habilidades de cada estudiante y los temas en los que necesitan ayuda. Usamos Prisma para la gestión de datos y PostgreSQL para almacenar las sesiones de tutoría.",
     technologies: ["Next.js", "TypeScript", "Prisma", "PostgreSQL"],
     team: [
-      { name: "Lucia Flores", role: "Líder" },
-      { name: "María Cáceres", role: "Miembro" },
-      { name: "Jorge Rojas", role: "Desarrollador" },
+      { name: "Valeria Cáceres Camacho", role: "Líder" },
+      { name: "Lucia Flores Torres", role: "Desarrolladora Backend" },
+      { name: "Jorge Rojas Huanca", role: "Desarrollador" },
     ],
     images: [
       "/images/projects/Wayki-1.png",
@@ -143,9 +143,9 @@ export const projects: Project[] = [
       "SafeBus conecta sensores GPS ESP32 instalados en buses urbanos de Arequipa con una aplicación web que muestra la ubicación en tiempo real. Los pasajeros pueden ver cuánto falta para que llegue su bus, y las empresas pueden optimizar sus rutas según los datos de uso.",
     technologies: ["ESP32", "React", "Python", "MQTT"],
     team: [
-      { name: "Pedro Gutiérrez", role: "Líder" },
-      { name: "María Cáceres", role: "Desarrolladora" },
-      { name: "Carlos Quispe", role: "Hardware" },
+      { name: "Diego Huamán Poma", role: "Líder" },
+      { name: "Maria Mamani Quispe", role: "Desarrolladora Frontend" },
+      { name: "Pedro Gutiérrez Salas", role: "Hardware" },
     ],
     images: [
       "/images/projects/SafeBus-1.png",
@@ -176,9 +176,9 @@ export const projects: Project[] = [
       "NutriScan usa un modelo de TensorFlow entrenado con miles de imágenes de etiquetas nutricionales peruanas. El usuario apunta su celular a la etiqueta, la IA extrae la información y genera un análisis nutricional personalizado según las necesidades del usuario.",
     technologies: ["Python", "TensorFlow", "React", "FastAPI"],
     team: [
-      { name: "María Cáceres", role: "Líder" },
-      { name: "Jorge Rojas", role: "Desarrollador" },
-      { name: "Ana Torres", role: "Diseñadora" },
+      { name: "Valeria Cáceres Camacho", role: "Líder" },
+      { name: "Carlos Quispe Rojas", role: "Desarrollador Backend" },
+      { name: "Ana Torres Mendoza", role: "Diseñadora UX/UI" },
     ],
     images: [
       "/images/projects/NutriScan-1.png",
@@ -209,8 +209,9 @@ export const projects: Project[] = [
       "Kanban Pro nació como un proyecto de curso y se convirtió en una herramienta que usamos internamente. Soporta drag & drop, etiquetas, fechas límite, asignación de miembros y notificaciones en tiempo real. El backend está en Node.js con PostgreSQL.",
     technologies: ["React", "Node.js", "PostgreSQL", "Tailwind"],
     team: [
-      { name: "Ana Torres", role: "Líder" },
-      { name: "María Cáceres", role: "Miembro" },
+      { name: "Lucia Flores Torres", role: "Líder" },
+      { name: "Jorge Rojas Huanca", role: "Desarrollador Backend" },
+      { name: "Ana Torres Mendoza", role: "Diseñadora UX/UI" },
     ],
     images: [
       "/images/projects/KanbanPro-1.png",
@@ -241,8 +242,8 @@ export const projects: Project[] = [
       "Turnify permite a las pymes configurar sus servicios, horarios disponibles y recibir reservas automáticas. Integramos Stripe para pagos por adelantado y un sistema de recordatorios por correo. La interfaz fue diseñada para ser usada por personas no técnicas.",
     technologies: ["Next.js", "Prisma", "Stripe", "Tailwind"],
     team: [
-      { name: "María Cáceres", role: "Líder" },
-      { name: "Lucia Flores", role: "Desarrolladora" },
+      { name: "Valeria Cáceres Camacho", role: "Líder" },
+      { name: "Lucia Flores Torres", role: "Desarrolladora" },
     ],
     images: [
       "/images/projects/Turnify-1.png",
@@ -273,9 +274,9 @@ export const projects: Project[] = [
       "AquaSense usa sensores de pH, turbidez y temperatura conectados a un ESP32 que envía datos vía MQTT a un servidor Node.js. El dashboard web muestra mapas de calor de la calidad del agua en diferentes zonas de la ciudad, con alertas automáticas cuando los niveles superan los límites permisibles.",
     technologies: ["ESP32", "Python", "MQTT", "React"],
     team: [
-      { name: "Diego Huamán", role: "Líder" },
-      { name: "María Cáceres", role: "Desarrolladora" },
-      { name: "Pedro Gutiérrez", role: "Hardware" },
+      { name: "Diego Huamán Poma", role: "Líder" },
+      { name: "Maria Mamani Quispe", role: "Desarrolladora Frontend" },
+      { name: "Pedro Gutiérrez Salas", role: "Hardware" },
     ],
     images: [
       "/images/projects/AquaSense-1.png",

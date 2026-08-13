@@ -1,14 +1,13 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useMemo } from "react";
 import { useParams } from "next/navigation";
+import Header from "@/components/layout/Header";
 import Avatar from "@/components/ui/Avatar";
-import Badge from "@/components/ui/Badge";
 import ProjectCard from "@/components/ui/ProjectCard";
 import { projects } from "@/lib/mock-data";
-import { slugify } from "@/lib/utils";
 
-// ─── Datos de estudiantes (cuando el backend esté listo vendrán de API) ───
+/* ─── Datos de estudiantes ─── */
 const students = [
   {
     slug: "maria-mamani-quispe",
@@ -92,6 +91,135 @@ const students = [
   },
 ];
 
+/* ─── Categorías para el radar de crecimiento ─── */
+const TECH_CATEGORIES = [
+  {
+    name: "Frontend",
+    techs: [
+      "React",
+      "Next.js",
+      "TypeScript",
+      "Tailwind",
+      "CSS",
+      "Three.js",
+      "WebRTC",
+    ],
+  },
+  {
+    name: "Backend",
+    techs: ["Node.js", "FastAPI", "Spring Boot", "Java"],
+  },
+  {
+    name: "IoT",
+    techs: ["ESP32", "MQTT", "C++", "Python", "TensorFlow"],
+  },
+  {
+    name: "Bases de Datos",
+    techs: ["PostgreSQL", "Prisma", "Firebase"],
+  },
+  {
+    name: "DevOps",
+    techs: ["Docker", "Stripe", "Grafana"],
+  },
+  {
+    name: "Diseño",
+    techs: ["Figma", "Adobe XD"],
+  },
+];
+
+/* ─── Componente radar SVG ─── */
+function RadarChart({ data }: { data: { name: string; score: number }[] }) {
+  const size = 140;
+  const cx = size / 2;
+  const cy = size / 2;
+  const maxR = 48;
+  const n = data.length;
+
+  const getPoint = (index: number, radius: number) => {
+    const angle = (index * 2 * Math.PI) / n - Math.PI / 2;
+    return {
+      x: cx + radius * Math.cos(angle),
+      y: cy + radius * Math.sin(angle),
+    };
+  };
+
+  const getLabelAnchor = (index: number): string => {
+    if (index === 0 || index === Math.floor(n / 2)) return "middle";
+    return index < n / 2 ? "start" : "end";
+  };
+
+  const gridLevels = [0.33, 0.66, 1.0];
+  const dataPoints = data.map((d, i) => getPoint(i, (d.score / 100) * maxR));
+
+  return (
+    <svg viewBox={`0 0 ${size} ${size}`} className="w-full h-full">
+      {gridLevels.map((level, li) => {
+        const pts = Array.from({ length: n }, (_, i) => {
+          const p = getPoint(i, maxR * level);
+          return `${p.x},${p.y}`;
+        }).join(" ");
+        return (
+          <polygon
+            key={li}
+            points={pts}
+            fill="none"
+            stroke="#e5e7eb"
+            strokeWidth="1"
+          />
+        );
+      })}
+
+      {Array.from({ length: n }, (_, i) => {
+        const p = getPoint(i, maxR);
+        return (
+          <line
+            key={i}
+            x1={cx}
+            y1={cy}
+            x2={p.x}
+            y2={p.y}
+            stroke="#e5e7eb"
+            strokeWidth="1"
+          />
+        );
+      })}
+
+      {data.some((d) => d.score > 0) && (
+        <polygon
+          points={dataPoints.map((p) => `${p.x},${p.y}`).join(" ")}
+          fill="rgba(0, 179, 224, 0.15)"
+          stroke="#00B3E0"
+          strokeWidth="1.5"
+          strokeLinejoin="round"
+        />
+      )}
+
+      {dataPoints.map((p, i) =>
+        data[i].score > 0 ? (
+          <circle key={i} cx={p.x} cy={p.y} r="2.5" fill="#00B3E0" />
+        ) : null,
+      )}
+
+      {data.map((d, i) => {
+        const p = getPoint(i, maxR + 12);
+        return (
+          <text
+            key={i}
+            x={p.x}
+            y={p.y}
+            textAnchor={getLabelAnchor(i)}
+            dominantBaseline="middle"
+            style={{ fontSize: "7px", fill: "#6b7280", fontWeight: 500 }}
+          >
+            {d.name}
+          </text>
+        );
+      })}
+    </svg>
+  );
+}
+
+/* ─── Página ─── */
 export default function StudentProfilePage() {
   const params = useParams();
   const slug = params.slug as string;
@@ -99,20 +227,36 @@ export default function StudentProfilePage() {
 
   const student = students.find((s) => s.slug === slug);
 
-  // Filtrar proyectos donde el estudiante es miembro del equipo
-  const studentProjects = student
-    ? projects.filter((p) => p.team.some((m) => m.name === student.name))
-    : [];
+  const studentProjects = useMemo(() => {
+    if (!student) return [];
+    return projects.filter((p) => p.team.some((m) => m.name === student.name));
+  }, [student]);
 
-  // Calcular tecnologías dominadas desde los proyectos
-  const techCount: Record<string, number> = {};
-  studentProjects.forEach((p) => {
-    p.technologies.forEach((t) => {
-      techCount[t] = (techCount[t] || 0) + 1;
+  const sortedTechs = useMemo(() => {
+    const techCount: Record<string, number> = {};
+    studentProjects.forEach((p) => {
+      p.technologies.forEach((t) => {
+        techCount[t] = (techCount[t] || 0) + 1;
+      });
     });
-  });
-  const sortedTechs = Object.entries(techCount).sort((a, b) => b[1] - a[1]);
-  const maxCount = sortedTechs.length > 0 ? sortedTechs[0][1] : 1;
+    return Object.entries(techCount).sort((a, b) => b[1] - a[1]);
+  }, [studentProjects]);
+
+  const maxTechCount = sortedTechs.length > 0 ? sortedTechs[0][1] : 1;
+
+  const radarData = useMemo(() => {
+    if (studentProjects.length === 0)
+      return TECH_CATEGORIES.map((c) => ({ name: c.name, score: 0 }));
+    return TECH_CATEGORIES.map((cat) => {
+      const count = studentProjects.filter((p) =>
+        p.technologies.some((t) => cat.techs.includes(t)),
+      ).length;
+      return {
+        name: cat.name,
+        score: Math.round((count / studentProjects.length) * 100),
+      };
+    });
+  }, [studentProjects]);
 
   const handleCopyLink = () => {
     navigator.clipboard.writeText(window.location.href);
@@ -141,14 +285,18 @@ export default function StudentProfilePage() {
 
   return (
     <div className="bg-tecsup-gray min-h-screen">
+      <Header />
+
       {/* ─── Banner ─── */}
       <div className="h-40 bg-gradient-to-r from-tecsup-cyan/30 via-tecsup-purple/20 to-tecsup-cyan/10 relative">
-        <div className="absolute -bottom-12 left-8">
-          <Avatar
-            name={student.name}
-            size="xl"
-            className="border-4 border-white shadow-lg"
-          />
+        <div className="max-w-7xl mx-auto px-6 absolute -bottom-12 left-0 right-0">
+          <div className="ml-6">
+            <Avatar
+              name={student.name}
+              size="xl"
+              className="border-4 border-white shadow-lg"
+            />
+          </div>
         </div>
       </div>
 
@@ -156,7 +304,6 @@ export default function StudentProfilePage() {
         {/* ─── Info personal ─── */}
         <div className="pt-14 mb-8">
           <div className="flex flex-col lg:flex-row lg:items-start lg:justify-between gap-4">
-            {/* Links sociales (izquierda) */}
             <div className="flex items-center gap-2 order-2 lg:order-1">
               <a
                 href={student.github}
@@ -207,7 +354,6 @@ export default function StudentProfilePage() {
               </a>
             </div>
 
-            {/* Nombre y datos (centro) */}
             <div className="order-1 lg:order-2">
               <h1 className="text-2xl font-bold text-tecsup-dark">
                 {student.name}
@@ -240,7 +386,6 @@ export default function StudentProfilePage() {
               </p>
             </div>
 
-            {/* Botones (derecha) */}
             <div className="flex items-center gap-2 shrink-0 order-3">
               <button
                 onClick={handleCopyLink}
@@ -255,83 +400,89 @@ export default function StudentProfilePage() {
           </div>
         </div>
 
-        {/* ─── Layout 2 columnas ─── */}
-        <div className="grid grid-cols-1 lg:grid-cols-3 gap-8 lg:items-start">
-          {/* Izquierda: Proyectos */}
-          <div className="lg:col-span-2">
-            <h2 className="text-lg font-bold text-tecsup-dark mb-6">
-              Proyectos ({studentProjects.length})
-            </h2>
+        {/* ─── Fila superior: Mapa (izq) + Tecnologías (der) ─── */}
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 mb-8">
+          {/* Mapa de crecimiento — compacto */}
+          <div className="bg-white rounded-xl border border-gray-200 p-4">
+            <h3 className="text-xs font-bold text-tecsup-dark mb-0.5">
+              Mapa de crecimiento
+            </h3>
+            <p className="text-[10px] text-gray-400 mb-2">
+              {studentProjects.length} proyectos documentados
+            </p>
             {studentProjects.length > 0 ? (
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-6">
-                {studentProjects.map((project) => (
-                  <ProjectCard key={project.id} project={project} />
-                ))}
+              <div className="h-44 flex items-center justify-center">
+                <RadarChart data={radarData} />
               </div>
             ) : (
-              <div className="bg-white rounded-xl border border-gray-200 p-12 text-center">
-                <p className="text-4xl mb-3">📋</p>
-                <p className="text-sm text-gray-400">
-                  Este estudiante aún no tiene proyectos publicados.
-                </p>
+              <div className="h-44 border-2 border-dashed border-gray-200 rounded-lg flex items-center justify-center">
+                <div className="text-center">
+                  <p className="text-xl mb-0.5">📊</p>
+                  <p className="text-[10px] text-gray-400">Gráfico radar</p>
+                </div>
               </div>
             )}
           </div>
 
-          {/* Derecha: Sidebar */}
-          <div className="lg:sticky lg:top-20 space-y-6">
-            {/* Mapa de crecimiento */}
-            <div className="bg-white rounded-xl border border-gray-200 p-6">
-              <h3 className="text-sm font-bold text-tecsup-dark mb-2">
-                Mapa de crecimiento
-              </h3>
-              <p className="text-[11px] text-gray-400 mb-4">
-                Según los {studentProjects.length} proyectos documentados
-              </p>
-              <div className="aspect-square border-2 border-dashed border-gray-200 rounded-xl flex items-center justify-center">
-                <div className="text-center">
-                  <p className="text-3xl mb-1">📊</p>
-                  <p className="text-[11px] text-gray-400">Gráfico radar</p>
-                  <p className="text-[10px] text-gray-300 mt-1">
-                    (Próximamente)
-                  </p>
-                </div>
-              </div>
-            </div>
-
-            {/* Tecnologías dominadas */}
-            <div className="bg-white rounded-xl border border-gray-200 p-6">
-              <h3 className="text-sm font-bold text-tecsup-dark mb-4">
-                Tecnologías dominadas
-              </h3>
-              {sortedTechs.length > 0 ? (
-                <div className="space-y-3">
-                  {sortedTechs.map(([tech, count]) => (
-                    <div key={tech}>
-                      <div className="flex items-center justify-between mb-1">
-                        <span className="text-xs font-medium text-gray-600">
-                          {tech}
-                        </span>
-                        <span className="text-[10px] text-gray-400">
-                          {count} proyecto{count > 1 ? "s" : ""}
-                        </span>
-                      </div>
-                      <div className="w-full bg-tecsup-gray h-3 rounded-full overflow-hidden">
-                        <div
-                          className="h-full bg-tecsup-cyan rounded-full transition-all duration-500"
-                          style={{ width: (count / maxCount) * 100 + "%" }}
-                        ></div>
-                      </div>
+          {/* Tecnologías dominadas — con scroll interno */}
+          <div className="bg-white rounded-xl border border-gray-200 p-4">
+            <h3 className="text-xs font-bold text-tecsup-dark mb-0.5">
+              Tecnologías dominadas
+            </h3>
+            <p className="text-[10px] text-gray-400 mb-2">
+              {sortedTechs.length} tecnologías en {studentProjects.length}{" "}
+              proyectos
+            </p>
+            {sortedTechs.length > 0 ? (
+              <div className="max-h-[176px] overflow-y-auto pr-1 space-y-1.5 scrollbar-thin">
+                {sortedTechs.map(([tech, count]) => (
+                  <div key={tech}>
+                    <div className="flex items-center justify-between mb-0.5">
+                      <span className="text-[11px] font-medium text-gray-600">
+                        {tech}
+                      </span>
+                      <span className="text-[9px] text-gray-400">
+                        {count} proyecto{count > 1 ? "s" : ""}
+                      </span>
                     </div>
-                  ))}
-                </div>
-              ) : (
-                <p className="text-xs text-gray-400 text-center py-4">
-                  Sin datos aún
-                </p>
-              )}
-            </div>
+                    <div className="w-full bg-tecsup-gray h-1.5 rounded-full overflow-hidden">
+                      <div
+                        className="h-full bg-tecsup-cyan rounded-full transition-all duration-500"
+                        style={{
+                          width: (count / maxTechCount) * 100 + "%",
+                        }}
+                      ></div>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            ) : (
+              <div className="h-44 flex items-center justify-center">
+                <p className="text-[11px] text-gray-400">Sin datos aún</p>
+              </div>
+            )}
           </div>
+        </div>
+
+        {/* ─── Proyectos ─── */}
+        <div>
+          <h2 className="text-lg font-bold text-tecsup-dark mb-6">
+            Proyectos ({studentProjects.length})
+          </h2>
+          {studentProjects.length > 0 ? (
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
+              {studentProjects.map((project) => (
+                <ProjectCard key={project.id} project={project} />
+              ))}
+            </div>
+          ) : (
+            <div className="bg-white rounded-xl border border-gray-200 p-12 text-center">
+              <p className="text-4xl mb-3">📋</p>
+              <p className="text-sm text-gray-400">
+                Este estudiante aún no tiene proyectos publicados.
+              </p>
+            </div>
+          )}
         </div>
       </div>
     </div>

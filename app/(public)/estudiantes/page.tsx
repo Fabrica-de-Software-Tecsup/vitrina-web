@@ -1,8 +1,8 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useMemo } from "react";
 import StudentCard from "@/components/ui/StudentCard";
-import Badge from "@/components/ui/Badge";
+import { projects, slugify } from "@/lib/mock-data";
 
 const heroSlides = [
   "/images/students/hero-students-1.png",
@@ -10,95 +10,76 @@ const heroSlides = [
   "/images/students/hero-students-1.png",
 ];
 
-const featuredStudents = [
-  {
-    name: "Maria Mamani Quispe",
-    career: "Diseño y Desarrollo de Software",
-    location: "Arequipa, Perú",
-    technologies: ["React", "TypeScript", "Node.js", "PostgreSQL", "Tailwind"],
-    projectCount: 12,
-  },
-  {
-    name: "Diego Huamán Poma",
-    career: "Diseño y Desarrollo de Software",
-    location: "Arequipa, Perú",
-    technologies: ["ESP32", "Python", "MQTT", "React", "C++"],
-    projectCount: 8,
-  },
-  {
-    name: "Valeria Cáceres Camacho",
-    career: "Diseño y Desarrollo de Software",
-    location: "Arequipa, Perú",
-    technologies: ["Next.js", "Tailwind", "Firebase", "WebRTC", "TypeScript"],
-    projectCount: 10,
-  },
-  {
-    name: "Carlos Quispe Rojas",
-    career: "Diseño y Desarrollo de Software",
-    location: "Arequipa, Perú",
-    technologies: ["Node.js", "PostgreSQL", "React", "Docker", "Prisma"],
-    projectCount: 9,
-  },
+const STUDENT_NAMES = [
+  "Maria Mamani Quispe",
+  "Diego Huamán Poma",
+  "Valeria Cáceres Camacho",
+  "Carlos Quispe Rojas",
+  "Lucia Flores Torres",
+  "Ana Torres Mendoza",
+  "Pedro Gutiérrez Salas",
+  "Jorge Rojas Huanca",
 ];
 
-const allStudents = [
-  {
-    name: "Maria Mamani Quispe",
+const STUDENT_META: Record<string, { career: string; location: string }> = {
+  "Maria Mamani Quispe": {
     career: "Diseño y Desarrollo de Software",
     location: "Arequipa, Perú",
-    technologies: ["React", "TypeScript", "Node.js", "PostgreSQL", "Tailwind"],
-    projectCount: 12,
   },
-  {
-    name: "Diego Huamán Poma",
+  "Diego Huamán Poma": {
     career: "Diseño y Desarrollo de Software",
     location: "Arequipa, Perú",
-    technologies: ["ESP32", "Python", "MQTT", "React", "C++"],
-    projectCount: 8,
   },
-  {
-    name: "Valeria Cáceres Camacho",
+  "Valeria Cáceres Camacho": {
     career: "Diseño y Desarrollo de Software",
     location: "Arequipa, Perú",
-    technologies: ["Next.js", "Tailwind", "Firebase", "WebRTC", "TypeScript"],
-    projectCount: 10,
   },
-  {
-    name: "Carlos Quispe Rojas",
+  "Carlos Quispe Rojas": {
     career: "Diseño y Desarrollo de Software",
     location: "Arequipa, Perú",
-    technologies: ["Node.js", "PostgreSQL", "React", "Docker", "Prisma"],
-    projectCount: 9,
   },
-  {
-    name: "Lucia Flores Torres",
+  "Lucia Flores Torres": {
     career: "Diseño y Desarrollo de Software",
     location: "Lima, Perú",
-    technologies: ["React", "Python", "IoT", "Node.js", "Grafana"],
-    projectCount: 6,
   },
-  {
-    name: "Ana Torres Mendoza",
+  "Ana Torres Mendoza": {
     career: "Diseño y Desarrollo de Software",
     location: "Cusco, Perú",
-    technologies: ["Figma", "Adobe XD", "React", "Tailwind", "CSS"],
-    projectCount: 7,
   },
-  {
-    name: "Pedro Gutiérrez Salas",
+  "Pedro Gutiérrez Salas": {
     career: "Diseño y Desarrollo de Software",
     location: "Arequipa, Perú",
-    technologies: ["C++", "Python", "ESP32", "TensorFlow", "MQTT"],
-    projectCount: 5,
   },
-  {
-    name: "Jorge Rojas Huanca",
+  "Jorge Rojas Huanca": {
     career: "Diseño y Desarrollo de Software",
     location: "Arequipa, Perú",
-    technologies: ["Java", "Spring Boot", "PostgreSQL", "React", "Docker"],
-    projectCount: 4,
   },
-];
+};
+
+function buildStudentData() {
+  return STUDENT_NAMES.map((name) => {
+    const meta = STUDENT_META[name];
+    const studentProjects = projects.filter((p) =>
+      p.team.some((m) => m.name === name),
+    );
+
+    const techSet = new Set<string>();
+    studentProjects.forEach((p) =>
+      p.technologies.forEach((t) => techSet.add(t)),
+    );
+
+    return {
+      name,
+      career: meta.career,
+      location: meta.location,
+      technologies: Array.from(techSet),
+      projectCount: studentProjects.length,
+      slug: slugify(name),
+    };
+  });
+}
+
+const allStudents = buildStudentData();
 
 export default function StudentsPage() {
   const [currentSlide, setCurrentSlide] = useState(0);
@@ -113,6 +94,15 @@ export default function StudentsPage() {
 
   const filteredAll = allStudents.filter((s) =>
     s.name.toLowerCase().includes(searchTerm.toLowerCase()),
+  );
+
+  /* Destacados: los 4 con más proyectos */
+  const featuredStudents = useMemo(
+    () =>
+      [...allStudents]
+        .sort((a, b) => b.projectCount - a.projectCount)
+        .slice(0, 4),
+    [],
   );
 
   return (
@@ -178,7 +168,8 @@ export default function StudentsPage() {
       <section className="bg-white border-b border-gray-100">
         <div className="max-w-7xl mx-auto px-6 py-4 text-center">
           <p className="text-xs text-gray-400 font-medium mb-3">
-            124 proyectos · 86 estudiantes · 18 cursos · 6 ciclos documentados
+            {projects.length} proyectos · {allStudents.length} estudiantes · 18
+            cursos · 6 ciclos documentados
           </p>
         </div>
       </section>
