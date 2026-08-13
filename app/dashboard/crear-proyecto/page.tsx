@@ -137,7 +137,6 @@ export default function CreateProjectPage() {
                 {step === 1 ? "Cancelar" : "Volver"}
               </button>
               <div className="flex gap-3">
-                <button className="px-6 py-2.5 border border-gray-300 text-gray-600 text-sm font-semibold rounded-full hover:bg-gray-50 transition-colors">Guardar Borrador</button>
                 <button onClick={() => { if(step === 1) setStep(2); }} className="px-6 py-2.5 bg-tecsup-cyan text-white text-sm font-semibold rounded-full hover:bg-tecsup-cyan/85 transition-colors shadow-sm">
                   {step === 1 ? "Siguiente" : "Asignar como Líder y Crear"}
                 </button>
