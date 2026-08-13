@@ -20,6 +20,7 @@ export default function RevisionPage() {
 
   const handlePublish = () => {
     // En producción: PUT /api/v1/projects/:id/status { status: "Publicado" }
+    project.status = "Publicado";
     setShowPublishModal(false);
     setSuccessType("published");
     setShowSuccessMessage(
@@ -31,6 +32,7 @@ export default function RevisionPage() {
   const handleRequestChanges = () => {
     if (observaciones.trim().length === 0) return;
     // En producción: POST /api/v1/projects/:id/request-changes { observaciones }
+    project.status = "En Desarrollo";
     setShowChangesPanel(false);
     setObservaciones("");
     setSuccessType("changes");
