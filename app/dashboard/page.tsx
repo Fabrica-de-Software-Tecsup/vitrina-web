@@ -17,16 +17,7 @@ const SHORT_COURSE: Record<string, string> = {
   "Redes y Comunicaciones": "Redes y Comunicaciones",
 };
 
-const allProjects = mockProjects.map((p) => ({
-  id: p.id,
-  name: p.name.split(" — ")[0],
-  course: SHORT_COURSE[p.course] ?? p.course,
-  status: p.status,
-  views: p.views.toLocaleString(),
-  cycle: p.cycle,
-  team: p.team,
-  image: p.images[0],
-}));
+
 
 const studentTabs = [
   { name: "Todos", status: "all" },
@@ -52,6 +43,40 @@ const stats = [
 export default function DashboardPage() {
   const [isTeacherView, setIsTeacherView] = useState(false);
   const [activeTab, setActiveTab] = useState("all");
+  const [postponeProjectId, setPostponeProjectId] = useState<string | null>(
+    null,
+  );
+  const [newDeadline, setNewDeadline] = useState("");
+
+  const allProjects = mockProjects.map((p) => ({
+    id: p.id,
+    name: p.name.split(" — ")[0],
+    course: SHORT_COURSE[p.course] ?? p.course,
+    status: p.status,
+    views: p.views.toLocaleString(),
+    cycle: p.cycle,
+    team: p.team,
+    image: p.images[0],
+    deadline: p.deadline,
+  }));
+
+  const openPostponeModal = (projectId: string, currentDeadline: string) => {
+    setPostponeProjectId(projectId);
+    setNewDeadline(currentDeadline);
+  };
+
+  const closePostponeModal = () => {
+    setPostponeProjectId(null);
+    setNewDeadline("");
+  };
+
+  const confirmPostpone = () => {
+    const project = mockProjects.find((p) => p.id === postponeProjectId);
+    if (project && newDeadline) {
+      project.deadline = newDeadline;
+    }
+    closePostponeModal();
+  };
 
   const currentTabs = isTeacherView ? teacherTabs : studentTabs;
   const filteredProjects =
@@ -220,6 +245,13 @@ export default function DashboardPage() {
                   {/* Curso */}
                   <div className="col-span-3">
                     <p className="text-sm text-gray-600">{project.course}</p>
+                    <p className="text-[11px] text-gray-400 mt-0.5">
+                      Vence:{" "}
+                      {new Date(project.deadline + "T00:00:00").toLocaleDateString(
+                        "es-PE",
+                        { day: "2-digit", month: "short", year: "numeric" },
+                      )}
+                    </p>
                   </div>
 
                   {/* Estado */}
@@ -246,6 +278,14 @@ export default function DashboardPage() {
                             Ver
                           </Link>
                         )}
+                        <button
+                          onClick={() =>
+                            openPostponeModal(project.id, project.deadline)
+                          }
+                          className="text-amber-600 hover:text-amber-700 font-medium text-sm cursor-pointer"
+                        >
+                          Aplazar
+                        </button>
                         <button className="text-gray-400 hover:text-gray-600 cursor-pointer">
                           <svg
                             className="w-5 h-5"
@@ -304,6 +344,50 @@ export default function DashboardPage() {
           </div>
         </div>
       </div>
+
+      {/* Modal: Aplazar entrega */}
+      {postponeProjectId && (
+        <>
+          <div
+            className="fixed inset-0 bg-black/40 z-40"
+            onClick={closePostponeModal}
+          />
+          <div className="fixed top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 z-50 bg-white rounded-2xl p-6 w-full max-w-sm shadow-2xl">
+            <h3 className="text-lg font-bold text-tecsup-dark mb-1">
+              Aplazar fecha de entrega
+            </h3>
+            <p className="text-sm text-gray-500 mb-4">
+              Selecciona la nueva fecha límite para este proyecto.
+            </p>
+            <input
+              type="date"
+              lang="es-PE"
+              value={newDeadline}
+              onChange={(e) => setNewDeadline(e.target.value)}
+              className="w-full px-4 py-2.5 text-sm bg-white rounded-xl border border-gray-200 focus:border-tecsup-cyan/40 focus:outline-none transition-all"
+            />
+            <div className="flex gap-3 mt-6">
+              <button
+                onClick={closePostponeModal}
+                className="flex-1 px-4 py-2.5 border border-gray-200 text-gray-600 text-sm font-semibold rounded-xl hover:bg-gray-50 transition-colors"
+              >
+                Cancelar
+              </button>
+              <button
+                onClick={confirmPostpone}
+                disabled={!newDeadline}
+                className={`flex-1 px-4 py-2.5 text-sm font-semibold rounded-xl transition-colors ${
+                  newDeadline
+                    ? "bg-tecsup-cyan text-white hover:bg-tecsup-cyan/85"
+                    : "bg-gray-200 text-gray-400 cursor-not-allowed"
+                }`}
+              >
+                Confirmar
+              </button>
+            </div>
+          </div>
+        </>
+      )}
     </div>
   );
 }
