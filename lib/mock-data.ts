@@ -16,7 +16,7 @@ export interface Project {
   images: string[];
   views: number;
   shares: number;
-  status: "Publicado" | "En Desarrollo" | "Por Revisar" | "Bloqueado";
+  status: "Publicado" | "En Desarrollo" | "Por Revisar" | "Oculto";
   links: {
     github: string;
     demo: string;

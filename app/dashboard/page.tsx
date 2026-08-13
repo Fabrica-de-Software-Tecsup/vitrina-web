@@ -16,7 +16,7 @@ const PROTOTYPE_STATUS: Record<string, Project["status"]> = {
   "1": "Publicado", // EcoCajero
   "2": "Publicado", // RivVirtual
   "3": "En Desarrollo", // Wayki
-  "4": "Bloqueado", // SafeBus
+  "4": "Oculto", // SafeBus
   "5": "Por Revisar", // NutriScan
   "6": "Publicado", // Kanban Pro
   "7": "Publicado", // Turnify
@@ -46,7 +46,7 @@ const studentTabs = [
   { name: "Todos", status: "all" },
   { name: "Publicados", status: "Publicado" },
   { name: "Borradores", status: "En Desarrollo" },
-  { name: "Bloqueados", status: "Bloqueado" },
+  { name: "Ocultos", status: "Oculto" },
 ];
 
 const teacherTabs = [
@@ -78,7 +78,7 @@ export default function DashboardPage() {
     Publicado: allProjects.filter((p) => p.status === "Publicado").length,
     "En Desarrollo": allProjects.filter((p) => p.status === "En Desarrollo")
       .length,
-    Bloqueado: allProjects.filter((p) => p.status === "Bloqueado").length,
+    Bloqueado: allProjects.filter((p) => p.status === "Oculto").length,
     "Por Revisar": allProjects.filter((p) => p.status === "Por Revisar").length,
   };
 
