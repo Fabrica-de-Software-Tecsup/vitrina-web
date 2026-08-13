@@ -1,12 +1,12 @@
-type BadgeVariant = "daw" | "iot" | "Publicado" | "En Desarrollo" | "Oculto" | "Bloqueado";
+type BadgeVariant = "daw" | "iot" | "Publicado" | "En Desarrollo" | "Por Revisar" | "Bloqueado";
 
 const variantStyles: Record<BadgeVariant, string> = {
   daw: "bg-tecsup-cyan/15 text-tecsup-cyan",
   iot: "bg-tecsup-purple/15 text-tecsup-purple",
   Publicado: "bg-tecsup-green/15 text-tecsup-green",
   "En Desarrollo": "bg-amber-100 text-amber-700",
-  Oculto: "bg-gray-100 text-gray-500",
-  Bloqueado: "bg-red-100 text-red-600",
+  "Por Revisar": "bg-tecsup-info/15 text-tecsup-info",
+  Bloqueado: "bg-tecsup-red/15 text-tecsup-red",
 };
 
 interface BadgeProps {
