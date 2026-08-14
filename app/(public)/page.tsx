@@ -10,6 +10,12 @@ export default function LandingPage() {
   const [activeFilter, setActiveFilter] = useState("Todos");
   const [searchTerm, setSearchTerm] = useState("");
 
+  /** Filtra Ocultos y aplica búsqueda */
+  const filterPublic = (list: typeof featuredProjects) =>
+    list
+      .filter((p) => p.status !== "Oculto")
+      .filter((p) => p.name.toLowerCase().includes(searchTerm.toLowerCase()));
+
   return (
     <>
       {/* ═══════════════ HERO ═══════════════ */}
@@ -132,26 +138,18 @@ export default function LandingPage() {
             </h2>
           </div>
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
-            {featuredProjects
-              .filter((p) =>
-                p.name.toLowerCase().includes(searchTerm.toLowerCase()),
-              )
-              .map((project) => (
-                <ProjectCard key={project.id} project={project} />
-              ))}
+            {filterPublic(featuredProjects).map((project) => (
+              <ProjectCard key={project.id} project={project} />
+            ))}
           </div>
         </div>
 
         <div>
           <h2 className="text-lg font-bold text-tecsup-dark mb-6">Recientes</h2>
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
-            {recentProjects
-              .filter((p) =>
-                p.name.toLowerCase().includes(searchTerm.toLowerCase()),
-              )
-              .map((project) => (
-                <ProjectCard key={project.id} project={project} />
-              ))}
+            {filterPublic(recentProjects).map((project) => (
+              <ProjectCard key={project.id} project={project} />
+            ))}
           </div>
         </div>
       </section>

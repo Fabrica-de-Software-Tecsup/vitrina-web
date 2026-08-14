@@ -16,7 +16,7 @@ export interface Project {
   images: string[];
   views: number;
   shares: number;
-  status: "Publicado" | "En Desarrollo" | "Por Revisar" | "Bloqueado";
+  status: "Publicado" | "En Desarrollo" | "Por Revisar" | "Oculto";
   links: {
     github: string;
     demo: string;
@@ -156,7 +156,7 @@ export const projects: Project[] = [
     ],
     views: 567,
     shares: 29,
-    status: "Publicado",
+    status: "Oculto",
     links: {
       github: "https://github.com",
       demo: "https://example.com",

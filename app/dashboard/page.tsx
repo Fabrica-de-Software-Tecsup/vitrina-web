@@ -6,24 +6,28 @@ import Link from "next/link";
 import Header from "@/components/layout/Header";
 import Avatar from "@/components/ui/Avatar";
 import Badge from "@/components/ui/Badge";
-import { projects as mockProjects, type Project } from "@/lib/mock-data";
+import {
+  projects as mockProjects,
+  slugify,
+  type Project,
+} from "@/lib/mock-data";
 
-/**
- * Sobreescribimos los estados para el prototipo (mock-data tiene todos "Publicado").
- * Esto permite probar las pestañas sin tocar la fuente de datos real.
- */
+/** Formato de número consistente server/client (evita hydration error) */
+function formatNumber(n: number): string {
+  return n.toString().replace(/\B(?=(\d{3})+(?!\d))/g, ",");
+}
+
 const PROTOTYPE_STATUS: Record<string, Project["status"]> = {
-  "1": "Publicado", // EcoCajero
-  "2": "Publicado", // RivVirtual
-  "3": "En Desarrollo", // Wayki
-  "4": "Bloqueado", // SafeBus
-  "5": "Por Revisar", // NutriScan
-  "6": "Publicado", // Kanban Pro
-  "7": "Publicado", // Turnify
-  "8": "Por Revisar", // AquaSense
+  "1": "Publicado",
+  "2": "Publicado",
+  "3": "En Desarrollo",
+  "4": "Oculto",
+  "5": "Por Revisar",
+  "6": "Publicado",
+  "7": "Publicado",
+  "8": "Por Revisar",
 };
 
-/** Mapeo de cursos completos → nombre corto para la tabla */
 const SHORT_COURSE: Record<string, string> = {
   "Desarrollo de Aplicaciones Web": "Desarrollo Web",
   "Internet de las Cosas": "Internet de las Cosas",
@@ -34,9 +38,10 @@ const SHORT_COURSE: Record<string, string> = {
 const allProjects = mockProjects.map((p) => ({
   id: p.id,
   name: p.name.split(" — ")[0],
+  fullName: p.name,
   course: SHORT_COURSE[p.course] ?? p.course,
   status: PROTOTYPE_STATUS[p.id] ?? p.status,
-  views: p.views.toLocaleString(),
+  views: p.views,
   cycle: p.cycle,
   team: p.team,
   image: p.images[0],
@@ -46,7 +51,7 @@ const studentTabs = [
   { name: "Todos", status: "all" },
   { name: "Publicados", status: "Publicado" },
   { name: "Borradores", status: "En Desarrollo" },
-  { name: "Bloqueados", status: "Bloqueado" },
+  { name: "Ocultos", status: "Oculto" },
 ];
 
 const teacherTabs = [
@@ -78,7 +83,7 @@ export default function DashboardPage() {
     Publicado: allProjects.filter((p) => p.status === "Publicado").length,
     "En Desarrollo": allProjects.filter((p) => p.status === "En Desarrollo")
       .length,
-    Bloqueado: allProjects.filter((p) => p.status === "Bloqueado").length,
+    Oculto: allProjects.filter((p) => p.status === "Oculto").length,
     "Por Revisar": allProjects.filter((p) => p.status === "Por Revisar").length,
   };
 
@@ -182,13 +187,13 @@ export default function DashboardPage() {
 
           {/* Tabla de proyectos */}
           <div className="bg-white rounded-xl border border-gray-200 overflow-hidden">
-            {/* Header */}
+            {/* Header — Proyecto col-span-4, Acciones col-span-2 */}
             <div className="hidden md:grid grid-cols-12 gap-4 px-6 py-3 bg-gray-50 border-b border-gray-100 text-[11px] font-semibold text-gray-400 uppercase tracking-wider">
-              <div className="col-span-5">Proyecto</div>
+              <div className="col-span-4">Proyecto</div>
               <div className="col-span-3">Curso</div>
               <div className="col-span-2">Estado</div>
               <div className="col-span-1 text-right">Vistas</div>
-              <div className="col-span-1 text-right">Acciones</div>
+              <div className="col-span-2 text-right">Acciones</div>
             </div>
 
             {/* Filas */}
@@ -204,8 +209,8 @@ export default function DashboardPage() {
                   key={project.id}
                   className="grid grid-cols-1 md:grid-cols-12 gap-4 px-6 py-4 border-b border-gray-50 hover:bg-tecsup-gray/50 transition-colors items-center"
                 >
-                  {/* Proyecto */}
-                  <div className="col-span-5 flex items-center gap-3">
+                  {/* Proyecto — col-span-4 */}
+                  <div className="col-span-4 flex items-center gap-3">
                     <div className="w-12 h-12 rounded-lg overflow-hidden bg-gray-100 shrink-0 relative">
                       <Image
                         src={project.image}
@@ -244,18 +249,18 @@ export default function DashboardPage() {
                   {/* Vistas */}
                   <div className="col-span-1 text-right">
                     <span className="text-sm font-medium text-gray-600">
-                      {project.views !== "0" ? project.views : "—"}
+                      {project.views > 0 ? formatNumber(project.views) : "—"}
                     </span>
                   </div>
 
-                  {/* Acciones */}
-                  <div className="col-span-1 text-right">
+                  {/* Acciones — col-span-2, todo a la derecha */}
+                  <div className="col-span-2 flex items-center justify-end gap-2">
                     {isTeacherView ? (
-                      <div className="flex items-center justify-end gap-3">
+                      <>
                         {project.status === "Por Revisar" && (
                           <Link
                             href={"/dashboard/revision/" + project.id}
-                            className="text-tecsup-cyan hover:text-tecsup-cyan/80 font-medium text-sm cursor-pointer"
+                            className="text-tecsup-cyan hover:text-tecsup-cyan/80 font-medium text-sm"
                           >
                             Ver
                           </Link>
@@ -269,8 +274,17 @@ export default function DashboardPage() {
                             <path d="M10 6a2 2 0 110-4 2 2 0 010 4zM10 12a2 2 0 110-4 2 2 0 010 4zM10 18a2 2 0 110-4 2 2 0 010 4z" />
                           </svg>
                         </button>
-                      </div>
+                      </>
+                    ) : project.status === "Publicado" ? (
+                      /* Publicado → solo Ver */
+                      <Link
+                        href={"/proyectos/" + slugify(project.fullName)}
+                        className="text-tecsup-cyan hover:text-tecsup-cyan/80 font-medium text-sm"
+                      >
+                        Ver
+                      </Link>
                     ) : project.status === "En Desarrollo" ? (
+                      /* En Desarrollo → solo Editar */
                       <Link
                         href={"/dashboard/editar-proyecto/" + project.id}
                         className="inline-flex items-center gap-1.5 px-3 py-1.5 text-xs font-semibold text-tecsup-cyan hover:bg-tecsup-cyan/10 rounded-lg transition-colors"
@@ -289,6 +303,13 @@ export default function DashboardPage() {
                           />
                         </svg>
                         Editar
+                      </Link>
+                    ) : project.status === "Oculto" ? (
+                      <Link
+                        href={"/proyectos/" + slugify(project.fullName)}
+                        className="text-tecsup-cyan hover:text-tecsup-cyan/80 font-medium text-sm"
+                      >
+                        Ver
                       </Link>
                     ) : (
                       <span className="text-xs text-gray-300">—</span>

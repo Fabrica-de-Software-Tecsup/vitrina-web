@@ -6,6 +6,7 @@ import Header from "@/components/layout/Header";
 import Avatar from "@/components/ui/Avatar";
 import ProjectCard from "@/components/ui/ProjectCard";
 import { projects } from "@/lib/mock-data";
+import { slugify } from "@/lib/utils";
 
 /* ─── Datos de estudiantes ─── */
 const students = [
@@ -225,7 +226,9 @@ export default function StudentProfilePage() {
   const slug = params.slug as string;
   const [copied, setCopied] = useState(false);
 
-  const student = students.find((s) => s.slug === slug);
+  const student =
+    students.find((s) => s.slug === slug) ??
+    students.find((s) => slugify(s.name) === slug);
 
   const studentProjects = useMemo(() => {
     if (!student) return [];
@@ -272,11 +275,12 @@ export default function StudentProfilePage() {
           <h1 className="text-2xl font-bold text-tecsup-dark">
             Estudiante no encontrado
           </h1>
+          -{" "}
           <a
-            href="/"
+            href="/estudiantes"
             className="mt-4 inline-block text-sm text-tecsup-cyan hover:underline"
           >
-            Volver a la Landing
+            Volver a Estudiantes
           </a>
         </div>
       </div>
