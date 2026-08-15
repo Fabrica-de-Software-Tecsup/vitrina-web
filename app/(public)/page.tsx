@@ -1,19 +1,40 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import ProjectCard from "@/components/ui/ProjectCard";
 import PillFilter from "@/components/ui/PillFilter";
 import Badge from "@/components/ui/Badge";
 import { featuredProjects, recentProjects } from "@/lib/mock-data";
+import { applyOverrides, useOverridesVersion } from "@/lib/project-overrides";
 
 export default function LandingPage() {
   const [activeFilter, setActiveFilter] = useState("Todos");
   const [searchTerm, setSearchTerm] = useState("");
 
+  // Evita aplicar overrides antes de que el cliente termine de hidratar
+  const [mounted, setMounted] = useState(false);
+  useEffect(() => {
+    setMounted(true);
+  }, []);
+
+  const overridesVersion = useOverridesVersion();
+
+  const liveFeaturedProjects = useMemo(
+    () => (mounted ? applyOverrides(featuredProjects) : featuredProjects),
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+    [mounted, overridesVersion],
+  );
+  const liveRecentProjects = useMemo(
+    () => (mounted ? applyOverrides(recentProjects) : recentProjects),
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+    [mounted, overridesVersion],
+  );
+
+
   /** Filtra Ocultos y aplica búsqueda */
   const filterPublic = (list: typeof featuredProjects) =>
     list
-      .filter((p) => p.status !== "Oculto")
+      .filter((p) => p.status === "Publicado")
       .filter((p) => p.name.toLowerCase().includes(searchTerm.toLowerCase()));
 
   return (
@@ -138,7 +159,7 @@ export default function LandingPage() {
             </h2>
           </div>
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
-            {filterPublic(featuredProjects).map((project) => (
+            {filterPublic(liveFeaturedProjects).map((project) => (
               <ProjectCard key={project.id} project={project} />
             ))}
           </div>
@@ -147,7 +168,7 @@ export default function LandingPage() {
         <div>
           <h2 className="text-lg font-bold text-tecsup-dark mb-6">Recientes</h2>
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
-            {filterPublic(recentProjects).map((project) => (
+            {filterPublic(liveRecentProjects).map((project) => (
               <ProjectCard key={project.id} project={project} />
             ))}
           </div>

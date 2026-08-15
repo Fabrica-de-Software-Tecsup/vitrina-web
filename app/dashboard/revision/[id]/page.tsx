@@ -5,6 +5,7 @@ import { useParams } from "next/navigation";
 import Avatar from "@/components/ui/Avatar";
 import Badge from "@/components/ui/Badge";
 import { getProjectByIdentifier } from "@/lib/mock-data";
+import { setProjectOverride } from "@/lib/project-overrides";
 
 export default function RevisionPage() {
   const params = useParams();
@@ -19,7 +20,8 @@ export default function RevisionPage() {
   const project = getProjectByIdentifier(slug);
 
   const handlePublish = () => {
-    // En producción: PUT /api/v1/projects/:id/status { status: "Publicado" }
+    if (!project) return;
+    setProjectOverride(project.id, { status: "Publicado" });
     setShowPublishModal(false);
     setSuccessType("published");
     setShowSuccessMessage(
@@ -29,8 +31,12 @@ export default function RevisionPage() {
   };
 
   const handleRequestChanges = () => {
+    if (!project) return;
     if (observaciones.trim().length === 0) return;
-    // En producción: POST /api/v1/projects/:id/request-changes { observaciones }
+    setProjectOverride(project.id, {
+      status: "En Desarrollo",
+      observaciones: observaciones.trim(),
+    });
     setShowChangesPanel(false);
     setObservaciones("");
     setSuccessType("changes");
@@ -48,10 +54,7 @@ export default function RevisionPage() {
           <h1 className="text-2xl font-bold text-tecsup-dark">
             Proyecto no encontrado
           </h1>
-          <a
-            href="/dashboard"
-            className="mt-4 inline-block text-sm text-tecsup-cyan hover:underline"
-          >
+          <a href="/dashboard" className="mt-4 inline-block text-sm text-tecsup-cyan hover:underline">
             Volver al Dashboard
           </a>
         </div>
@@ -68,7 +71,6 @@ export default function RevisionPage() {
     <div className="bg-tecsup-gray min-h-screen flex flex-col">
       <Header />
       <main className="flex-1">
-        {/* Mensaje de éxito */}
         {showSuccessMessage && (
           <div
             className={`fixed top-20 left-1/2 -translate-x-1/2 z-50 px-6 py-3 rounded-xl shadow-lg text-sm font-medium transition-all ${
@@ -81,7 +83,6 @@ export default function RevisionPage() {
           </div>
         )}
 
-        {/* Modal de confirmación para publicar */}
         {showPublishModal && (
           <>
             <div
@@ -119,13 +120,9 @@ export default function RevisionPage() {
           </>
         )}
 
-        {/* Breadcrumb */}
         <div className="bg-white border-b border-gray-100">
           <div className="max-w-7xl mx-auto px-6 py-3 flex items-center gap-2 text-xs text-gray-400">
-            <a
-              href="/dashboard"
-              className="hover:text-tecsup-dark transition-colors"
-            >
+            <a href="/dashboard" className="hover:text-tecsup-dark transition-colors">
               Dashboard
             </a>
             <span>/</span>
@@ -138,7 +135,6 @@ export default function RevisionPage() {
         </div>
 
         <div className="max-w-7xl mx-auto px-6 py-8">
-          {/* Encabezado */}
           <div className="mb-8">
             <div className="flex flex-col md:flex-row md:items-start md:justify-between gap-4 mb-4">
               <div>
@@ -167,11 +163,8 @@ export default function RevisionPage() {
             </div>
           </div>
 
-          {/* Layout 2 columnas */}
           <div className="grid grid-cols-1 lg:grid-cols-3 gap-8 lg:items-start">
-            {/* Izquierda: Contenido del proyecto */}
             <div className="lg:col-span-2 space-y-8">
-              {/* Imagen principal */}
               <div className="rounded-xl overflow-hidden bg-gray-100 aspect-video">
                 <img
                   src={project.images[selectedImage]}
@@ -180,7 +173,6 @@ export default function RevisionPage() {
                 />
               </div>
 
-              {/* Miniaturas */}
               <div className="grid grid-cols-5 gap-3">
                 {project.images.map((img, i) => (
                   <button
@@ -202,7 +194,6 @@ export default function RevisionPage() {
                 ))}
               </div>
 
-              {/* Sobre el proyecto */}
               <div>
                 <h2 className="text-lg font-bold text-tecsup-dark mb-3">
                   Sobre el proyecto
@@ -215,7 +206,6 @@ export default function RevisionPage() {
                 </p>
               </div>
 
-              {/* Video + Stats */}
               <div className="flex gap-4 items-end">
                 <div className="flex-1">
                   <h2 className="text-lg font-bold text-tecsup-dark mb-3">
@@ -259,10 +249,8 @@ export default function RevisionPage() {
               </div>
             </div>
 
-            {/* Derecha: Sidebar con acciones del docente */}
             <div className="lg:sticky lg:top-20">
               <div className="bg-white rounded-xl border border-gray-200 p-6">
-                {/* Equipo */}
                 <div className="mb-6">
                   <h3 className="text-sm font-bold text-tecsup-dark mb-4">
                     Equipo
@@ -289,7 +277,6 @@ export default function RevisionPage() {
 
                 <div className="border-t border-gray-100 my-6"></div>
 
-                {/* Tecnologías */}
                 <div className="mb-6">
                   <h3 className="text-sm font-bold text-tecsup-dark mb-3">
                     Tecnologías
@@ -308,31 +295,18 @@ export default function RevisionPage() {
 
                 <div className="border-t border-gray-100 my-6"></div>
 
-                {/* Enlaces */}
                 <div className="mb-6">
                   <h3 className="text-sm font-bold text-tecsup-dark mb-3">
                     Enlaces
                   </h3>
                   <div className="space-y-2">
-                    <a
-                      href={project.links.github}
-                      target="_blank"
-                      className="flex items-center gap-2 text-sm text-gray-600 hover:text-tecsup-dark transition-colors"
-                    >
+                    <a href={project.links.github} target="_blank" className="flex items-center gap-2 text-sm text-gray-600 hover:text-tecsup-dark transition-colors">
                       🌐 GitHub
                     </a>
-                    <a
-                      href={project.links.demo}
-                      target="_blank"
-                      className="flex items-center gap-2 text-sm text-gray-600 hover:text-tecsup-dark transition-colors"
-                    >
+                    <a href={project.links.demo} target="_blank" className="flex items-center gap-2 text-sm text-gray-600 hover:text-tecsup-dark transition-colors">
                       🌐 Demo en vivo
                     </a>
-                    <a
-                      href={project.links.figma}
-                      target="_blank"
-                      className="flex items-center gap-2 text-sm text-gray-600 hover:text-tecsup-dark transition-colors"
-                    >
+                    <a href={project.links.figma} target="_blank" className="flex items-center gap-2 text-sm text-gray-600 hover:text-tecsup-dark transition-colors">
                       🌐 Figma
                     </a>
                   </div>
@@ -340,7 +314,6 @@ export default function RevisionPage() {
 
                 <div className="border-t border-gray-100 my-6"></div>
 
-                {/* Botón Solicitar Cambios */}
                 <button
                   onClick={() => setShowChangesPanel(!showChangesPanel)}
                   className="w-full flex items-center justify-center gap-2 px-4 py-3 border-2 border-amber-300 text-amber-700 text-sm font-semibold rounded-xl hover:bg-amber-50 transition-colors"
@@ -363,7 +336,6 @@ export default function RevisionPage() {
                     : "Solicitar cambios"}
                 </button>
 
-                {/* Panel de observaciones */}
                 {showChangesPanel && (
                   <div className="mt-4 p-4 bg-amber-50 border border-amber-200 rounded-xl space-y-3">
                     <label className="text-xs font-bold text-amber-800 uppercase tracking-wider">
@@ -394,7 +366,6 @@ export default function RevisionPage() {
                   </div>
                 )}
 
-                {/* Botón Publicar */}
                 <button
                   onClick={() => setShowPublishModal(true)}
                   className="w-full mt-4 flex items-center justify-center gap-2 px-4 py-3 bg-tecsup-green text-white text-sm font-semibold rounded-xl hover:bg-tecsup-green/85 transition-colors"

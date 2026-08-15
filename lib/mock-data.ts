@@ -123,7 +123,7 @@ export const projects: Project[] = [
     ],
     views: 432,
     shares: 15,
-    status: "Publicado",
+    status: "En Desarrollo",
     links: {
       github: "https://github.com",
       demo: "https://example.com",
@@ -189,7 +189,7 @@ export const projects: Project[] = [
     ],
     views: 540,
     shares: 18,
-    status: "Publicado",
+    status: "Por Revisar",
     links: {
       github: "https://github.com",
       demo: "https://example.com",
@@ -287,7 +287,7 @@ export const projects: Project[] = [
     ],
     views: 654,
     shares: 25,
-    status: "Publicado",
+    status: "Por Revisar",
     links: {
       github: "https://github.com",
       demo: "https://example.com",
