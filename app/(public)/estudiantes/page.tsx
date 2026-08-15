@@ -6,7 +6,7 @@ import { projects, slugify } from "@/lib/mock-data";
 
 const heroSlides = [
   "/images/students/hero-students-1.png",
-  "/images/students/hero-students-1.png",
+  "/images/students/Mobile-1.png",
   "/images/students/hero-students-1.png",
 ];
 
@@ -109,12 +109,16 @@ export default function StudentsPage() {
     <>
       {/* ═══════════════ HERO CON CARRUSEL ═══════════════ */}
       <section className="relative overflow-hidden h-[70vh] min-h-[500px]">
-        <img
-          src={heroSlides[currentSlide]}
-          alt="Hero Estudiantes"
-          className="absolute inset-0 w-full h-full object-cover transition-opacity duration-500"
-        />
-        <div className="absolute inset-0 bg-black/30"></div>
+        {heroSlides.map((slide, i) => (
+          <img
+            key={i}
+            src={slide}
+            alt="Hero Estudiantes"
+            className={`absolute inset-0 w-full h-full object-cover transition-opacity duration-700 ease-in-out ${
+              i === currentSlide ? "opacity-100" : "opacity-0"
+            }`}
+          />
+        ))}
 
         <button
           onClick={prevSlide}

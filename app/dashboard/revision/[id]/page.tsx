@@ -1,5 +1,6 @@
 "use client";
 import Header from "@/components/layout/Header";
+import Link from "next/link";
 import { useState } from "react";
 import { useParams } from "next/navigation";
 import Avatar from "@/components/ui/Avatar";
@@ -20,8 +21,8 @@ export default function RevisionPage() {
   const project = getProjectByIdentifier(slug);
 
   const handlePublish = () => {
-    if (!project) return;
-    setProjectOverride(project.id, { status: "Publicado" });
+    // En producción: PUT /api/v1/projects/:id/status { status: "Publicado" }
+    project.status = "Publicado";
     setShowPublishModal(false);
     setSuccessType("published");
     setShowSuccessMessage(
@@ -33,10 +34,8 @@ export default function RevisionPage() {
   const handleRequestChanges = () => {
     if (!project) return;
     if (observaciones.trim().length === 0) return;
-    setProjectOverride(project.id, {
-      status: "En Desarrollo",
-      observaciones: observaciones.trim(),
-    });
+    // En producción: POST /api/v1/projects/:id/request-changes { observaciones }
+    project.status = "En Desarrollo";
     setShowChangesPanel(false);
     setObservaciones("");
     setSuccessType("changes");
@@ -122,9 +121,12 @@ export default function RevisionPage() {
 
         <div className="bg-white border-b border-gray-100">
           <div className="max-w-7xl mx-auto px-6 py-3 flex items-center gap-2 text-xs text-gray-400">
-            <a href="/dashboard" className="hover:text-tecsup-dark transition-colors">
+            <Link
+              href="/dashboard"
+              className="hover:text-tecsup-dark transition-colors"
+            >
               Dashboard
-            </a>
+            </Link>
             <span>/</span>
             <span className="text-amber-600 font-medium">Por Revisar</span>
             <span>/</span>
