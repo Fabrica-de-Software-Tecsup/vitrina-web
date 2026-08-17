@@ -28,22 +28,19 @@ export default function EditProjectPage() {
   const [shortDesc, setShortDesc] = useState("");
   const [longDesc, setLongDesc] = useState("");
 
-  // ✅ NUEVOS: Enlaces obligatorios
   const [youtubeUrl, setYoutubeUrl] = useState("");
   const [githubUrl, setGithubUrl] = useState("");
 
-  // Estados para el Paso 4
   const [howBuilt, setHowBuilt] = useState("");
   const [challenges, setChallenges] = useState("");
   const [lessons, setLessons] = useState("");
   const [future, setFuture] = useState("");
 
-  // Key para forzar re-render del input de imágenes
   const [imageInputKey, setImageInputKey] = useState(0);
   const zipInputRef = useRef<HTMLInputElement>(null);
 
-  // ✅ NUEVO: Estado para el modal de cancelación
   const [showCancelModal, setShowCancelModal] = useState(false);
+  const [showSuccessModal, setShowSuccessModal] = useState(false);
 
   const addTech = () => {
     if (techInput.trim() && !technologies.includes(techInput)) {
@@ -58,14 +55,12 @@ export default function EditProjectPage() {
 
   const handleAddMember = () => {
     if (memberEmail.trim() === "") return;
-
     const namePart = memberEmail.split("@")[0];
     const formattedName =
       namePart.charAt(0).toUpperCase() + namePart.slice(1).replace(".", " ");
     const exists = teamMembers.find(
       (m) => m.email === memberEmail.toLowerCase(),
     );
-
     if (!exists) {
       setTeamMembers([
         ...teamMembers,
@@ -82,18 +77,12 @@ export default function EditProjectPage() {
   const handleImageChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const files = Array.from(e.target.files || []);
     if (files.length === 0) return;
-
     const newImages = files.map((file) => ({
       name: file.name,
       url: URL.createObjectURL(file),
       file: file,
     }));
-
-    setImages((prev) => {
-      const updated = [...prev, ...newImages];
-      return updated.slice(0, 5);
-    });
-
+    setImages((prev) => [...prev, ...newImages].slice(0, 5));
     e.target.value = "";
   };
 
@@ -116,7 +105,6 @@ export default function EditProjectPage() {
     }
   };
 
-  // ✅ NUEVO: Función para validar URL de YouTube
   const isValidYoutubeUrl = (url: string) => {
     if (!url.trim()) return false;
     const pattern =
@@ -124,7 +112,6 @@ export default function EditProjectPage() {
     return pattern.test(url.trim());
   };
 
-  // ✅ NUEVO: Función para validar URL de GitHub
   const isValidGithubUrl = (url: string) => {
     if (!url.trim()) return false;
     const pattern =
@@ -132,7 +119,6 @@ export default function EditProjectPage() {
     return pattern.test(url.trim());
   };
 
-  // ⚡ STEPPER INTELIGENTE
   useEffect(() => {
     if (step === 1 && longDesc.length > 20 && technologies.length > 0) {
       setStep(2);
@@ -150,7 +136,6 @@ export default function EditProjectPage() {
     zipFile,
   ]);
 
-  // ✅ ACTUALIZADO: Validación global con YouTube y GitHub obligatorios
   const isFormComplete =
     shortDesc.trim().length > 0 &&
     longDesc.trim().length > 20 &&
@@ -164,36 +149,24 @@ export default function EditProjectPage() {
     lessons.trim().length > 0 &&
     future.trim().length > 0;
 
-  // ✅ NUEVO: Acción de cancelar con confirmación
-  const handleCancel = () => {
-    setShowCancelModal(true);
-  };
-
+  const handleCancel = () => setShowCancelModal(true);
   const confirmCancel = () => {
-    // Navegar al dashboard de forma segura (no usa history.back)
     window.location.href = "/dashboard";
   };
-
-  const closeCancelModal = () => {
-    setShowCancelModal(false);
-  };
+  const closeCancelModal = () => setShowCancelModal(false);
 
   return (
     <div className="bg-tecsup-gray min-h-full flex flex-col">
       <Header role="student" />
 
-      {/* ✅ NUEVO: Modal de confirmación para cancelar */}
+      {/* Modal cancelar */}
       {showCancelModal && (
         <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
-          {/* Overlay oscuro */}
           <div
             className="absolute inset-0 bg-black/50 backdrop-blur-sm"
             onClick={closeCancelModal}
           />
-
-          {/* Contenido del modal */}
-          <div className="relative bg-white rounded-2xl shadow-2xl w-full max-w-md p-6 transform animate-in fade-in zoom-in duration-200">
-            {/* Ícono de advertencia */}
+          <div className="relative bg-white rounded-2xl shadow-2xl w-full max-w-md p-6">
             <div className="w-14 h-14 bg-red-100 rounded-full flex items-center justify-center mx-auto mb-4">
               <svg
                 className="w-7 h-7 text-red-500"
@@ -209,14 +182,12 @@ export default function EditProjectPage() {
                 />
               </svg>
             </div>
-
             <h3 className="text-lg font-bold text-tecsup-dark text-center mb-2">
               ¿Cancelar edición?
             </h3>
             <p className="text-sm text-gray-500 text-center mb-6">
               Si sales ahora, perderás todos los cambios que no hayas enviado.
             </p>
-
             <div className="flex gap-3">
               <button
                 onClick={closeCancelModal}
@@ -235,9 +206,51 @@ export default function EditProjectPage() {
         </div>
       )}
 
+      {/* Modal éxito al enviar */}
+      {showSuccessModal && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
+          <div className="absolute inset-0 bg-black/50 backdrop-blur-sm" />
+          <div className="relative bg-white rounded-2xl shadow-2xl w-full max-w-md p-6">
+            <div className="w-14 h-14 bg-green-100 rounded-full flex items-center justify-center mx-auto mb-4">
+              <svg
+                className="w-7 h-7 text-green-500"
+                fill="none"
+                stroke="currentColor"
+                viewBox="0 0 24 24"
+              >
+                <path
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                  strokeWidth={2}
+                  d="M5 13l4 4L19 7"
+                />
+              </svg>
+            </div>
+            <h3 className="text-lg font-bold text-tecsup-dark text-center mb-2">
+              ¡Proyecto entregado!
+            </h3>
+            <p className="text-sm text-gray-500 text-center mb-6">
+              Tu proyecto pasó a estado{" "}
+              <span className="font-semibold text-tecsup-dark">
+                Por Revisar
+              </span>
+              . El docente lo evaluará y, al aprobarlo, se publicará en la
+              vitina.
+            </p>
+            <button
+              onClick={() => {
+                window.location.href = "/dashboard";
+              }}
+              className="w-full px-4 py-2.5 bg-tecsup-cyan text-white text-sm font-semibold rounded-xl hover:bg-tecsup-cyan/85 transition-colors"
+            >
+              Volver al Dashboard
+            </button>
+          </div>
+        </div>
+      )}
+
       <div className="flex-1 w-[90%] mx-auto transform scale-[0.9] origin-top">
         <div className="max-w-6xl mx-auto px-6 py-8">
-          {/* Cabecera y Aviso Crítico */}
           <div className="mb-6">
             <div className="mb-4">
               <div>
@@ -249,7 +262,6 @@ export default function EditProjectPage() {
                 </p>
               </div>
             </div>
-
             <div className="bg-amber-50 border border-amber-200 rounded-lg p-3 flex items-center gap-2">
               <span className="text-lg">⚠️</span>
               <p className="text-xs text-amber-700 font-medium">
@@ -259,7 +271,6 @@ export default function EditProjectPage() {
             </div>
           </div>
 
-          {/* Stepper Horizontal */}
           <div className="flex items-center gap-2 mb-8 bg-white p-3 rounded-xl border border-gray-200 overflow-x-auto">
             {["1 General", "2 Equipo", "3 Multimedia", "4 Reflexión"].map(
               (s, i) => (
@@ -278,16 +289,13 @@ export default function EditProjectPage() {
             )}
           </div>
 
-          {/* Layout de 2 Columnas */}
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
-            {/* ================= COLUMNA IZQUIERDA ================= */}
+            {/* COLUMNA IZQUIERDA */}
             <div className="space-y-8">
-              {/* PASO 1: Info General */}
               <div className="bg-white rounded-xl border border-gray-200 p-6">
                 <h2 className="text-lg font-bold text-tecsup-dark border-b pb-3 mb-6">
                   PASO 1: Información General
                 </h2>
-
                 <div className="mb-5">
                   <label className="block text-xs font-semibold text-gray-400 uppercase tracking-wider mb-1.5">
                     Nombre del proyecto 🔒
@@ -299,7 +307,6 @@ export default function EditProjectPage() {
                     className="w-full px-4 py-3 text-sm bg-tecsup-gray text-gray-400 rounded-xl border border-gray-200 cursor-not-allowed"
                   />
                 </div>
-
                 <div className="mb-5">
                   <label className="block text-xs font-semibold text-gray-400 uppercase tracking-wider mb-1.5">
                     Curso 🔒
@@ -311,7 +318,6 @@ export default function EditProjectPage() {
                     className="w-full px-4 py-3 text-sm bg-tecsup-gray text-gray-400 rounded-xl border border-gray-200 cursor-not-allowed"
                   />
                 </div>
-
                 <div className="mb-5">
                   <label className="block text-xs font-semibold text-gray-400 uppercase tracking-wider mb-1.5">
                     Categoría 🔒
@@ -323,9 +329,7 @@ export default function EditProjectPage() {
                     className="w-full px-4 py-3 text-sm bg-tecsup-gray text-gray-400 rounded-xl border border-gray-200 cursor-not-allowed"
                   />
                 </div>
-
                 <div className="border-t border-dashed border-gray-200 my-6"></div>
-
                 <div className="mb-5">
                   <label className="block text-xs font-semibold text-gray-500 uppercase tracking-wider mb-1.5">
                     Descripción corta
@@ -338,7 +342,6 @@ export default function EditProjectPage() {
                     className="w-full px-4 py-3 text-sm bg-white rounded-xl border border-gray-200 focus:border-tecsup-cyan/40 focus:outline-none transition-all"
                   />
                 </div>
-
                 <div className="mb-5">
                   <label className="block text-xs font-semibold text-gray-500 uppercase tracking-wider mb-1.5">
                     Descripción larga
@@ -351,7 +354,6 @@ export default function EditProjectPage() {
                     className="w-full px-4 py-3 text-sm bg-white rounded-xl border border-gray-200 focus:border-tecsup-cyan/40 focus:outline-none transition-all resize-none"
                   />
                 </div>
-
                 <div>
                   <label className="block text-xs font-semibold text-gray-500 uppercase tracking-wider mb-2">
                     Tecnologías
@@ -403,12 +405,10 @@ export default function EditProjectPage() {
                 </div>
               </div>
 
-              {/* PASO 2: Equipo */}
               <div className="bg-white rounded-xl border border-gray-200 p-6">
                 <h2 className="text-lg font-bold text-tecsup-dark border-b pb-3 mb-6">
                   PASO 2: Equipo
                 </h2>
-
                 <div className="mb-5">
                   <label className="block text-xs font-semibold text-gray-500 uppercase tracking-wider mb-1.5">
                     Buscar estudiante por correo
@@ -419,7 +419,7 @@ export default function EditProjectPage() {
                       value={memberEmail}
                       onChange={(e) => setMemberEmail(e.target.value)}
                       placeholder="Escribe un correo..."
-                      className="flex-1 px-4 py-3 text-sm bg-white rounded-xl border border-gray-200 focus:border-tecsup-cian/40 focus:outline-none transition-all"
+                      className="flex-1 px-4 py-3 text-sm bg-white rounded-xl border border-gray-200 focus:border-tecsup-cyan/40 focus:outline-none transition-all"
                       onKeyDown={(e) => {
                         if (e.key === "Enter") handleAddMember();
                       }}
@@ -432,7 +432,6 @@ export default function EditProjectPage() {
                     </button>
                   </div>
                 </div>
-
                 <div className="space-y-3">
                   <div className="flex items-center justify-between p-4 bg-tecsup-gray rounded-xl border border-gray-100">
                     <div className="flex items-center gap-3">
@@ -458,7 +457,6 @@ export default function EditProjectPage() {
                       </span>
                     </div>
                   </div>
-
                   {teamMembers.map((member) => (
                     <div
                       key={member.email}
@@ -504,32 +502,27 @@ export default function EditProjectPage() {
               </div>
             </div>
 
-            {/* ================= COLUMNA DERECHA ================= */}
+            {/* COLUMNA DERECHA */}
             <div className="space-y-8">
-              {/* PASO 3: Multimedia */}
               <div className="bg-white rounded-xl border border-gray-200 p-6">
                 <h2 className="text-lg font-bold text-tecsup-dark border-b pb-3 mb-6">
                   PASO 3: Multimedia
                 </h2>
-
                 <div className="mb-6">
                   <label className="block text-xs font-semibold text-gray-500 uppercase tracking-wider mb-3">
                     Galería de fotos{" "}
                     <span className="text-gray-400 font-normal normal-case">
-                      {" "}
                       (Máx. 5 archivos · Máx. 5MB c/u)
                     </span>
                   </label>
-
                   <input
                     key={`image-input-${imageInputKey}`}
                     type="file"
                     multiple
                     accept="image/png, image/jpeg, image/webp"
                     onChange={handleImageChange}
-                    className="w-full text-sm text-gray-500 file:mr-4 file:py-3 file:rounded-xl border border-dashed border-gray-300 hover:border-tecsup-cian/50 file:bg-white file:text-gray-500 cursor-pointer"
+                    className="w-full text-sm text-gray-500 file:mr-4 file:py-3 file:rounded-xl border border-dashed border-gray-300 hover:border-tecsup-cyan/50 file:bg-white file:text-gray-500 cursor-pointer"
                   />
-
                   <div className="grid grid-cols-5 gap-3 mt-3">
                     {[...Array(5)].map((_, i) => {
                       const img = images[i];
@@ -582,13 +575,10 @@ export default function EditProjectPage() {
                       );
                     })}
                   </div>
-
                   <p className="text-xs text-gray-400 mt-2 text-center">
                     {images.length}/5 imágenes seleccionadas
                   </p>
                 </div>
-
-                {/* ✅ MEJORADO: YouTube con validación visual */}
                 <div className="mb-4">
                   <label className="block text-xs font-semibold text-gray-500 uppercase tracking-wider mb-1.5">
                     Video (YouTube) <span className="text-red-400">*</span>
@@ -608,11 +598,7 @@ export default function EditProjectPage() {
                       value={youtubeUrl}
                       onChange={(e) => setYoutubeUrl(e.target.value)}
                       placeholder="https://youtube.com/watch?v=..."
-                      className={`w-full pl-10 pr-4 py-3 text-sm bg-white rounded-xl border transition-all focus:outline-none ${
-                        youtubeUrl && !isValidYoutubeUrl(youtubeUrl)
-                          ? "border-red-300 focus:border-red-400 bg-red-50/30"
-                          : "border-gray-200 focus:border-tecsup-cyan/40"
-                      }`}
+                      className={`w-full pl-10 pr-4 py-3 text-sm bg-white rounded-xl border transition-all focus:outline-none ${youtubeUrl && !isValidYoutubeUrl(youtubeUrl) ? "border-red-300 focus:border-red-400 bg-red-50/30" : "border-gray-200 focus:border-tecsup-cyan/40"}`}
                     />
                   </div>
                   {youtubeUrl && !isValidYoutubeUrl(youtubeUrl) && (
@@ -634,8 +620,6 @@ export default function EditProjectPage() {
                     </p>
                   )}
                 </div>
-
-                {/* ✅ MEJORADO: GitHub con validación visual */}
                 <div className="mb-4">
                   <label className="block text-xs font-semibold text-gray-500 uppercase tracking-wider mb-1.5">
                     Enlace a GitHub <span className="text-red-400">*</span>
@@ -655,11 +639,7 @@ export default function EditProjectPage() {
                       value={githubUrl}
                       onChange={(e) => setGithubUrl(e.target.value)}
                       placeholder="https://github.com/usuario/repositorio"
-                      className={`w-full pl-10 pr-4 py-3 text-sm bg-white rounded-xl border transition-all focus:outline-none ${
-                        githubUrl && !isValidGithubUrl(githubUrl)
-                          ? "border-red-300 focus:border-red-400 bg-red-50/30"
-                          : "border-gray-200 focus:border-tecsup-cyan/40"
-                      }`}
+                      className={`w-full pl-10 pr-4 py-3 text-sm bg-white rounded-xl border transition-all focus:outline-none ${githubUrl && !isValidGithubUrl(githubUrl) ? "border-red-300 focus:border-red-400 bg-red-50/30" : "border-gray-200 focus:border-tecsup-cyan/40"}`}
                     />
                   </div>
                   {githubUrl && !isValidGithubUrl(githubUrl) && (
@@ -682,12 +662,10 @@ export default function EditProjectPage() {
                     </p>
                   )}
                 </div>
-
                 <div className="mb-4">
                   <label className="block text-xs font-semibold text-gray-500 uppercase tracking-wider mb-1.5">
                     Compilado / Build descargable
                   </label>
-
                   <input
                     ref={zipInputRef}
                     type="file"
@@ -695,7 +673,6 @@ export default function EditProjectPage() {
                     onChange={handleZipChange}
                     className="w-full text-sm text-gray-500 file:mr-4 file:py-3 file:rounded-xl border border-dashed border-gray-300 hover:border-tecsup-cyan/50 file:bg-white file:text-gray-500 cursor-pointer"
                   />
-
                   {zipFile && (
                     <div className="flex items-center justify-between mt-2 p-3 bg-tecsup-green/10 rounded-lg border border-tecsup-green/20">
                       <div className="flex items-center gap-3">
@@ -746,12 +723,10 @@ export default function EditProjectPage() {
                 </div>
               </div>
 
-              {/* PASO 4: Reflexiones */}
               <div className="bg-white rounded-xl border border-gray-200 p-6">
                 <h2 className="text-lg font-bold text-tecsup-dark border-b pb-3 mb-6">
                   PASO 4: Reflexiones
                 </h2>
-
                 <div className="space-y-4">
                   <div>
                     <label className="block text-xs font-semibold text-gray-500 uppercase tracking-wider mb-1.5">
@@ -762,7 +737,7 @@ export default function EditProjectPage() {
                       onChange={(e) => setHowBuilt(e.target.value)}
                       rows={3}
                       placeholder="Describe el proceso de desarrollo..."
-                      className="w-full px-4 py-3 text-sm bg-white rounded-xl border border-gray-200 focus:border-tecsup-cian/40 focus:outline-none transition-all resize-none"
+                      className="w-full px-4 py-3 text-sm bg-white rounded-xl border border-gray-200 focus:border-tecsup-cyan/40 focus:outline-none transition-all resize-none"
                     />
                   </div>
                   <div>
@@ -774,7 +749,7 @@ export default function EditProjectPage() {
                       onChange={(e) => setChallenges(e.target.value)}
                       rows={3}
                       placeholder="Los obstáculos que enfrentaron..."
-                      className="w-full px-4 py-3 text-sm bg-white rounded-xl border border-gray-200 focus:border-tecsup-cian/40 focus:outline-none transition-all resize-none"
+                      className="w-full px-4 py-3 text-sm bg-white rounded-xl border border-gray-200 focus:border-tecsup-cyan/40 focus:outline-none transition-all resize-none"
                     />
                   </div>
                   <div>
@@ -786,7 +761,7 @@ export default function EditProjectPage() {
                       onChange={(e) => setLessons(e.target.value)}
                       rows={3}
                       placeholder="Lo más valioso que aprendieron..."
-                      className="w-full px-4 py-3 text-sm bg-white rounded-xl border border-gray-200 focus:border-tecsup-cian/40 focus:outline-none transition-all resize-none"
+                      className="w-full px-4 py-3 text-sm bg-white rounded-xl border border-gray-200 focus:border-tecsup-cyan/40 focus:outline-none transition-all resize-none"
                     />
                   </div>
                   <div>
@@ -798,7 +773,7 @@ export default function EditProjectPage() {
                       onChange={(e) => setFuture(e.target.value)}
                       rows={3}
                       placeholder="Mejoras para una futura versión..."
-                      className="w-full px-4 py-3 text-sm bg-white rounded-xl border border-gray-200 focus:border-tecsup-cian/40 focus:outline-none transition-all resize-none"
+                      className="w-full px-4 py-3 text-sm bg-white rounded-xl border border-gray-200 focus:border-tecsup-cyan/40 focus:outline-none transition-all resize-none"
                     />
                   </div>
                 </div>
@@ -827,14 +802,10 @@ export default function EditProjectPage() {
               </svg>
               Cancelar
             </button>
-
             <button
               disabled={!isFormComplete}
-              className={`px-8 py-2.5 text-sm font-semibold rounded-full transition-all shadow-sm flex items-center gap-2 ${
-                isFormComplete
-                  ? "bg-tecsup-cyan text-white hover:bg-tecsup-cyan/85 cursor-pointer hover:shadow-md"
-                  : "bg-gray-200 text-gray-400 cursor-not-allowed"
-              }`}
+              onClick={() => isFormComplete && setShowSuccessModal(true)}
+              className={`px-8 py-2.5 text-sm font-semibold rounded-full transition-all shadow-sm flex items-center gap-2 ${isFormComplete ? "bg-tecsup-cyan text-white hover:bg-tecsup-cyan/85 cursor-pointer hover:shadow-md" : "bg-gray-200 text-gray-400 cursor-not-allowed"}`}
             >
               {isFormComplete ? (
                 <>
@@ -859,7 +830,6 @@ export default function EditProjectPage() {
             </button>
           </div>
 
-          {/* Indicador de progreso del formulario */}
           {!isFormComplete && (
             <div className="mt-4 p-3 bg-gray-50 rounded-lg border border-gray-100">
               <p className="text-xs text-gray-500 font-medium mb-2">
