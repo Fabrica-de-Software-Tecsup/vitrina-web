@@ -28,7 +28,7 @@ function normalizeStatus(s: string): Project["status"] {
     PUBLICADO: "Publicado",
     EN_DESARROLLO: "En Desarrollo",
     POR_REVISAR: "Por Revisar",
-    BLOQUEADO: "Bloqueado",
+    BLOQUEADO: "Bloqueado" as Project["status"],
     OCULTO: "Oculto",
   };
   return map[s] ?? (s as Project["status"]);
@@ -78,10 +78,25 @@ const teacherStats = [
   { value: "6", label: "tecnologías dominadas", icon: "⚡" },
 ];
 
+/** Formatea "YYYY-MM-DD" sin usar Intl/locale del navegador,
+ * para no reintroducir un hydration mismatch. */
+const MONTHS_ES = [
+  "ene", "feb", "mar", "abr", "may", "jun",
+  "jul", "ago", "sep", "oct", "nov", "dic",
+];
+function formatDeadline(dateStr: string): string {
+  const [y, m, d] = dateStr.split("-").map(Number);
+  return `${String(d).padStart(2, "0")} ${MONTHS_ES[m - 1]}. ${y}`;
+}
+
 export default function DashboardPage() {
   const [isTeacherView, setIsTeacherView] = useState(false);
   const [activeTab, setActiveTab] = useState("all");
   const [openMenuId, setOpenMenuId] = useState<string | null>(null);
+  const [postponeProjectId, setPostponeProjectId] = useState<string | null>(
+    null,
+  );
+  const [newDeadline, setNewDeadline] = useState("");
 
   /* Se recalcula cada vez que cambia un override en cualquier página */
   const overridesVersion = useOverridesVersion();
@@ -99,6 +114,7 @@ export default function DashboardPage() {
       cycle: p.cycle,
       team: p.team,
       image: p.images[0],
+      deadline: p.deadline,
     }));
     return applyOverrides(base);
     // eslint-disable-next-line react-hooks/exhaustive-deps
@@ -121,8 +137,9 @@ export default function DashboardPage() {
   const counts = {
     all: visibleProjects.length,
     Publicado: visibleProjects.filter((p) => p.status === "Publicado").length,
-    "En Desarrollo": visibleProjects.filter((p) => p.status === "En Desarrollo")
-      .length,
+    "En Desarrollo": visibleProjects.filter(
+      (p) => p.status === "En Desarrollo",
+    ).length,
     Oculto: visibleProjects.filter((p) => p.status === "Oculto").length,
     "Por Revisar": visibleProjects.filter((p) => p.status === "Por Revisar")
       .length,
@@ -168,6 +185,24 @@ export default function DashboardPage() {
     setOpenMenuId(null);
   };
 
+  const openPostponeModal = (projectId: string, currentDeadline: string) => {
+    setOpenMenuId(null);
+    setPostponeProjectId(projectId);
+    setNewDeadline(currentDeadline);
+  };
+
+  const closePostponeModal = () => {
+    setPostponeProjectId(null);
+    setNewDeadline("");
+  };
+
+  const confirmPostpone = () => {
+    if (postponeProjectId && newDeadline) {
+      setProjectOverride(postponeProjectId, { deadline: newDeadline });
+    }
+    closePostponeModal();
+  };
+
   return (
     <div className="bg-tecsup-gray min-h-full flex flex-col">
       <Header role={isTeacherView ? "teacher" : "student"} />
@@ -204,7 +239,7 @@ export default function DashboardPage() {
                   Gestión de proyectos — Ciclo 2026-I
                 </p>
                 <p className="text-xs text-tecsup-purple/70 mt-0.5">
-                  Puedes aperturar, bloquear o evaluar las entregas de los
+                  Puedes aperturar, aplazar o evaluar las entregas de los
                   estudiantes.
                 </p>
               </div>
@@ -268,7 +303,6 @@ export default function DashboardPage() {
 
           {/* Tabla de proyectos */}
           <div className="bg-white rounded-xl border border-gray-200 overflow-hidden">
-            {/* Header */}
             <div className="hidden md:grid grid-cols-12 gap-4 px-6 py-3 bg-gray-50 border-b border-gray-100 text-[11px] font-semibold text-gray-400 uppercase tracking-wider">
               <div className="col-span-4">Proyecto</div>
               <div className="col-span-3">Curso</div>
@@ -277,7 +311,6 @@ export default function DashboardPage() {
               <div className="col-span-2 text-right">Acciones</div>
             </div>
 
-            {/* Filas */}
             {filteredProjects.length === 0 ? (
               <div className="px-6 py-16 text-center">
                 <p className="text-gray-400 text-sm">
@@ -325,8 +358,7 @@ export default function DashboardPage() {
                         </div>
                         {showObservacion && (
                           <p className="text-[11px] text-amber-600 mt-1 flex items-start gap-1">
-                            📝 Observación del docente:{" "}
-                            {override!.observaciones}
+                            📝 Observación del docente: {override!.observaciones}
                           </p>
                         )}
                       </div>
@@ -335,6 +367,9 @@ export default function DashboardPage() {
                     {/* Curso */}
                     <div className="col-span-3">
                       <p className="text-sm text-gray-600">{project.course}</p>
+                      <p className="text-[11px] text-gray-400 mt-0.5">
+                        Vence: {formatDeadline(project.deadline)}
+                      </p>
                     </div>
 
                     {/* Estado */}
@@ -361,6 +396,14 @@ export default function DashboardPage() {
                               Ver
                             </Link>
                           )}
+                          <button
+                            onClick={() =>
+                              openPostponeModal(project.id, project.deadline)
+                            }
+                            className="text-amber-600 hover:text-amber-700 font-medium text-sm cursor-pointer"
+                          >
+                            Aplazar
+                          </button>
                           <div className="relative">
                             <button
                               onClick={() =>
@@ -494,6 +537,50 @@ export default function DashboardPage() {
           </div>
         </div>
       </div>
+
+      {/* Modal: Aplazar entrega */}
+      {postponeProjectId && (
+        <>
+          <div
+            className="fixed inset-0 bg-black/40 z-40"
+            onClick={closePostponeModal}
+          />
+          <div className="fixed top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 z-50 bg-white rounded-2xl p-6 w-full max-w-sm shadow-2xl">
+            <h3 className="text-lg font-bold text-tecsup-dark mb-1">
+              Aplazar fecha de entrega
+            </h3>
+            <p className="text-sm text-gray-500 mb-4">
+              Selecciona la nueva fecha límite para este proyecto.
+            </p>
+            <input
+              type="date"
+              lang="es-PE"
+              value={newDeadline}
+              onChange={(e) => setNewDeadline(e.target.value)}
+              className="w-full px-4 py-2.5 text-sm bg-white rounded-xl border border-gray-200 focus:border-tecsup-cyan/40 focus:outline-none transition-all"
+            />
+            <div className="flex gap-3 mt-6">
+              <button
+                onClick={closePostponeModal}
+                className="flex-1 px-4 py-2.5 border border-gray-200 text-gray-600 text-sm font-semibold rounded-xl hover:bg-gray-50 transition-colors"
+              >
+                Cancelar
+              </button>
+              <button
+                onClick={confirmPostpone}
+                disabled={!newDeadline}
+                className={`flex-1 px-4 py-2.5 text-sm font-semibold rounded-xl transition-colors ${
+                  newDeadline
+                    ? "bg-tecsup-cyan text-white hover:bg-tecsup-cyan/85"
+                    : "bg-gray-200 text-gray-400 cursor-not-allowed"
+                }`}
+              >
+                Confirmar
+              </button>
+            </div>
+          </div>
+        </>
+      )}
     </div>
   );
 }

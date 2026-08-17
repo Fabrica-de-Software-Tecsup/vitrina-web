@@ -17,6 +17,7 @@ export interface Project {
   views: number;
   shares: number;
   status: "Publicado" | "En Desarrollo" | "Por Revisar" | "Oculto";
+  deadline: string; // formato "YYYY-MM-DD"
   links: {
     github: string;
     demo: string;
@@ -58,6 +59,7 @@ export const projects: Project[] = [
     views: 1245,
     shares: 38,
     status: "Publicado",
+    deadline: "2026-08-30",
     links: {
       github: "https://github.com",
       demo: "https://example.com",
@@ -91,6 +93,7 @@ export const projects: Project[] = [
     views: 876,
     shares: 22,
     status: "Publicado",
+    deadline: "2026-08-30",
     links: {
       github: "https://github.com",
       demo: "https://example.com",
@@ -124,6 +127,7 @@ export const projects: Project[] = [
     views: 432,
     shares: 15,
     status: "En Desarrollo",
+    deadline: "2026-08-20",
     links: {
       github: "https://github.com",
       demo: "https://example.com",
@@ -157,6 +161,7 @@ export const projects: Project[] = [
     views: 567,
     shares: 29,
     status: "Oculto",
+    deadline: "2026-08-15",
     links: {
       github: "https://github.com",
       demo: "https://example.com",
@@ -190,6 +195,7 @@ export const projects: Project[] = [
     views: 540,
     shares: 18,
     status: "Por Revisar",
+    deadline: "2026-08-18",
     links: {
       github: "https://github.com",
       demo: "https://example.com",
@@ -223,6 +229,7 @@ export const projects: Project[] = [
     views: 321,
     shares: 11,
     status: "Publicado",
+    deadline: "2026-07-30",
     links: {
       github: "https://github.com",
       demo: "https://example.com",
@@ -255,6 +262,7 @@ export const projects: Project[] = [
     views: 198,
     shares: 7,
     status: "Publicado",
+    deadline: "2026-08-05",
     links: {
       github: "https://github.com",
       demo: "https://example.com",
@@ -288,6 +296,7 @@ export const projects: Project[] = [
     views: 654,
     shares: 25,
     status: "Por Revisar",
+    deadline: "2026-08-22",
     links: {
       github: "https://github.com",
       demo: "https://example.com",
