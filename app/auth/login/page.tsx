@@ -1,8 +1,43 @@
 "use client";
 
+import { GoogleLogin, CredentialResponse } from "@react-oauth/google";
+import { useRouter } from "next/navigation";
+import { useState } from "react";
 import Image from "next/image";
 
 export default function LoginPage() {
+  const router = useRouter();
+  const [error, setError] = useState<string | null>(null);
+  const [cargando, setCargando] = useState(false);
+
+  async function manejarLoginExitoso(credentialResponse: CredentialResponse) {
+    setError(null);
+    setCargando(true);
+
+    try {
+      const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/auth/google`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ idToken: credentialResponse.credential }),
+      });
+
+      if (!res.ok) {
+        const data = await res.json();
+        throw new Error(data.message || "No se pudo iniciar sesión");
+      }
+
+      const data = await res.json();
+      localStorage.setItem("accessToken", data.accessToken);
+      localStorage.setItem("refreshToken", data.refreshToken);
+
+      router.push("/dashboard");
+    } catch (err: any) {
+      setError(err.message || "Ocurrió un error al iniciar sesión");
+    } finally {
+      setCargando(false);
+    }
+  }
+
   return (
     <div className="h-full flex flex-col bg-white">
       <div className="flex-1 flex overflow-hidden">
@@ -90,8 +125,31 @@ export default function LoginPage() {
                 Accede a tu portafolio de proyectos
               </p>
 
+              {/* Boton de Google */}
+              <div className="mt-8 flex justify-center">
+                <GoogleLogin
+                  onSuccess={manejarLoginExitoso}
+                  onError={() => setError("No se pudo conectar con Google")}
+                  locale="es"
+                />
+              </div>
+
+              {cargando && (
+                <p className="text-center text-gray-500 text-sm mt-3">Verificando...</p>
+              )}
+              {error && (
+                <p className="text-center text-red-500 text-sm mt-3">{error}</p>
+              )}
+
+              {/* Separador */}
+              <div className="flex items-center gap-3 my-6">
+                <div className="flex-1 h-px bg-gray-200" />
+                <span className="text-xs text-gray-400 uppercase tracking-wider">o continúa con</span>
+                <div className="flex-1 h-px bg-gray-200" />
+              </div>
+
               <form
-                className="mt-8 space-y-5"
+                className="space-y-5"
                 onSubmit={(e) => e.preventDefault()}
               >
                 <div>

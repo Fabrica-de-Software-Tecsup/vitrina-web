@@ -28,7 +28,6 @@ function normalizeStatus(s: string): Project["status"] {
     PUBLICADO: "Publicado",
     EN_DESARROLLO: "En Desarrollo",
     POR_REVISAR: "Por Revisar",
-    BLOQUEADO: "Bloqueado" as Project["status"],
     OCULTO: "Oculto",
   };
   return map[s] ?? (s as Project["status"]);
