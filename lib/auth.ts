@@ -21,3 +21,23 @@ export function cerrarSesion() {
   localStorage.removeItem("accessToken");
   localStorage.removeItem("refreshToken");
 }
+
+export interface UsuarioActual {
+  id: string;
+  nombre: string;
+  correo: string;
+  fotoUrl: string | null;
+  rol: string;
+}
+
+export async function obtenerUsuarioActual(): Promise<UsuarioActual | null> {
+  const tokenData = obtenerUsuarioDesdeToken();
+  if (!tokenData) return null;
+
+  const { apiFetch } = await import("./api-client");
+  try {
+    return await apiFetch(`/usuarios/${tokenData.sub}`);
+  } catch {
+    return null;
+  }
+}

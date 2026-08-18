@@ -1,13 +1,13 @@
 "use client";
 
-import { useState, useMemo } from "react";
+import { useState, useMemo, useEffect } from "react";
+import { getProyectos } from "@/lib/api-proyectos";
 import Image from "next/image";
 import Link from "next/link";
 import Header from "@/components/layout/Header";
 import Avatar from "@/components/ui/Avatar";
 import Badge from "@/components/ui/Badge";
 import {
-  projects as mockProjects,
   slugify,
   type Project,
 } from "@/lib/mock-data";
@@ -33,19 +33,6 @@ function normalizeStatus(s: string): Project["status"] {
   return map[s] ?? (s as Project["status"]);
 }
 
-/** Estado inicial de cada proyecto en el prototipo, antes de cualquier
- * acción real del docente (publicar / solicitar cambios). Una vez que
- * exista un override guardado en localStorage, ese override manda. */
-const PROTOTYPE_STATUS: Record<string, Project["status"]> = {
-  "1": "Publicado",
-  "2": "Publicado",
-  "3": "En Desarrollo",
-  "4": "Oculto",
-  "5": "Por Revisar",
-  "6": "Publicado",
-  "7": "Publicado",
-  "8": "Por Revisar",
-};
 
 const SHORT_COURSE: Record<string, string> = {
   "Desarrollo de Aplicaciones Web": "Desarrollo Web",
@@ -54,7 +41,6 @@ const SHORT_COURSE: Record<string, string> = {
   "Redes y Comunicaciones": "Redes y Comunicaciones",
 };
 
-const STUDENT_NAME = "Maria Mamani Quispe";
 
 const studentTabs = [
   { name: "Todos", status: "all" },
@@ -97,16 +83,27 @@ export default function DashboardPage() {
   );
   const [newDeadline, setNewDeadline] = useState("");
 
+  const [proyectosApi, setProyectosApi] = useState<Project[]>([]);
+  const [cargandoProyectos, setCargandoProyectos] = useState(true);
+  const [errorProyectos, setErrorProyectos] = useState<string | null>(null);
+
+  useEffect(() => {
+    getProyectos()
+      .then(setProyectosApi)
+      .catch((err) => setErrorProyectos(err.message || "Error al cargar proyectos"))
+      .finally(() => setCargandoProyectos(false));
+  }, []);
+
   /* Se recalcula cada vez que cambia un override en cualquier página */
   const overridesVersion = useOverridesVersion();
 
   const projectList = useMemo(() => {
-    const base = mockProjects.map((p) => ({
+    const base = proyectosApi.map((p) => ({
       id: p.id,
-      name: p.name.split(" — ")[0],
+      name: p.name,
       fullName: p.name,
       course: SHORT_COURSE[p.course] ?? p.course,
-      status: normalizeStatus(PROTOTYPE_STATUS[p.id] ?? p.status),
+      status: normalizeStatus(p.status),
       views: p.views,
       shares: p.shares,
       technologies: p.technologies,
@@ -117,15 +114,10 @@ export default function DashboardPage() {
     }));
     return applyOverrides(base);
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [overridesVersion]);
+  }, [proyectosApi, overridesVersion]);
 
-  /* Alumno: solo sus proyectos */
-  const visibleProjects = useMemo(() => {
-    if (isTeacherView) return projectList;
-    return projectList.filter((p) =>
-      p.team.some((m) => m.name === STUDENT_NAME),
-    );
-  }, [isTeacherView, projectList]);
+  /* El backend ya filtra los proyectos visibles según el usuario autenticado */
+  const visibleProjects = projectList;
 
   const currentTabs = isTeacherView ? teacherTabs : studentTabs;
   const filteredProjects =

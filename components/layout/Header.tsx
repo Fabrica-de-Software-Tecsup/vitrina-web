@@ -3,13 +3,14 @@
 import { useState, useEffect } from "react";
 import Link from "next/link";
 import Avatar from "@/components/ui/Avatar";
+import { obtenerUsuarioActual, type UsuarioActual } from "@/lib/auth";
 
 interface HeaderProps {
   role?: "public" | "student" | "teacher";
 }
 
 export default function Header({ role = "public" }: HeaderProps) {
-  const userName = "Maria Mamani";
+  const [usuario, setUsuario] = useState<UsuarioActual | null>(null);
   const [viewMode, setViewMode] = useState<"public" | "session">(role);
 
   useEffect(() => {
@@ -19,6 +20,10 @@ export default function Header({ role = "public" }: HeaderProps) {
       setViewMode("session");
     }
   }, [role]);
+
+  useEffect(() => {
+    obtenerUsuarioActual().then(setUsuario);
+  }, []);
 
   const isSession = viewMode === "session";
   const currentRole = isSession ? "student" : "public";
@@ -111,11 +116,13 @@ export default function Header({ role = "public" }: HeaderProps) {
             <div className="flex items-center gap-3 cursor-pointer group">
               <div className="text-right hidden sm:block">
                 <p className="text-sm font-semibold text-white leading-tight">
-                  Maria
+                  {usuario?.nombre.split(" ")[0] ?? "..."}
                 </p>
-                <p className="text-[10px] text-white/60 uppercase">Alumno</p>
+                <p className="text-[10px] text-white/60 uppercase">
+                  {usuario?.rol ?? ""}
+                </p>
               </div>
-              <Avatar name={userName} size="md" />
+              <Avatar name={usuario?.nombre ?? "?"} size="md" />
             </div>
           ) : (
             <Link
