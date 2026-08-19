@@ -55,9 +55,9 @@ export default function RevisionPage() {
           <h1 className="text-2xl font-bold text-tecsup-dark">
             Proyecto no encontrado
           </h1>
-          <a href="/dashboard" className="mt-4 inline-block text-sm text-tecsup-cyan hover:underline">
+          <Link href="/dashboard" className="mt-4 inline-block text-sm text-tecsup-cyan hover:underline">
             Volver al Dashboard
-          </a>
+          </Link>
         </div>
       </div>
     );
