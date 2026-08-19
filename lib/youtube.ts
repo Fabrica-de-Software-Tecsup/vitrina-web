@@ -16,5 +16,10 @@ export function obtenerUrlEmbedYoutube(url: string | null | undefined): string |
     if (match) return `https://www.youtube.com/embed/${match[1]}`;
   }
 
+  // Si no matchea ninguna URL conocida, puede que ya sea solo el ID del video
+  if (/^[a-zA-Z0-9_-]{11}$/.test(url)) {
+    return `https://www.youtube.com/embed/${url}`;
+  }
+
   return null;
 }
