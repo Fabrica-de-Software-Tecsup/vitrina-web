@@ -89,3 +89,29 @@ export async function agregarMiembro(
     body: JSON.stringify({ usuarioId, rol, esLider }),
   });
 }
+
+export async function getProyectoPorId(id: string): Promise<Project> {
+  const data: ProyectoApi = await apiFetch(`/proyectos/${id}`);
+  return proyectoApiToProject(data);
+}
+
+export interface ActualizarProyectoInput {
+  estado?: string;
+  observaciones?: string;
+}
+
+export async function actualizarProyecto(
+  id: string,
+  cambios: ActualizarProyectoInput,
+): Promise<ProyectoApi> {
+  return apiFetch(`/proyectos/${id}`, {
+    method: "PATCH",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify(cambios),
+  });
+}
+
+export async function getProyectoPorSlug(slug: string): Promise<Project> {
+  const data: ProyectoApi = await apiFetch(`/proyectos/slug/${slug}`);
+  return proyectoApiToProject(data);
+}
