@@ -60,3 +60,32 @@ export async function getProyectos(): Promise<Project[]> {
   const data: ProyectoApi[] = await apiFetch("/proyectos");
   return data.map(proyectoApiToProject);
 }
+
+
+export interface CrearProyectoInput {
+  nombre: string;
+  descripcion?: string;
+  categoriaIds?: number[];
+  cursoIds?: number[];
+}
+
+export async function crearProyecto(input: CrearProyectoInput): Promise<ProyectoApi> {
+  return apiFetch("/proyectos", {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify(input),
+  });
+}
+
+export async function agregarMiembro(
+  proyectoId: string,
+  usuarioId: string,
+  rol: string,
+  esLider = false,
+): Promise<ProyectoApi> {
+  return apiFetch(`/proyectos/${proyectoId}/miembros`, {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ usuarioId, rol, esLider }),
+  });
+}
