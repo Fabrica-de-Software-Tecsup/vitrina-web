@@ -4,6 +4,7 @@ import { useState, useEffect } from "react";
 import Link from "next/link";
 import Avatar from "@/components/ui/Avatar";
 import { obtenerUsuarioActual, type UsuarioActual } from "@/lib/auth";
+import { useRouter } from "next/navigation";
 
 interface HeaderProps {
   role?: "public" | "student" | "teacher";
@@ -27,6 +28,7 @@ export default function Header({ role = "public" }: HeaderProps) {
 
   const isSession = viewMode === "session";
   const currentRole = isSession ? "student" : "public";
+  const router = useRouter();
 
   return (
     <header className="sticky top-0 z-50 bg-tecsup-blue text-white shadow-lg relative">
@@ -45,7 +47,13 @@ export default function Header({ role = "public" }: HeaderProps) {
               Público
             </button>
             <button
-              onClick={() => setViewMode("session")}
+              onClick={() => {
+                if (usuario) {
+                  setViewMode("session");
+                } else {
+                  router.push("/auth/login");
+                }
+              }}
               className={`text-[9px] font-bold px-1.5 py-0.5 rounded cursor-pointer transition-colors ${
                 isSession
                   ? "bg-white text-tecsup-blue"
