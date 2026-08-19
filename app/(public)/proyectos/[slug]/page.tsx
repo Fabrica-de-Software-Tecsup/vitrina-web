@@ -4,6 +4,7 @@ import { useState } from "react";
 import { useParams } from "next/navigation";
 import Avatar from "@/components/ui/Avatar";
 import Badge from "@/components/ui/Badge";
+import { obtenerUrlEmbedYoutube } from "@/lib/youtube";
 import { getProjectBySlug } from "@/lib/mock-data";
 
 export default function ProjectDetailPage() {
@@ -196,7 +197,7 @@ export default function ProjectDetailPage() {
                 </h2>
                 <div className="aspect-video rounded-xl overflow-hidden bg-[#0F0F0F]">
                   <iframe
-                    src={"https://www.youtube.com/embed/" + project.youtubeId}
+                    src={obtenerUrlEmbedYoutube(project.youtubeId) ?? ""}
                     className="w-full h-full"
                     allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
                     allowFullScreen
