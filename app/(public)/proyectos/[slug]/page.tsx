@@ -1,19 +1,28 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useParams } from "next/navigation";
+import Link from "next/link";
 import Avatar from "@/components/ui/Avatar";
 import Badge from "@/components/ui/Badge";
 import { obtenerUrlEmbedYoutube } from "@/lib/youtube";
-import { getProjectBySlug } from "@/lib/mock-data";
+import { getProyectoPorSlug } from "@/lib/api-proyectos";
+import type { Project } from "@/lib/mock-data";
 
 export default function ProjectDetailPage() {
   const params = useParams();
   const slug = params.slug as string;
+  const [project, setProject] = useState<Project | null>(null);
+  const [cargando, setCargando] = useState(true);
   const [selectedImage, setSelectedImage] = useState(0);
   const [copied, setCopied] = useState(false);
 
-  const project = getProjectBySlug(slug);
+  useEffect(() => {
+    getProyectoPorSlug(slug)
+      .then(setProject)
+      .catch(() => setProject(null))
+      .finally(() => setCargando(false));
+  }, [slug]);
 
   const handleCopyLink = () => {
     navigator.clipboard.writeText(window.location.href);
@@ -38,6 +47,14 @@ export default function ProjectDetailPage() {
     );
   };
 
+  if (cargando) {
+    return (
+      <div className="bg-tecsup-gray min-h-screen flex items-center justify-center">
+        <p className="text-gray-400 text-sm">Cargando proyecto...</p>
+      </div>
+    );
+  }
+
   if (!project) {
     return (
       <div className="bg-tecsup-gray min-h-screen flex items-center justify-center">
@@ -46,12 +63,12 @@ export default function ProjectDetailPage() {
           <h1 className="text-2xl font-bold text-tecsup-dark">
             Proyecto no encontrado
           </h1>
-          <a
+          <Link
             href="/"
             className="mt-4 inline-block text-sm text-tecsup-cyan hover:underline"
           >
             Volver a la Landing
-          </a>
+          </Link>
         </div>
       </div>
     );
@@ -67,9 +84,9 @@ export default function ProjectDetailPage() {
       {/* Breadcrumb */}
       <div className="bg-white border-b border-gray-100">
         <div className="max-w-7xl mx-auto px-6 py-3 flex items-center gap-2 text-xs text-gray-400">
-          <a href="/" className="hover:text-tecsup-dark transition-colors">
+          <Link href="/" className="hover:text-tecsup-dark transition-colors">
             Proyectos
-          </a>
+          </Link>
           <span>/</span>
           <span className="text-gray-500">{project.course}</span>
           <span>/</span>
@@ -270,6 +287,7 @@ export default function ProjectDetailPage() {
                   Enlaces
                 </h3>
                 <div className="space-y-2">
+                  
                   <a
                     href={project.links.github}
                     target="_blank"
