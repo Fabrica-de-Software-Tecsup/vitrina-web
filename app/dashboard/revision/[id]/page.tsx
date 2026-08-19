@@ -1,52 +1,84 @@
 "use client";
 import Header from "@/components/layout/Header";
 import Link from "next/link";
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useParams } from "next/navigation";
 import Avatar from "@/components/ui/Avatar";
 import Badge from "@/components/ui/Badge";
 import { obtenerUrlEmbedYoutube } from "@/lib/youtube";
-import { getProjectByIdentifier } from "@/lib/mock-data";
-import { setProjectOverride } from "@/lib/project-overrides";
+import { getProyectoPorId, actualizarProyecto } from "@/lib/api-proyectos";
+import type { Project } from "@/lib/mock-data";
 
 export default function RevisionPage() {
   const params = useParams();
-  const slug = params.id as string;
+  const id = params.id as string;
+  const [project, setProject] = useState<Project | null>(null);
+  const [cargando, setCargando] = useState(true);
   const [selectedImage, setSelectedImage] = useState(0);
   const [showChangesPanel, setShowChangesPanel] = useState(false);
   const [observaciones, setObservaciones] = useState("");
   const [showPublishModal, setShowPublishModal] = useState(false);
   const [showSuccessMessage, setShowSuccessMessage] = useState("");
   const [successType, setSuccessType] = useState("");
+  const [enviando, setEnviando] = useState(false);
 
-  const project = getProjectByIdentifier(slug);
+  useEffect(() => {
+    getProyectoPorId(id)
+      .then(setProject)
+      .catch(() => setProject(null))
+      .finally(() => setCargando(false));
+  }, [id]);
 
-  const handlePublish = () => {
+  const handlePublish = async () => {
     if (!project) return;
-    setProjectOverride(project.id, { status: "Publicado" });
-    setShowPublishModal(false);
-    setSuccessType("published");
-    setShowSuccessMessage(
-      "Proyecto publicado correctamente. Ahora es visible para todos.",
-    );
-    setTimeout(() => setShowSuccessMessage(""), 4000);
+    setEnviando(true);
+    try {
+      await actualizarProyecto(project.id, { estado: "PUBLICADO" });
+      setProject({ ...project, status: "Publicado" });
+      setShowPublishModal(false);
+      setSuccessType("published");
+      setShowSuccessMessage(
+        "Proyecto publicado correctamente. Ahora es visible para todos.",
+      );
+      setTimeout(() => setShowSuccessMessage(""), 4000);
+    } catch (err) {
+      console.error("Error al publicar:", err);
+    } finally {
+      setEnviando(false);
+    }
   };
 
-  const handleRequestChanges = () => {
+  const handleRequestChanges = async () => {
     if (!project) return;
     if (observaciones.trim().length === 0) return;
-    setProjectOverride(project.id, {
-      status: "En Desarrollo",
-      observaciones: observaciones.trim(),
-    });
-    setShowChangesPanel(false);
-    setObservaciones("");
-    setSuccessType("changes");
-    setShowSuccessMessage(
-      "Observaciones enviadas. El proyecto vuelve a estado En Desarrollo.",
-    );
-    setTimeout(() => setShowSuccessMessage(""), 4000);
+    setEnviando(true);
+    try {
+      await actualizarProyecto(project.id, {
+        estado: "EN_DESARROLLO",
+        observaciones: observaciones.trim(),
+      });
+      setProject({ ...project, status: "En Desarrollo" });
+      setShowChangesPanel(false);
+      setObservaciones("");
+      setSuccessType("changes");
+      setShowSuccessMessage(
+        "Observaciones enviadas. El proyecto vuelve a estado En Desarrollo.",
+      );
+      setTimeout(() => setShowSuccessMessage(""), 4000);
+    } catch (err) {
+      console.error("Error al solicitar cambios:", err);
+    } finally {
+      setEnviando(false);
+    }
   };
+
+  if (cargando) {
+    return (
+      <div className="bg-tecsup-gray min-h-screen flex items-center justify-center">
+        <p className="text-gray-400 text-sm">Cargando proyecto...</p>
+      </div>
+    );
+  }
 
   if (!project) {
     return (
@@ -113,9 +145,10 @@ export default function RevisionPage() {
                 </button>
                 <button
                   onClick={handlePublish}
-                  className="flex-1 px-4 py-2.5 bg-tecsup-green text-white text-sm font-semibold rounded-xl hover:bg-tecsup-green/85 transition-colors"
+                  disabled={enviando}
+                  className="flex-1 px-4 py-2.5 bg-tecsup-green text-white text-sm font-semibold rounded-xl hover:bg-tecsup-green/85 transition-colors disabled:opacity-50"
                 >
-                  Publicar
+                  {enviando ? "Publicando..." : "Publicar"}
                 </button>
               </div>
             </div>
@@ -350,14 +383,14 @@ export default function RevisionPage() {
                     />
                     <button
                       onClick={handleRequestChanges}
-                      disabled={observaciones.trim().length === 0}
+                      disabled={observaciones.trim().length === 0 || enviando}
                       className={`w-full px-4 py-2.5 text-sm font-semibold rounded-lg transition-colors ${
                         observaciones.trim().length > 0
                           ? "bg-amber-600 text-white hover:bg-amber-700"
                           : "bg-gray-200 text-gray-400 cursor-not-allowed"
                       }`}
                     >
-                      Enviar observaciones
+                      {enviando ? "Enviando..." : "Enviar observaciones"}
                     </button>
                     <p className="text-[10px] text-amber-600/70 text-center">
                       El proyecto volverá a estado "En Desarrollo" para que el
