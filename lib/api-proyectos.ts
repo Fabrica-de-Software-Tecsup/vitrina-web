@@ -1,7 +1,7 @@
 import { apiFetch } from "./api-client";
 import type { Project } from "./mock-data";
 
-interface ProyectoApi {
+export interface ProyectoApi {
   id: string;
   nombre: string;
   slug: string;
@@ -14,13 +14,16 @@ interface ProyectoApi {
   vistas: number;
   compartidos: number;
   fechaEntrega: string | null;
-  categorias: { categoria: { nombre: string } }[];
-  tecnologias: { tecnologia: { nombre: string } }[];
-  cursos: { curso: { nombre: string; ciclo: string } }[];
+  comoLoConstruyeron: string | null;
+  retosSuperados: string | null;
+  leccionAprendida: string | null;
+  queHarianDiferente: string | null;
+  categorias: { categoria: { id: number; nombre: string } }[];
+  tecnologias: { tecnologia: { id: number; nombre: string } }[];
+  cursos: { curso: { id: number; nombre: string; ciclo: string } }[];
   miembros: { usuarioId: string; rol: string; usuario: { nombre: string; fotoUrl: string | null } }[];
-  imagenes: { url: string }[];
+  imagenes: { id: string; url: string; esPortada: boolean }[];
   createdAt: string;
-  slug: string;
 }
 
 function normalizeEstado(estado: string): Project["status"] {
@@ -102,8 +105,15 @@ export async function getProyectoPorId(id: string): Promise<Project> {
 export interface ActualizarProyectoInput {
   estado?: string;
   observaciones?: string;
+  descripcion?: string;
+  tecnologiaIds?: number[];
+  youtubeUrl?: string;
+  githubUrl?: string;
+  comoLoConstruyeron?: string;
+  retosSuperados?: string;
+  leccionAprendida?: string;
+  queHarianDiferente?: string;
 }
-
 export async function actualizarProyecto(
   id: string,
   cambios: ActualizarProyectoInput,
@@ -118,4 +128,43 @@ export async function actualizarProyecto(
 export async function getProyectoPorSlug(slug: string): Promise<Project> {
   const data: ProyectoApi = await apiFetch(`/proyectos/slug/${slug}`);
   return proyectoApiToProject(data);
+}
+
+export async function subirImagenProyecto(
+  proyectoId: string,
+  archivo: File,
+  esPortada: boolean,
+): Promise<ProyectoApi> {
+  const formData = new FormData();
+  formData.append("archivo", archivo);
+  formData.append("esPortada", String(esPortada));
+  return apiFetch(`/proyectos/${proyectoId}/imagenes`, {
+    method: "POST",
+    body: formData,
+  });
+}
+
+export async function subirBuildProyecto(
+  proyectoId: string,
+  archivo: File,
+): Promise<ProyectoApi> {
+  const formData = new FormData();
+  formData.append("archivo", archivo);
+  return apiFetch(`/proyectos/${proyectoId}/build`, {
+    method: "POST",
+    body: formData,
+  });
+}
+
+export async function quitarMiembro(
+  proyectoId: string,
+  usuarioId: string,
+): Promise<ProyectoApi> {
+  return apiFetch(`/proyectos/${proyectoId}/miembros/${usuarioId}`, {
+    method: "DELETE",
+  });
+}
+
+export async function getProyectoRawPorId(id: string): Promise<ProyectoApi> {
+  return apiFetch(`/proyectos/${id}`);
 }
