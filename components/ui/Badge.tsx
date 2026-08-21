@@ -16,12 +16,13 @@ const variantStyles: Record<string, string> = {
 interface BadgeProps {
   children: React.ReactNode;
   variant?: string;
+  className?: string;
 }
 
-export default function Badge({ children, variant = "Publicado" }: BadgeProps) {
+export default function Badge({ children, variant = "Publicado", className = "" }: BadgeProps) {
   return (
     <span
-      className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-[11px] font-semibold uppercase ${variantStyles[variant] ?? "bg-gray-100 text-gray-500"}`}
+      className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-[11px] font-semibold uppercase ${variantStyles[variant] ?? "bg-gray-100 text-gray-500"} ${className}`}
     >
       {children}
     </span>
