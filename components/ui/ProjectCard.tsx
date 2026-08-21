@@ -18,7 +18,7 @@ export default function ProjectCard({ project }: ProjectCardProps) {
 
   return (
     <Link
-      href={"/proyectos/" + slugify(project.name)}
+      href={"/proyectos/" + (project.slug ?? slugify(project.name))}
       className="group block bg-white rounded-xl border border-gray-100 overflow-hidden shadow-sm hover:shadow-2xl hover:scale-[1.03] hover:-translate-y-2 transition-all duration-300"
     >
       <div className="relative aspect-[16/10] overflow-hidden">
