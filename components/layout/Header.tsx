@@ -8,29 +8,21 @@ import { useRouter } from "next/navigation";
 import { slugConId } from "@/lib/utils";
 
 interface HeaderProps {
-  role?: "public" | "student" | "teacher";
+  defaultView?: "public" | "session";
 }
 
-export default function Header({ role = "public" }: HeaderProps) {
+export default function Header({ defaultView = "session" }: HeaderProps) {
   const [usuario, setUsuario] = useState<UsuarioActual | null>(null);
-  const [viewMode, setViewMode] = useState<"public" | "session">(role);
-
-  useEffect(() => {
-    if (role === "public") {
-      setViewMode("public");
-    } else {
-      setViewMode("session");
-    }
-  }, [role]);
+  const [viewMode, setViewMode] = useState<"public" | "session">(defaultView);
+  const router = useRouter();
+  const [showMenu, setShowMenu] = useState(false);
 
   useEffect(() => {
     obtenerUsuarioActual().then(setUsuario);
   }, []);
 
   const isSession = viewMode === "session";
-  const currentRole = isSession ? "student" : "public";
-  const router = useRouter();
-  const [showMenu, setShowMenu] = useState(false);
+  const esDocente = usuario?.rol === "DOCENTE" || usuario?.rol === "ADMIN";
 
   const handleCerrarSesion = () => {
     cerrarSesion();
@@ -100,7 +92,7 @@ export default function Header({ role = "public" }: HeaderProps) {
             Estudiantes
           </Link>
 
-          {isSession && role === "teacher" && (
+          {isSession && usuario && (
             <>
               <Link
                 href="/dashboard"
@@ -108,28 +100,21 @@ export default function Header({ role = "public" }: HeaderProps) {
               >
                 Mis Proyectos
               </Link>
-              <Link
-                href="/dashboard/crear-proyecto"
-                className="px-3 py-1.5 text-sm font-semibold text-white bg-tecsup-green rounded-md hover:bg-tecsup-green/90 transition-colors"
-              >
-                + Nuevo Proyecto
-              </Link>
+              {esDocente && (
+                <Link
+                  href="/dashboard/crear-proyecto"
+                  className="px-3 py-1.5 text-sm font-semibold text-white bg-tecsup-green rounded-md hover:bg-tecsup-green/90 transition-colors"
+                >
+                  + Nuevo Proyecto
+                </Link>
+              )}
             </>
-          )}
-
-          {isSession && role !== "teacher" && (
-            <Link
-              href="/dashboard"
-              className="px-3 py-1.5 text-sm font-semibold text-white bg-white/20 rounded-md"
-            >
-              Mis Proyectos
-            </Link>
           )}
         </nav>
 
         {/* Lado Derecho */}
         <div>
-          {isSession ? (
+          {isSession && usuario ? (
             <div className="relative">
               <button
                 onClick={() => setShowMenu((prev) => !prev)}
@@ -137,13 +122,13 @@ export default function Header({ role = "public" }: HeaderProps) {
               >
                 <div className="text-right hidden sm:block">
                   <p className="text-sm font-semibold text-white leading-tight">
-                    {usuario?.nombre.split(" ")[0] ?? "..."}
+                    {usuario.nombre.split(" ")[0]}
                   </p>
                   <p className="text-[10px] text-white/60 uppercase">
-                    {usuario?.rol ?? ""}
+                    {usuario.rol}
                   </p>
                 </div>
-                <Avatar name={usuario?.nombre ?? "?"} size="md" />
+                <Avatar name={usuario.nombre} size="md" />
               </button>
 
               {showMenu && (
@@ -155,13 +140,13 @@ export default function Header({ role = "public" }: HeaderProps) {
                   <div className="absolute right-0 top-full mt-2 w-48 bg-white rounded-xl shadow-xl border border-gray-100 py-2 z-50">
                     <div className="px-4 py-2 border-b border-gray-100">
                       <p className="text-xs font-semibold text-tecsup-dark truncate">
-                        {usuario?.nombre}
+                        {usuario.nombre}
                       </p>
                       <p className="text-[10px] text-gray-400 truncate">
-                        {usuario?.correo}
+                        {usuario.correo}
                       </p>
                     </div>
-                    {usuario && usuario.rol === "ALUMNO" && (
+                    {usuario.rol === "ALUMNO" && (
                       <Link
                         href={`/perfiles/${slugConId(usuario.nombre, usuario.id)}`}
                         onClick={() => setShowMenu(false)}

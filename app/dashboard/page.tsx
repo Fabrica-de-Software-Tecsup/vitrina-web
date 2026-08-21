@@ -224,7 +224,7 @@ export default function DashboardPage() {
 
   return (
     <div className="bg-tecsup-gray min-h-full flex flex-col">
-      <Header role={isTeacherView ? "teacher" : "student"} />
+      <Header defaultView="session" />
 
       <div className="flex-1">
         <div className="max-w-7xl mx-auto px-6 py-8">

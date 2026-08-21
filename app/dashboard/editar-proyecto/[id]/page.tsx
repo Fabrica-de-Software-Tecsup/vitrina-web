@@ -270,7 +270,7 @@ export default function EditProjectPage() {
 
     return (
     <div className="bg-tecsup-gray min-h-full flex flex-col">
-      <Header role="student" />
+      <Header defaultView="session" />
 
       {showCancelModal && (
         <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
