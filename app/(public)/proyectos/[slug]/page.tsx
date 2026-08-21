@@ -6,7 +6,7 @@ import Link from "next/link";
 import Avatar from "@/components/ui/Avatar";
 import Badge from "@/components/ui/Badge";
 import { obtenerUrlEmbedYoutube } from "@/lib/youtube";
-import { getProyectoPorSlug } from "@/lib/api-proyectos";
+import { getProyectoPorSlug, incrementarVistas, incrementarCompartidos } from "@/lib/api-proyectos";
 import type { Project } from "@/lib/mock-data";
 
 export default function ProjectDetailPage() {
@@ -19,7 +19,14 @@ export default function ProjectDetailPage() {
 
   useEffect(() => {
     getProyectoPorSlug(slug)
-      .then(setProject)
+      .then((p) => {
+        setProject(p);
+        const key = `vista-registrada-${p.id}`;
+        if (!sessionStorage.getItem(key)) {
+          sessionStorage.setItem(key, "1");
+          incrementarVistas(p.id).catch(() => {});
+        }
+      })
       .catch(() => setProject(null))
       .finally(() => setCargando(false));
   }, [slug]);
@@ -28,6 +35,7 @@ export default function ProjectDetailPage() {
     navigator.clipboard.writeText(window.location.href);
     setCopied(true);
     setTimeout(() => setCopied(false), 2000);
+    if (project) incrementarCompartidos(project.id).catch(() => {});
   };
 
   const handleShareLinkedIn = () => {
@@ -45,6 +53,7 @@ export default function ProjectDetailPage() {
         text,
       "_blank",
     );
+    incrementarCompartidos(project.id).catch(() => {});
   };
 
   if (cargando) {
