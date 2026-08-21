@@ -22,7 +22,7 @@ export interface ProyectoApi {
   tecnologias: { tecnologia: { id: number; nombre: string } }[];
   cursos: { curso: { id: number; nombre: string; ciclo: string } }[];
   miembros: { usuarioId: string; rol: string; usuario: { nombre: string; fotoUrl: string | null } }[];
-  imagenes: { id: string; url: string; esPortada: boolean }[];
+  imagenes: { id: string; url: string; esPortada: boolean; orden: number }[];
   buildUrl: string | null;
   createdAt: string;
 }
@@ -48,7 +48,9 @@ export function proyectoApiToProject(p: ProyectoApi): Project {
     descriptionLong: p.descripcion ?? "",
     technologies: p.tecnologias.map((t) => t.tecnologia.nombre),
     team: p.miembros.map((m) => ({ id: m.usuarioId, name: m.usuario.nombre, role: m.rol })),
-    images: p.imagenes.map((img) => img.url),
+    images: [...p.imagenes]
+      .sort((a, b) => (b.esPortada ? 1 : 0) - (a.esPortada ? 1 : 0))
+      .map((img) => img.url),
     views: p.vistas,
     shares: p.compartidos,
     status: normalizeEstado(p.estado),
@@ -172,3 +174,23 @@ export async function getProyectoRawPorId(id: string): Promise<ProyectoApi> {
   return apiFetch(`/proyectos/${id}`);
 }
 
+export async function actualizarImagenProyecto(
+  proyectoId: string,
+  imagenId: string,
+  cambios: { esPortada?: boolean; orden?: number },
+): Promise<ProyectoApi> {
+  return apiFetch(`/proyectos/${proyectoId}/imagenes/${imagenId}`, {
+    method: "PATCH",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify(cambios),
+  });
+}
+
+export async function eliminarImagenProyecto(
+  proyectoId: string,
+  imagenId: string,
+): Promise<ProyectoApi> {
+  return apiFetch(`/proyectos/${proyectoId}/imagenes/${imagenId}`, {
+    method: "DELETE",
+  });
+}
