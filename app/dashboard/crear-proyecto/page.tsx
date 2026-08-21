@@ -102,7 +102,7 @@ export default function CreateProjectPage() {
 
   return (
     <div className="bg-tecsup-gray min-h-full flex flex-col">
-      <Header role="teacher" />
+      <Header defaultView="session" />
 
       <div className="flex-1 w-[85%] mx-auto transform scale-[0.85] origin-top">
         <div className="max-w-2xl mx-auto px-6 py-8">

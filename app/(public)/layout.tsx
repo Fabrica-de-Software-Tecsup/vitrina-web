@@ -7,7 +7,7 @@ export default function PublicLayout({
 }) {
   return (
     <div>
-      <Header role="public" />
+      <Header defaultView="public" />
       {children}
     </div>
   );
