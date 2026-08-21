@@ -146,15 +146,13 @@ export default function Header({ defaultView = "session" }: HeaderProps) {
                         {usuario.correo}
                       </p>
                     </div>
-                    {usuario.rol === "ALUMNO" && (
-                      <Link
-                        href={`/perfiles/${slugConId(usuario.nombre, usuario.id)}`}
-                        onClick={() => setShowMenu(false)}
-                        className="block px-4 py-2 text-sm text-gray-600 hover:bg-gray-50 transition-colors"
-                      >
-                        Ver mi perfil
-                      </Link>
-                    )}
+                    <Link
+                      href={`/perfiles/${slugConId(usuario.nombre, usuario.id)}`}
+                      onClick={() => setShowMenu(false)}
+                      className="block px-4 py-2 text-sm text-gray-600 hover:bg-gray-50 transition-colors"
+                    >
+                      Mi perfil
+                    </Link>
                     <Link
                       href="/dashboard"
                       onClick={() => setShowMenu(false)}
