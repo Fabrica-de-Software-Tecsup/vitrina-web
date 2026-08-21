@@ -24,6 +24,7 @@ export interface ProyectoApi {
   miembros: { usuarioId: string; rol: string; usuario: { nombre: string; fotoUrl: string | null } }[];
   imagenes: { id: string; url: string; esPortada: boolean; orden: number }[];
   buildUrl: string | null;
+  observaciones: string | null;
   createdAt: string;
 }
 
@@ -64,6 +65,7 @@ export function proyectoApiToProject(p: ProyectoApi): Project {
     createdAt: p.createdAt,
     slug: p.slug,
     buildUrl: p.buildUrl,
+    observaciones: p.observaciones,
   };
 }
 
