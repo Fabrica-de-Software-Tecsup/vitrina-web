@@ -19,6 +19,8 @@ interface ProyectoApi {
   cursos: { curso: { nombre: string; ciclo: string } }[];
   miembros: { rol: string; usuario: { nombre: string; fotoUrl: string | null } }[];
   imagenes: { url: string }[];
+  createdAt: string;
+  slug: string;
 }
 
 function normalizeEstado(estado: string): Project["status"] {
@@ -53,6 +55,8 @@ export function proyectoApiToProject(p: ProyectoApi): Project {
       figma: p.figmaUrl ?? "",
     },
     youtubeId: p.youtubeUrl ?? "",
+    createdAt: p.createdAt,
+    slug: p.slug,
   };
 }
 

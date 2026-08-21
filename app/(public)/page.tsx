@@ -4,38 +4,43 @@ import { useEffect, useMemo, useState } from "react";
 import ProjectCard from "@/components/ui/ProjectCard";
 import PillFilter from "@/components/ui/PillFilter";
 import Badge from "@/components/ui/Badge";
-import { featuredProjects, recentProjects } from "@/lib/mock-data";
-import { applyOverrides, useOverridesVersion } from "@/lib/project-overrides";
+import { getProyectos } from "@/lib/api-proyectos";
+import type { Project } from "@/lib/mock-data";
+
+const CANTIDAD_DESTACADOS = 4;
 
 export default function LandingPage() {
   const [activeFilter, setActiveFilter] = useState("Todos");
   const [searchTerm, setSearchTerm] = useState("");
+  const [proyectos, setProyectos] = useState<Project[]>([]);
+  const [cargando, setCargando] = useState(true);
 
-  // Evita aplicar overrides antes de que el cliente termine de hidratar
-  const [mounted, setMounted] = useState(false);
   useEffect(() => {
-    setMounted(true);
+    getProyectos()
+      .then(setProyectos)
+      .catch(() => setProyectos([]))
+      .finally(() => setCargando(false));
   }, []);
 
-  const overridesVersion = useOverridesVersion();
-
-  const liveFeaturedProjects = useMemo(
-    () => (mounted ? applyOverrides(featuredProjects) : featuredProjects),
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-    [mounted, overridesVersion],
-  );
-  const liveRecentProjects = useMemo(
-    () => (mounted ? applyOverrides(recentProjects) : recentProjects),
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-    [mounted, overridesVersion],
+  const publicados = useMemo(
+    () => proyectos.filter((p) => p.status === "Publicado"),
+    [proyectos],
   );
 
+  const destacados = useMemo(
+    () => [...publicados].sort((a, b) => b.views - a.views).slice(0, CANTIDAD_DESTACADOS),
+    [publicados],
+  );
 
-  /** Filtra Ocultos y aplica búsqueda */
-  const filterPublic = (list: typeof featuredProjects) =>
-    list
-      .filter((p) => p.status === "Publicado")
-      .filter((p) => p.name.toLowerCase().includes(searchTerm.toLowerCase()));
+  const recientes = useMemo(() => {
+    const destacadosIds = new Set(destacados.map((p) => p.id));
+    return [...publicados]
+      .filter((p) => !destacadosIds.has(p.id))
+      .sort((a, b) => (b.createdAt ?? "").localeCompare(a.createdAt ?? ""));
+  }, [publicados, destacados]);
+
+  const filterBySearch = (list: Project[]) =>
+    list.filter((p) => p.name.toLowerCase().includes(searchTerm.toLowerCase()));
 
   return (
     <>
@@ -65,27 +70,7 @@ export default function LandingPage() {
               <p className="text-white/70 text-sm leading-relaxed mt-2">
                 Ideas que crean soluciones que construyen el mañana.
               </p>
-
-              <div className="mt-5 flex items-center gap-3">
-                <div className="flex -space-x-2">
-                  {["Maria Mamani", "Diego Huamán", "Valeria Cáceres"].map(
-                    (name) => (
-                      <div
-                        key={name}
-                        className="w-8 h-8 rounded-full bg-tecsup-cyan/50 border-2 border-white/20 flex items-center justify-center text-[10px] text-white font-bold"
-                      >
-                        {name
-                          .split(" ")
-                          .map((n) => n[0])
-                          .join("")}
-                      </div>
-                    ),
-                  )}
-                </div>
-                <span className="text-white/50 text-xs">+86 estudiantes</span>
-              </div>
-
-              <a
+              <a             
                 href="/auth/login"
                 className="mt-5 w-full flex items-center justify-center px-5 py-2.5 bg-[#1B76FF] text-white text-sm font-semibold rounded-full hover:bg-[#1B76FF]/85 transition-colors shadow-md"
               >
@@ -116,7 +101,7 @@ export default function LandingPage() {
             </div>
 
             <p className="text-xs text-gray-400 font-medium hidden sm:block">
-              124 proyectos · 86 estudiantes · 18 cursos · 6 ciclos documentados
+              {publicados.length} proyectos publicados
             </p>
 
             <div className="relative">
@@ -144,35 +129,51 @@ export default function LandingPage() {
           </div>
 
           <p className="text-xs text-gray-400 font-medium text-center mt-2 sm:hidden">
-            124 proyectos · 86 estudiantes · 18 cursos · 6 ciclos documentados
+            {publicados.length} proyectos publicados
           </p>
         </div>
       </section>
 
       {/* ═══════════════ CONTENIDO ═══════════════ */}
       <section className="max-w-7xl mx-auto px-6 py-12">
-        <div className="mb-12">
-          <div className="flex items-center gap-2 mb-6">
-            <span className="text-sm">★</span>
-            <h2 className="text-lg font-bold text-tecsup-dark">
-              Destacados del ciclo
-            </h2>
-          </div>
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
-            {filterPublic(liveFeaturedProjects).map((project) => (
-              <ProjectCard key={project.id} project={project} />
-            ))}
-          </div>
-        </div>
+        {cargando ? (
+          <p className="text-center text-gray-400 text-sm py-12">
+            Cargando proyectos...
+          </p>
+        ) : publicados.length === 0 ? (
+          <p className="text-center text-gray-400 text-sm py-12">
+            Aún no hay proyectos publicados.
+          </p>
+        ) : (
+          <>
+            <div className="mb-12">
+              <div className="flex items-center gap-2 mb-6">
+                <span className="text-sm">★</span>
+                <h2 className="text-lg font-bold text-tecsup-dark">
+                  Destacados del ciclo
+                </h2>
+              </div>
+              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
+                {filterBySearch(destacados).map((project) => (
+                  <ProjectCard key={project.id} project={project} />
+                ))}
+              </div>
+            </div>
 
-        <div>
-          <h2 className="text-lg font-bold text-tecsup-dark mb-6">Recientes</h2>
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
-            {filterPublic(liveRecentProjects).map((project) => (
-              <ProjectCard key={project.id} project={project} />
-            ))}
-          </div>
-        </div>
+            {recientes.length > 0 && (
+              <div>
+                <h2 className="text-lg font-bold text-tecsup-dark mb-6">
+                  Recientes
+                </h2>
+                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
+                  {filterBySearch(recientes).map((project) => (
+                    <ProjectCard key={project.id} project={project} />
+                  ))}
+                </div>
+              </div>
+            )}
+          </>
+        )}
       </section>
     </>
   );
