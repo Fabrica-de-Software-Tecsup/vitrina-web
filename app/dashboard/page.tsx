@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useMemo, useEffect } from "react";
-import { getProyectos } from "@/lib/api-proyectos";
+import { getProyectos, actualizarProyecto } from "@/lib/api-proyectos";
 import { obtenerUsuarioActual, type UsuarioActual } from "@/lib/auth";
 import Image from "next/image";
 import Link from "next/link";
@@ -71,10 +71,20 @@ const MONTHS_ES = [
   "jul", "ago", "sep", "oct", "nov", "dic",
 ];
 function formatDeadline(dateStr: string): string {
+  if (!dateStr) return "Sin fecha asignada";
   const [y, m, d] = dateStr.split("-").map(Number);
+  if (!y || !m || !d) return "Sin fecha asignada";
   return `${String(d).padStart(2, "0")} ${MONTHS_ES[m - 1]}. ${y}`;
 }
-
+function getProjectHref(project: { id: string; slug?: string; status: string }): string {
+  if (project.status === "Publicado" && project.slug) {
+    return `/proyectos/${project.slug}`;
+  }
+  if (project.status === "Por Revisar") {
+    return `/dashboard/revision/${project.id}`;
+  }
+  return `/dashboard/editar-proyecto/${project.id}`;
+}
 export default function DashboardPage() {
   const [isTeacherView, setIsTeacherView] = useState(false);
   const [activeTab, setActiveTab] = useState("all");
@@ -104,6 +114,7 @@ export default function DashboardPage() {
   const projectList = useMemo(() => {
     const base = proyectosApi.map((p) => ({
       id: p.id,
+      slug: p.slug,
       name: p.name,
       fullName: p.name,
       course: SHORT_COURSE[p.course] ?? p.course,
@@ -191,11 +202,24 @@ export default function DashboardPage() {
     setNewDeadline("");
   };
 
-  const confirmPostpone = () => {
-    if (postponeProjectId && newDeadline) {
-      setProjectOverride(postponeProjectId, { deadline: newDeadline });
+  const [aplazando, setAplazando] = useState(false);
+
+  const confirmPostpone = async () => {
+    if (!postponeProjectId || !newDeadline) {
+      closePostponeModal();
+      return;
     }
-    closePostponeModal();
+    setAplazando(true);
+    try {
+      await actualizarProyecto(postponeProjectId, { fechaEntrega: newDeadline });
+      const actualizados = await getProyectos();
+      setProyectosApi(actualizados);
+    } catch {
+      // silencioso; el modal se cierra igual y el usuario puede reintentar
+    } finally {
+      setAplazando(false);
+      closePostponeModal();
+    }
   };
 
   return (
@@ -328,7 +352,10 @@ export default function DashboardPage() {
                     className="grid grid-cols-1 md:grid-cols-12 gap-4 px-6 py-4 border-b border-gray-50 hover:bg-tecsup-gray/50 transition-colors items-center"
                   >
                     {/* Proyecto */}
-                    <div className="col-span-4 flex items-center gap-3">
+                    <Link
+                      href={getProjectHref(project)}
+                      className="col-span-4 flex items-center gap-3 hover:opacity-80 transition-opacity"
+                    >
                       <div className="w-12 h-12 rounded-lg overflow-hidden bg-gray-100 shrink-0 relative">
                         <Image
                           src={project.image}
@@ -357,7 +384,9 @@ export default function DashboardPage() {
                           </p>
                         )}
                       </div>
-                    </div>
+                    </Link>
+
+                    {/* Curso */}
 
                     {/* Curso */}
                     <div className="col-span-3">
@@ -563,14 +592,14 @@ export default function DashboardPage() {
               </button>
               <button
                 onClick={confirmPostpone}
-                disabled={!newDeadline}
+                disabled={!newDeadline || aplazando}
                 className={`flex-1 px-4 py-2.5 text-sm font-semibold rounded-xl transition-colors ${
-                  newDeadline
+                  newDeadline && !aplazando
                     ? "bg-tecsup-cyan text-white hover:bg-tecsup-cyan/85"
                     : "bg-gray-200 text-gray-400 cursor-not-allowed"
                 }`}
               >
-                Confirmar
+                {aplazando ? "Guardando..." : "Confirmar"}
               </button>
             </div>
           </div>
