@@ -23,6 +23,7 @@ export interface ProyectoApi {
   cursos: { curso: { id: number; nombre: string; ciclo: string } }[];
   miembros: { usuarioId: string; rol: string; usuario: { nombre: string; fotoUrl: string | null } }[];
   imagenes: { id: string; url: string; esPortada: boolean }[];
+  buildUrl: string | null;
   createdAt: string;
 }
 
@@ -60,6 +61,7 @@ export function proyectoApiToProject(p: ProyectoApi): Project {
     youtubeId: p.youtubeUrl ?? "",
     createdAt: p.createdAt,
     slug: p.slug,
+    buildUrl: p.buildUrl,
   };
 }
 
