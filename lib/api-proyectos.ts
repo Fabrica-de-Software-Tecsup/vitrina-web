@@ -194,3 +194,11 @@ export async function eliminarImagenProyecto(
     method: "DELETE",
   });
 }
+
+export async function incrementarVistas(id: string): Promise<void> {
+  await apiFetch(`/proyectos/${id}/vistas`, { method: "POST" });
+}
+
+export async function incrementarCompartidos(id: string): Promise<void> {
+  await apiFetch(`/proyectos/${id}/compartidos`, { method: "POST" });
+}
