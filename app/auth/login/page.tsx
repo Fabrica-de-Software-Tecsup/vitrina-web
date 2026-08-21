@@ -130,7 +130,6 @@ export default function LoginPage() {
                 <GoogleLogin
                   onSuccess={manejarLoginExitoso}
                   onError={() => setError("No se pudo conectar con Google")}
-                  locale="es"
                 />
               </div>
 
