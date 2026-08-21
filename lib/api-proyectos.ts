@@ -113,6 +113,7 @@ export interface ActualizarProyectoInput {
   retosSuperados?: string;
   leccionAprendida?: string;
   queHarianDiferente?: string;
+  fechaEntrega?: string;
 }
 export async function actualizarProyecto(
   id: string,
@@ -168,3 +169,4 @@ export async function quitarMiembro(
 export async function getProyectoRawPorId(id: string): Promise<ProyectoApi> {
   return apiFetch(`/proyectos/${id}`);
 }
+
