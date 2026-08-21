@@ -321,7 +321,7 @@ export default function DashboardPage() {
           </div>
 
           {/* Tabla de proyectos */}
-          <div className="bg-white rounded-xl border border-gray-200 overflow-hidden">
+          <div className="bg-white rounded-xl border border-gray-200">
             <div className="hidden md:grid grid-cols-12 gap-4 px-6 py-3 bg-gray-50 border-b border-gray-100 text-[11px] font-semibold text-gray-400 uppercase tracking-wider">
               <div className="col-span-4">Proyecto</div>
               <div className="col-span-3">Curso</div>
@@ -356,14 +356,18 @@ export default function DashboardPage() {
                       href={getProjectHref(project)}
                       className="col-span-4 flex items-center gap-3 hover:opacity-80 transition-opacity"
                     >
-                      <div className="w-12 h-12 rounded-lg overflow-hidden bg-gray-100 shrink-0 relative">
-                        <Image
-                          src={project.image}
-                          alt={project.name}
-                          fill
-                          className="object-cover"
-                          sizes="48px"
-                        />
+                      <div className="w-12 h-12 rounded-lg overflow-hidden bg-gray-100 shrink-0 relative flex items-center justify-center">
+                        {project.image ? (
+                          <Image
+                            src={project.image}
+                            alt={project.name}
+                            fill
+                            className="object-cover"
+                            sizes="48px"
+                          />
+                        ) : (
+                          <span className="text-gray-300 text-lg">📁</span>
+                        )}
                       </div>
                       <div className="min-w-0">
                         <p className="text-sm font-semibold text-tecsup-dark truncate">
@@ -474,7 +478,7 @@ export default function DashboardPage() {
                                     </button>
                                   )}
                                   <Link
-                                    href="/dashboard/crear-proyecto"
+                                    href={`/dashboard/editar-proyecto/${project.id}`}
                                     className="w-full text-left px-4 py-2.5 text-sm text-gray-700 hover:bg-gray-50 flex items-center gap-2.5"
                                     onClick={() => setOpenMenuId(null)}
                                   >
