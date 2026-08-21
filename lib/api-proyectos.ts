@@ -118,6 +118,8 @@ export interface ActualizarProyectoInput {
   leccionAprendida?: string;
   queHarianDiferente?: string;
   fechaEntrega?: string;
+  cursoIds?: number[];
+  categoriaIds?: number[];
 }
 export async function actualizarProyecto(
   id: string,
