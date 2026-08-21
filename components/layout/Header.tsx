@@ -3,8 +3,9 @@
 import { useState, useEffect } from "react";
 import Link from "next/link";
 import Avatar from "@/components/ui/Avatar";
-import { obtenerUsuarioActual, type UsuarioActual } from "@/lib/auth";
+import { obtenerUsuarioActual, cerrarSesion, type UsuarioActual } from "@/lib/auth";
 import { useRouter } from "next/navigation";
+import { slugConId } from "@/lib/utils";
 
 interface HeaderProps {
   role?: "public" | "student" | "teacher";
@@ -29,6 +30,14 @@ export default function Header({ role = "public" }: HeaderProps) {
   const isSession = viewMode === "session";
   const currentRole = isSession ? "student" : "public";
   const router = useRouter();
+  const [showMenu, setShowMenu] = useState(false);
+
+  const handleCerrarSesion = () => {
+    cerrarSesion();
+    setShowMenu(false);
+    router.push("/");
+    router.refresh();
+  };
 
   return (
     <header className="sticky top-0 z-50 bg-tecsup-blue text-white shadow-lg relative">
@@ -121,16 +130,63 @@ export default function Header({ role = "public" }: HeaderProps) {
         {/* Lado Derecho */}
         <div>
           {isSession ? (
-            <div className="flex items-center gap-3 cursor-pointer group">
-              <div className="text-right hidden sm:block">
-                <p className="text-sm font-semibold text-white leading-tight">
-                  {usuario?.nombre.split(" ")[0] ?? "..."}
-                </p>
-                <p className="text-[10px] text-white/60 uppercase">
-                  {usuario?.rol ?? ""}
-                </p>
-              </div>
-              <Avatar name={usuario?.nombre ?? "?"} size="md" />
+            <div className="relative">
+              <button
+                onClick={() => setShowMenu((prev) => !prev)}
+                className="flex items-center gap-3 cursor-pointer group"
+              >
+                <div className="text-right hidden sm:block">
+                  <p className="text-sm font-semibold text-white leading-tight">
+                    {usuario?.nombre.split(" ")[0] ?? "..."}
+                  </p>
+                  <p className="text-[10px] text-white/60 uppercase">
+                    {usuario?.rol ?? ""}
+                  </p>
+                </div>
+                <Avatar name={usuario?.nombre ?? "?"} size="md" />
+              </button>
+
+              {showMenu && (
+                <>
+                  <div
+                    className="fixed inset-0 z-40"
+                    onClick={() => setShowMenu(false)}
+                  />
+                  <div className="absolute right-0 top-full mt-2 w-48 bg-white rounded-xl shadow-xl border border-gray-100 py-2 z-50">
+                    <div className="px-4 py-2 border-b border-gray-100">
+                      <p className="text-xs font-semibold text-tecsup-dark truncate">
+                        {usuario?.nombre}
+                      </p>
+                      <p className="text-[10px] text-gray-400 truncate">
+                        {usuario?.correo}
+                      </p>
+                    </div>
+                    {usuario && usuario.rol === "ALUMNO" && (
+                      <Link
+                        href={`/perfiles/${slugConId(usuario.nombre, usuario.id)}`}
+                        onClick={() => setShowMenu(false)}
+                        className="block px-4 py-2 text-sm text-gray-600 hover:bg-gray-50 transition-colors"
+                      >
+                        Ver mi perfil
+                      </Link>
+                    )}
+                    <Link
+                      href="/dashboard"
+                      onClick={() => setShowMenu(false)}
+                      className="block px-4 py-2 text-sm text-gray-600 hover:bg-gray-50 transition-colors"
+                    >
+                      Mis Proyectos
+                    </Link>
+                    <div className="border-t border-gray-100 my-1" />
+                    <button
+                      onClick={handleCerrarSesion}
+                      className="w-full text-left px-4 py-2 text-sm text-red-500 hover:bg-red-50 transition-colors"
+                    >
+                      Cerrar sesión
+                    </button>
+                  </div>
+                </>
+              )}
             </div>
           ) : (
             <Link

@@ -2,6 +2,7 @@
 
 import { useState, useMemo, useEffect } from "react";
 import { getProyectos } from "@/lib/api-proyectos";
+import { obtenerUsuarioActual, type UsuarioActual } from "@/lib/auth";
 import Image from "next/image";
 import Link from "next/link";
 import Header from "@/components/layout/Header";
@@ -82,7 +83,10 @@ export default function DashboardPage() {
     null,
   );
   const [newDeadline, setNewDeadline] = useState("");
-
+  const [usuarioActual, setUsuarioActual] = useState<UsuarioActual | null>(null);
+  useEffect(() => {
+    obtenerUsuarioActual().then(setUsuarioActual);
+  }, []);
   const [proyectosApi, setProyectosApi] = useState<Project[]>([]);
   const [cargandoProyectos, setCargandoProyectos] = useState(true);
   const [errorProyectos, setErrorProyectos] = useState<string | null>(null);
@@ -253,7 +257,7 @@ export default function DashboardPage() {
           {/* Saludo */}
           <div className="mb-8">
             <h1 className="text-2xl font-bold text-tecsup-dark">
-              {isTeacherView ? "Panel de Gestión" : "Hola, María 👋"}
+              {isTeacherView ? "Panel de Gestión" : `Hola, ${usuarioActual?.nombre.split(" ")[0] ?? "..."} 👋`}
             </h1>
             <p className="text-sm text-gray-500 mt-1">
               {isTeacherView ? (
