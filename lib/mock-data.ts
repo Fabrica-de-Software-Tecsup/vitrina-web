@@ -24,6 +24,8 @@ export interface Project {
     figma: string;
   };
   youtubeId: string;
+  createdAt?: string;
+  slug?: string;
 }
 
 // ─── Cuando el backend esté listo, reemplaza esto por:
