@@ -7,7 +7,8 @@ import Header from "@/components/layout/Header";
 import Avatar from "@/components/ui/Avatar";
 import ProjectCard from "@/components/ui/ProjectCard";
 import { getProyectos } from "@/lib/api-proyectos";
-import { getEstudiantes, type EstudianteConStats } from "@/lib/api-usuarios";
+import { getUsuarios, editarPerfil, type EstudianteConStats } from "@/lib/api-usuarios";
+import { obtenerUsuarioDesdeToken } from "@/lib/auth";
 import { slugConId } from "@/lib/utils";
 import type { Project } from "@/lib/mock-data";
 
@@ -141,9 +142,9 @@ export default function StudentProfilePage() {
   const [cargando, setCargando] = useState(true);
 
   useEffect(() => {
-    Promise.all([getEstudiantes(), getProyectos()])
-      .then(([estudiantes, proyectos]) => {
-        const found = estudiantes.find(
+    Promise.all([getUsuarios(), getProyectos()])
+      .then(([usuarios, proyectos]) => {
+        const found = usuarios.find(
           (e) => slugConId(e.nombre, e.id) === slug,
         );
         setStudent(found ?? null);
@@ -152,6 +153,49 @@ export default function StudentProfilePage() {
       .catch(() => setStudent(null))
       .finally(() => setCargando(false));
   }, [slug]);
+
+  const usuarioActual = obtenerUsuarioDesdeToken();
+  const esMiPerfil = usuarioActual?.sub === student?.id;
+
+  const [editando, setEditando] = useState(false);
+  const [bioEdit, setBioEdit] = useState("");
+  const [ciudadEdit, setCiudadEdit] = useState("");
+  const [carreraEdit, setCarreraEdit] = useState("");
+  const [githubEdit, setGithubEdit] = useState("");
+  const [linkedinEdit, setLinkedinEdit] = useState("");
+  const [guardandoPerfil, setGuardandoPerfil] = useState(false);
+
+  const iniciarEdicion = () => {
+    if (!student) return;
+    setBioEdit(student.bio ?? "");
+    setCiudadEdit(student.ciudad ?? "");
+    setCarreraEdit(student.carrera ?? "");
+    setGithubEdit(student.githubUrl ?? "");
+    setLinkedinEdit(student.linkedinUrl ?? "");
+    setEditando(true);
+  };
+
+  const cancelarEdicion = () => setEditando(false);
+
+  const guardarPerfil = async () => {
+    if (!student) return;
+    setGuardandoPerfil(true);
+    try {
+      const actualizado = await editarPerfil(student.id, {
+        bio: bioEdit,
+        ciudad: ciudadEdit,
+        carrera: carreraEdit,
+        githubUrl: githubEdit,
+        linkedinUrl: linkedinEdit,
+      });
+      setStudent(actualizado);
+      setEditando(false);
+    } catch {
+      // silencioso
+    } finally {
+      setGuardandoPerfil(false);
+    }
+  };
 
   const studentProjects = useMemo(() => {
     if (!student) return [];
@@ -305,14 +349,104 @@ export default function StudentProfilePage() {
                 </svg>
                 {student.ciudad ?? "Sin especificar"}
               </p>
-              {student.bio && (
-                <p className="text-sm text-gray-500 mt-3 max-w-lg leading-relaxed">
-                  {student.bio}
-                </p>
+
+              {editando ? (
+                <div className="mt-4 max-w-lg space-y-3">
+                  <div>
+                    <label className="block text-[10px] font-semibold text-gray-400 uppercase tracking-wider mb-1">
+                      Sobre mí
+                    </label>
+                    <textarea
+                      value={bioEdit}
+                      onChange={(e) => setBioEdit(e.target.value)}
+                      rows={3}
+                      placeholder="Cuéntanos sobre ti..."
+                      className="w-full px-3 py-2 text-sm bg-white rounded-lg border border-gray-200 focus:border-tecsup-cyan/40 focus:outline-none resize-none"
+                    />
+                  </div>
+                  <div className="grid grid-cols-2 gap-3">
+                    <div>
+                      <label className="block text-[10px] font-semibold text-gray-400 uppercase tracking-wider mb-1">
+                        Carrera
+                      </label>
+                      <input
+                        type="text"
+                        value={carreraEdit}
+                        onChange={(e) => setCarreraEdit(e.target.value)}
+                        className="w-full px-3 py-2 text-sm bg-white rounded-lg border border-gray-200 focus:border-tecsup-cyan/40 focus:outline-none"
+                      />
+                    </div>
+                    <div>
+                      <label className="block text-[10px] font-semibold text-gray-400 uppercase tracking-wider mb-1">
+                        Ciudad
+                      </label>
+                      <input
+                        type="text"
+                        value={ciudadEdit}
+                        onChange={(e) => setCiudadEdit(e.target.value)}
+                        className="w-full px-3 py-2 text-sm bg-white rounded-lg border border-gray-200 focus:border-tecsup-cyan/40 focus:outline-none"
+                      />
+                    </div>
+                  </div>
+                  <div>
+                    <label className="block text-[10px] font-semibold text-gray-400 uppercase tracking-wider mb-1">
+                      GitHub (URL completa)
+                    </label>
+                    <input
+                      type="text"
+                      value={githubEdit}
+                      onChange={(e) => setGithubEdit(e.target.value)}
+                      placeholder="https://github.com/tu-usuario"
+                      className="w-full px-3 py-2 text-sm bg-white rounded-lg border border-gray-200 focus:border-tecsup-cyan/40 focus:outline-none"
+                    />
+                  </div>
+                  <div>
+                    <label className="block text-[10px] font-semibold text-gray-400 uppercase tracking-wider mb-1">
+                      LinkedIn (URL completa)
+                    </label>
+                    <input
+                      type="text"
+                      value={linkedinEdit}
+                      onChange={(e) => setLinkedinEdit(e.target.value)}
+                      placeholder="https://linkedin.com/in/tu-usuario"
+                      className="w-full px-3 py-2 text-sm bg-white rounded-lg border border-gray-200 focus:border-tecsup-cyan/40 focus:outline-none"
+                    />
+                  </div>
+                  <div className="flex gap-2">
+                    <button
+                      onClick={guardarPerfil}
+                      disabled={guardandoPerfil}
+                      className="px-4 py-2 bg-tecsup-cyan text-white text-xs font-semibold rounded-full hover:bg-tecsup-cyan/85 transition-colors disabled:opacity-50"
+                    >
+                      {guardandoPerfil ? "Guardando..." : "Guardar cambios"}
+                    </button>
+                    <button
+                      onClick={cancelarEdicion}
+                      disabled={guardandoPerfil}
+                      className="px-4 py-2 border border-gray-200 text-gray-600 text-xs font-semibold rounded-full hover:bg-gray-50 transition-colors"
+                    >
+                      Cancelar
+                    </button>
+                  </div>
+                </div>
+              ) : (
+                student.bio && (
+                  <p className="text-sm text-gray-500 mt-3 max-w-lg leading-relaxed">
+                    {student.bio}
+                  </p>
+                )
               )}
             </div>
 
             <div className="flex items-center gap-2 shrink-0 order-3">
+              {esMiPerfil && !editando && (
+                <button
+                  onClick={iniciarEdicion}
+                  className="px-4 py-2 bg-tecsup-dark text-white text-xs font-semibold rounded-full hover:bg-tecsup-dark/85 transition-colors"
+                >
+                  Editar perfil
+                </button>
+              )}
               <button
                 onClick={handleCopyLink}
                 className="px-4 py-2 border border-gray-200 bg-white text-gray-600 text-xs font-semibold rounded-full hover:bg-gray-50 transition-colors"

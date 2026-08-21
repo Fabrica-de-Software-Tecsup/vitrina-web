@@ -414,6 +414,22 @@ export default function EditProjectPage() {
             </p>
           </div>
 
+          {proyecto.observaciones && (
+            <div className="mb-6 p-5 bg-amber-50 border-2 border-amber-200 rounded-xl">
+              <div className="flex items-start gap-3">
+                <span className="text-2xl">📋</span>
+                <div>
+                  <h3 className="text-sm font-bold text-amber-800 mb-1">
+                    Recomendaciones del docente
+                  </h3>
+                  <p className="text-sm text-amber-700 leading-relaxed">
+                    {proyecto.observaciones}
+                  </p>
+                </div>
+              </div>
+            </div>
+          )}
+
           <div className="space-y-6">
             {/* PASO 1 */}
             <div className="bg-white rounded-xl border border-gray-200 p-6">
@@ -429,7 +445,8 @@ export default function EditProjectPage() {
                     <select
                       value={cursoId}
                       onChange={(e) => setCursoId(e.target.value)}
-                      className="w-full px-4 py-3 text-sm bg-white rounded-xl border border-gray-200 focus:border-tecsup-cyan/40 focus:outline-none transition-all text-gray-600"
+                      disabled={!puedeCrearTecnologia}
+                      className="w-full px-4 py-3 text-sm bg-white rounded-xl border border-gray-200 focus:border-tecsup-cyan/40 focus:outline-none transition-all text-gray-600 disabled:bg-gray-50 disabled:cursor-not-allowed"
                     >
                       <option value="">Sin curso asignado</option>
                       {cursos.map((c) => (
@@ -446,7 +463,8 @@ export default function EditProjectPage() {
                     <select
                       value={categoriaId}
                       onChange={(e) => setCategoriaId(e.target.value)}
-                      className="w-full px-4 py-3 text-sm bg-white rounded-xl border border-gray-200 focus:border-tecsup-cyan/40 focus:outline-none transition-all text-gray-600"
+                      disabled={!puedeCrearTecnologia}
+                      className="w-full px-4 py-3 text-sm bg-white rounded-xl border border-gray-200 focus:border-tecsup-cyan/40 focus:outline-none transition-all text-gray-600 disabled:bg-gray-50 disabled:cursor-not-allowed"
                     >
                       <option value="">Sin categoría asignada</option>
                       {categorias.map((c) => (
