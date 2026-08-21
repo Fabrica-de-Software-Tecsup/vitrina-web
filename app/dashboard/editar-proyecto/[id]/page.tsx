@@ -1,107 +1,189 @@
 "use client";
 
-import { useState, useEffect, useRef } from "react";
+import { useState, useEffect, useRef, useMemo } from "react";
+import { useParams, useRouter } from "next/navigation";
 import Header from "@/components/layout/Header";
 import Avatar from "@/components/ui/Avatar";
-
-interface UploadedFile {
-  name: string;
-  url: string;
-  file: File;
-}
+import {
+  getProyectoRawPorId,
+  actualizarProyecto,
+  subirImagenProyecto,
+  subirBuildProyecto,
+  agregarMiembro,
+  quitarMiembro,
+  type ProyectoApi,
+} from "@/lib/api-proyectos";
+import {
+  getTecnologias,
+  crearTecnologia,
+  type Tecnologia,
+} from "@/lib/api-catalogos";
+import { buscarUsuarios, type UsuarioBusqueda } from "@/lib/api-usuarios";
+import { obtenerUsuarioDesdeToken } from "@/lib/auth";
 
 export default function EditProjectPage() {
-  const [step, setStep] = useState(1);
-  const [techInput, setTechInput] = useState("");
-  const [technologies, setTechnologies] = useState([
-    "React",
-    "Node.js",
-    "PostgreSQL",
-  ]);
-  const [memberEmail, setMemberEmail] = useState("");
-  const [teamMembers, setTeamMembers] = useState([
-    { name: "Carlos Quispe", email: "cquispe@tecsup.edu.pe" },
-  ]);
+  const params = useParams();
+  const router = useRouter();
+  const id = params.id as string;
 
-  const [images, setImages] = useState<UploadedFile[]>([]);
-  const [zipFile, setZipFile] = useState<File | null>(null);
+  const [proyecto, setProyecto] = useState<ProyectoApi | null>(null);
+  const [cargando, setCargando] = useState(true);
+  const [errorCarga, setErrorCarga] = useState<string | null>(null);
+
+  const usuarioActual = obtenerUsuarioDesdeToken();
+  const puedeCrearTecnologia =
+    usuarioActual?.rol === "DOCENTE" || usuarioActual?.rol === "ADMIN";
+
+  const [step, setStep] = useState(1);
+
+  const [catalogoTech, setCatalogoTech] = useState<Tecnologia[]>([]);
+  const [selectedTechIds, setSelectedTechIds] = useState<number[]>([]);
+  const [nuevaTechNombre, setNuevaTechNombre] = useState("");
+  const [creandoTech, setCreandoTech] = useState(false);
+
+  const [memberEmail, setMemberEmail] = useState("");
+  const [buscandoMiembro, setBuscandoMiembro] = useState(false);
+  const [resultadosMiembro, setResultadosMiembro] = useState<UsuarioBusqueda[]>([]);
+  const [teamMembers, setTeamMembers] = useState<
+    { usuarioId: string; nombre: string; rol: string }[]
+  >([]);
+
+  const [imagenes, setImagenes] = useState<{ id: string; url: string; esPortada: boolean }[]>([]);
+  const [subiendoImagen, setSubiendoImagen] = useState(false);
+  const [buildUrl, setBuildUrl] = useState<string | null>(null);
+  const [subiendoZip, setSubiendoZip] = useState(false);
+  const zipInputRef = useRef<HTMLInputElement>(null);
+
   const [shortDesc, setShortDesc] = useState("");
   const [longDesc, setLongDesc] = useState("");
-
   const [youtubeUrl, setYoutubeUrl] = useState("");
   const [githubUrl, setGithubUrl] = useState("");
-
   const [howBuilt, setHowBuilt] = useState("");
   const [challenges, setChallenges] = useState("");
   const [lessons, setLessons] = useState("");
   const [future, setFuture] = useState("");
 
-  const [imageInputKey, setImageInputKey] = useState(0);
-  const zipInputRef = useRef<HTMLInputElement>(null);
-
   const [showCancelModal, setShowCancelModal] = useState(false);
   const [showSuccessModal, setShowSuccessModal] = useState(false);
+  const [enviando, setEnviando] = useState(false);
+  const [errorEnvio, setErrorEnvio] = useState<string | null>(null);
 
-  const addTech = () => {
-    if (techInput.trim() && !technologies.includes(techInput)) {
-      setTechnologies([...technologies, techInput]);
-      setTechInput("");
-    }
-  };
+  useEffect(() => {
+    Promise.all([getProyectoRawPorId(id), getTecnologias()])
+      .then(([p, techs]) => {
+        setProyecto(p);
+        setCatalogoTech(techs);
+        setSelectedTechIds(p.tecnologias.map((t) => t.tecnologia.id));
+        setTeamMembers(
+          p.miembros.map((m) => ({
+            usuarioId: m.usuarioId,
+            nombre: m.usuario.nombre,
+            rol: m.rol,
+          })),
+        );
+        setImagenes(p.imagenes);
+        setYoutubeUrl(p.youtubeUrl ?? "");
+        setGithubUrl(p.githubUrl ?? "");
+        setHowBuilt(p.comoLoConstruyeron ?? "");
+        setChallenges(p.retosSuperados ?? "");
+        setLessons(p.leccionAprendida ?? "");
+        setFuture(p.queHarianDiferente ?? "");
+        if (p.descripcion) {
+          const partes = p.descripcion.split("\n\n");
+          setShortDesc(partes[0] ?? "");
+          setLongDesc(partes.slice(1).join("\n\n") ?? "");
+        }
+      })
+      .catch(() => setErrorCarga("No se pudo cargar el proyecto."))
+      .finally(() => setCargando(false));
+  }, [id]);
 
-  const removeTech = (tech: string) => {
-    setTechnologies(technologies.filter((t) => t !== tech));
-  };
-
-  const handleAddMember = () => {
-    if (memberEmail.trim() === "") return;
-    const namePart = memberEmail.split("@")[0];
-    const formattedName =
-      namePart.charAt(0).toUpperCase() + namePart.slice(1).replace(".", " ");
-    const exists = teamMembers.find(
-      (m) => m.email === memberEmail.toLowerCase(),
+  const toggleTech = (techId: number) => {
+    setSelectedTechIds((prev) =>
+      prev.includes(techId) ? prev.filter((t) => t !== techId) : [...prev, techId],
     );
-    if (!exists) {
-      setTeamMembers([
-        ...teamMembers,
-        { name: formattedName, email: memberEmail.toLowerCase() },
-      ]);
+  };
+
+  const handleCrearTecnologia = async () => {
+    if (!nuevaTechNombre.trim()) return;
+    setCreandoTech(true);
+    try {
+      const nueva = await crearTecnologia(nuevaTechNombre.trim(), "herramienta");
+      setCatalogoTech((prev) => [...prev, nueva]);
+      setSelectedTechIds((prev) => [...prev, nueva.id]);
+      setNuevaTechNombre("");
+    } catch {
+      // silencioso, el input se queda para reintentar
+    } finally {
+      setCreandoTech(false);
+    }
+  };
+
+  useEffect(() => {
+    if (memberEmail.trim().length < 2) {
+      setResultadosMiembro([]);
+      return;
+    }
+    setBuscandoMiembro(true);
+    const timeoutId = setTimeout(() => {
+      buscarUsuarios(memberEmail)
+        .then(setResultadosMiembro)
+        .catch(() => setResultadosMiembro([]))
+        .finally(() => setBuscandoMiembro(false));
+    }, 400);
+    return () => clearTimeout(timeoutId);
+  }, [memberEmail]);
+
+  const handleAddMember = async (u: UsuarioBusqueda) => {
+    if (teamMembers.some((m) => m.usuarioId === u.id)) return;
+    try {
+      await agregarMiembro(id, u.id, "Colaborador", false);
+      setTeamMembers((prev) => [...prev, { usuarioId: u.id, nombre: u.nombre, rol: "Colaborador" }]);
       setMemberEmail("");
+      setResultadosMiembro([]);
+    } catch {
+      // silencioso
     }
   };
 
-  const handleRemoveMember = (emailToRemove: string) => {
-    setTeamMembers(teamMembers.filter((m) => m.email !== emailToRemove));
+  const handleRemoveMember = async (usuarioId: string) => {
+    try {
+      await quitarMiembro(id, usuarioId);
+      setTeamMembers((prev) => prev.filter((m) => m.usuarioId !== usuarioId));
+    } catch {
+      // el backend rechaza quitar al creador; se ignora silenciosamente
+    }
   };
 
-  const handleImageChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+  const handleImageChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const files = Array.from(e.target.files || []);
+    e.target.value = "";
     if (files.length === 0) return;
-    const newImages = files.map((file) => ({
-      name: file.name,
-      url: URL.createObjectURL(file),
-      file: file,
-    }));
-    setImages((prev) => [...prev, ...newImages].slice(0, 5));
-    e.target.value = "";
-  };
-
-  const handleRemoveImage = (indexToRemove: number) => {
-    setImages((prev) => prev.filter((_, idx) => idx !== indexToRemove));
-    setImageInputKey((prev) => prev + 1);
-  };
-
-  const handleZipChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    if (e.target.files && e.target.files[0]) {
-      setZipFile(e.target.files[0]);
+    setSubiendoImagen(true);
+    try {
+      for (const file of files.slice(0, 5 - imagenes.length)) {
+        const actualizado = await subirImagenProyecto(id, file, imagenes.length === 0);
+        setImagenes(actualizado.imagenes);
+      }
+    } catch {
+      // silencioso
+    } finally {
+      setSubiendoImagen(false);
     }
-    e.target.value = "";
   };
 
-  const handleRemoveZip = () => {
-    setZipFile(null);
-    if (zipInputRef.current) {
-      zipInputRef.current.value = "";
+  const handleZipChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    e.target.value = "";
+    if (!file) return;
+    setSubiendoZip(true);
+    try {
+      const actualizado = await subirBuildProyecto(id, file);
+      setBuildUrl((actualizado as any).buildUrl ?? "subido");
+    } catch {
+      // silencioso
+    } finally {
+      setSubiendoZip(false);
     }
   };
 
@@ -114,34 +196,26 @@ export default function EditProjectPage() {
 
   const isValidGithubUrl = (url: string) => {
     if (!url.trim()) return false;
-    const pattern =
-      /^(https?:\/\/)?(www\.)?github\.com\/[a-zA-Z0-9_-]+\/[a-zA-Z0-9_-]+/;
+    const pattern = /^(https?:\/\/)?(www\.)?github\.com\/[a-zA-Z0-9_-]+\/[a-zA-Z0-9_-]+/;
     return pattern.test(url.trim());
   };
 
   useEffect(() => {
-    if (step === 1 && longDesc.length > 20 && technologies.length > 0) {
+    if (step === 1 && longDesc.length > 20 && selectedTechIds.length > 0) {
       setStep(2);
     } else if (step === 2 && teamMembers.length > 1) {
       setStep(3);
-    } else if (step === 3 && images.length >= 5 && zipFile) {
+    } else if (step === 3 && imagenes.length >= 5 && buildUrl) {
       setStep(4);
     }
-  }, [
-    step,
-    longDesc,
-    technologies.length,
-    teamMembers.length,
-    images.length,
-    zipFile,
-  ]);
+  }, [step, longDesc, selectedTechIds.length, teamMembers.length, imagenes.length, buildUrl]);
 
   const isFormComplete =
     shortDesc.trim().length > 0 &&
     longDesc.trim().length > 20 &&
-    technologies.length > 0 &&
-    images.length === 5 &&
-    zipFile !== null &&
+    selectedTechIds.length > 0 &&
+    imagenes.length === 5 &&
+    buildUrl !== null &&
     isValidYoutubeUrl(youtubeUrl) &&
     isValidGithubUrl(githubUrl) &&
     howBuilt.trim().length > 0 &&
@@ -149,17 +223,55 @@ export default function EditProjectPage() {
     lessons.trim().length > 0 &&
     future.trim().length > 0;
 
-  const handleCancel = () => setShowCancelModal(true);
-  const confirmCancel = () => {
-    window.location.href = "/dashboard";
+  const handleSubmit = async () => {
+    if (!isFormComplete) return;
+    setEnviando(true);
+    setErrorEnvio(null);
+    try {
+      const descripcion = [shortDesc, longDesc].filter(Boolean).join("\n\n");
+      await actualizarProyecto(id, {
+        descripcion,
+        tecnologiaIds: selectedTechIds,
+        youtubeUrl,
+        githubUrl,
+        comoLoConstruyeron: howBuilt,
+        retosSuperados: challenges,
+        leccionAprendida: lessons,
+        queHarianDiferente: future,
+        estado: "POR_REVISAR",
+      });
+      setShowSuccessModal(true);
+    } catch (err: any) {
+      setErrorEnvio(err.message || "Error al enviar el proyecto");
+    } finally {
+      setEnviando(false);
+    }
   };
+
+  const handleCancel = () => setShowCancelModal(true);
+  const confirmCancel = () => router.push("/dashboard");
   const closeCancelModal = () => setShowCancelModal(false);
 
-  return (
+  if (cargando) {
+    return (
+      <div className="bg-tecsup-gray min-h-full flex items-center justify-center">
+        <p className="text-gray-400 text-sm">Cargando proyecto...</p>
+      </div>
+    );
+  }
+
+  if (errorCarga || !proyecto) {
+    return (
+      <div className="bg-tecsup-gray min-h-full flex items-center justify-center">
+        <p className="text-red-500 text-sm">{errorCarga ?? "Proyecto no encontrado"}</p>
+      </div>
+    );
+  }
+
+    return (
     <div className="bg-tecsup-gray min-h-full flex flex-col">
       <Header role="student" />
 
-      {/* Modal cancelar */}
       {showCancelModal && (
         <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
           <div
@@ -168,25 +280,13 @@ export default function EditProjectPage() {
           />
           <div className="relative bg-white rounded-2xl shadow-2xl w-full max-w-md p-6">
             <div className="w-14 h-14 bg-red-100 rounded-full flex items-center justify-center mx-auto mb-4">
-              <svg
-                className="w-7 h-7 text-red-500"
-                fill="none"
-                stroke="currentColor"
-                viewBox="0 0 24 24"
-              >
-                <path
-                  strokeLinecap="round"
-                  strokeLinejoin="round"
-                  strokeWidth={2}
-                  d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-2.5L13.732 4c-.77-.833-1.964-.833-2.732 0L4.082 16.5c-.77.833.192 2.5 1.732 2.5z"
-                />
+              <svg className="w-7 h-7 text-red-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-2.5L13.732 4c-.77-.833-1.964-.833-2.732 0L4.082 16.5c-.77.833.192 2.5 1.732 2.5z" />
               </svg>
             </div>
-            <h3 className="text-lg font-bold text-tecsup-dark text-center mb-2">
-              ¿Cancelar edición?
-            </h3>
+            <h3 className="text-lg font-bold text-tecsup-dark text-center mb-2">¿Cancelar edición?</h3>
             <p className="text-sm text-gray-500 text-center mb-6">
-              Si sales ahora, perderás todos los cambios que no hayas enviado.
+              Si sales ahora, perderás los cambios sin enviar.
             </p>
             <div className="flex gap-3">
               <button
@@ -199,48 +299,26 @@ export default function EditProjectPage() {
                 onClick={confirmCancel}
                 className="flex-1 px-4 py-2.5 bg-red-500 text-white text-sm font-semibold rounded-xl hover:bg-red-600 transition-colors"
               >
-                Sí, cancelar
+                Salir sin guardar
               </button>
             </div>
           </div>
         </div>
       )}
 
-      {/* Modal éxito al enviar */}
       {showSuccessModal && (
         <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
           <div className="absolute inset-0 bg-black/50 backdrop-blur-sm" />
-          <div className="relative bg-white rounded-2xl shadow-2xl w-full max-w-md p-6">
-            <div className="w-14 h-14 bg-green-100 rounded-full flex items-center justify-center mx-auto mb-4">
-              <svg
-                className="w-7 h-7 text-green-500"
-                fill="none"
-                stroke="currentColor"
-                viewBox="0 0 24 24"
-              >
-                <path
-                  strokeLinecap="round"
-                  strokeLinejoin="round"
-                  strokeWidth={2}
-                  d="M5 13l4 4L19 7"
-                />
-              </svg>
+          <div className="relative bg-white rounded-2xl shadow-2xl w-full max-w-md p-6 text-center">
+            <div className="w-14 h-14 bg-tecsup-green/10 rounded-full flex items-center justify-center mx-auto mb-4">
+              <span className="text-2xl">✅</span>
             </div>
-            <h3 className="text-lg font-bold text-tecsup-dark text-center mb-2">
-              ¡Proyecto entregado!
-            </h3>
-            <p className="text-sm text-gray-500 text-center mb-6">
-              Tu proyecto pasó a estado{" "}
-              <span className="font-semibold text-tecsup-dark">
-                Por Revisar
-              </span>
-              . El docente lo evaluará y, al aprobarlo, se publicará en la
-              vitina.
+            <h3 className="text-lg font-bold text-tecsup-dark mb-2">¡Proyecto enviado!</h3>
+            <p className="text-sm text-gray-500 mb-6">
+              Tu proyecto quedó en revisión. El docente lo evaluará pronto.
             </p>
             <button
-              onClick={() => {
-                window.location.href = "/dashboard";
-              }}
+              onClick={() => router.push("/dashboard")}
               className="w-full px-4 py-2.5 bg-tecsup-cyan text-white text-sm font-semibold rounded-xl hover:bg-tecsup-cyan/85 transition-colors"
             >
               Volver al Dashboard
@@ -249,88 +327,25 @@ export default function EditProjectPage() {
         </div>
       )}
 
-      <div className="flex-1 w-[90%] mx-auto transform scale-[0.9] origin-top">
-        <div className="max-w-6xl mx-auto px-6 py-8">
-          <div className="mb-6">
-            <div className="mb-4">
-              <div>
-                <h1 className="text-2xl font-bold text-tecsup-dark">
-                  Editando: EcoCajero
-                </h1>
-                <p className="text-sm text-gray-400 mt-1">
-                  Campos bloqueados asignados por el docente
-                </p>
-              </div>
-            </div>
-            <div className="bg-amber-50 border border-amber-200 rounded-lg p-3 flex items-center gap-2">
-              <span className="text-lg">⚠️</span>
-              <p className="text-xs text-amber-700 font-medium">
-                Los campos de Nombre, Curso y Categoría fueron asignados por tu
-                docente y no pueden ser modificados.
-              </p>
-            </div>
+      <div className="flex-1 w-[90%] mx-auto py-8">
+        <div className="max-w-4xl mx-auto px-6">
+          <div className="mb-8">
+            <h1 className="text-2xl font-bold text-tecsup-dark">
+              Completar Proyecto: {proyecto.nombre}
+            </h1>
+            <p className="text-gray-500 text-sm mt-1">
+              Completa toda la información para enviar tu proyecto a revisión.
+            </p>
           </div>
 
-          <div className="flex items-center gap-2 mb-8 bg-white p-3 rounded-xl border border-gray-200 overflow-x-auto">
-            {["1 General", "2 Equipo", "3 Multimedia", "4 Reflexión"].map(
-              (s, i) => (
-                <button
-                  key={s}
-                  onClick={() => setStep(i + 1)}
-                  className={
-                    step === i + 1
-                      ? "bg-tecsup-cyan text-white px-4 py-2 rounded-lg text-sm font-semibold whitespace-nowrap shadow-sm"
-                      : "text-gray-400 hover:bg-gray-50 px-4 py-2 rounded-lg text-sm font-semibold whitespace-nowrap"
-                  }
-                >
-                  {s}
-                </button>
-              ),
-            )}
-          </div>
-
-          <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
-            {/* COLUMNA IZQUIERDA */}
-            <div className="space-y-8">
-              <div className="bg-white rounded-xl border border-gray-200 p-6">
-                <h2 className="text-lg font-bold text-tecsup-dark border-b pb-3 mb-6">
-                  PASO 1: Información General
-                </h2>
-                <div className="mb-5">
-                  <label className="block text-xs font-semibold text-gray-400 uppercase tracking-wider mb-1.5">
-                    Nombre del proyecto 🔒
-                  </label>
-                  <input
-                    type="text"
-                    value="EcoCajero — Recompensas por reciclaje"
-                    readOnly
-                    className="w-full px-4 py-3 text-sm bg-tecsup-gray text-gray-400 rounded-xl border border-gray-200 cursor-not-allowed"
-                  />
-                </div>
-                <div className="mb-5">
-                  <label className="block text-xs font-semibold text-gray-400 uppercase tracking-wider mb-1.5">
-                    Curso 🔒
-                  </label>
-                  <input
-                    type="text"
-                    value="Desarrollo de Aplicaciones Web"
-                    readOnly
-                    className="w-full px-4 py-3 text-sm bg-tecsup-gray text-gray-400 rounded-xl border border-gray-200 cursor-not-allowed"
-                  />
-                </div>
-                <div className="mb-5">
-                  <label className="block text-xs font-semibold text-gray-400 uppercase tracking-wider mb-1.5">
-                    Categoría 🔒
-                  </label>
-                  <input
-                    type="text"
-                    value="DAW"
-                    readOnly
-                    className="w-full px-4 py-3 text-sm bg-tecsup-gray text-gray-400 rounded-xl border border-gray-200 cursor-not-allowed"
-                  />
-                </div>
-                <div className="border-t border-dashed border-gray-200 my-6"></div>
-                <div className="mb-5">
+          <div className="space-y-6">
+            {/* PASO 1 */}
+            <div className="bg-white rounded-xl border border-gray-200 p-6">
+              <h2 className="text-lg font-bold text-tecsup-dark border-b pb-3 mb-6">
+                PASO 1: Descripción y Tecnologías
+              </h2>
+              <div className="space-y-4">
+                <div>
                   <label className="block text-xs font-semibold text-gray-500 uppercase tracking-wider mb-1.5">
                     Descripción corta
                   </label>
@@ -342,491 +357,295 @@ export default function EditProjectPage() {
                     className="w-full px-4 py-3 text-sm bg-white rounded-xl border border-gray-200 focus:border-tecsup-cyan/40 focus:outline-none transition-all"
                   />
                 </div>
-                <div className="mb-5">
+                <div>
                   <label className="block text-xs font-semibold text-gray-500 uppercase tracking-wider mb-1.5">
                     Descripción larga
                   </label>
                   <textarea
-                    rows={4}
                     value={longDesc}
                     onChange={(e) => setLongDesc(e.target.value)}
-                    placeholder="Escribe aquí la descripción detallada del proyecto..."
+                    rows={4}
+                    placeholder="Explica a detalle de qué trata el proyecto..."
                     className="w-full px-4 py-3 text-sm bg-white rounded-xl border border-gray-200 focus:border-tecsup-cyan/40 focus:outline-none transition-all resize-none"
                   />
                 </div>
                 <div>
-                  <label className="block text-xs font-semibold text-gray-500 uppercase tracking-wider mb-2">
-                    Tecnologías
+                  <label className="block text-xs font-semibold text-gray-500 uppercase tracking-wider mb-1.5">
+                    Tecnologías utilizadas
                   </label>
                   <div className="flex flex-wrap gap-2 mb-3">
-                    {technologies.map((tech) => (
-                      <span
-                        key={tech}
-                        className="bg-tecsup-gray text-gray-600 pl-3 pr-1 py-1.5 rounded-full text-xs font-medium flex items-center gap-2"
+                    {catalogoTech.map((t) => (
+                      <button
+                        key={t.id}
+                        type="button"
+                        onClick={() => toggleTech(t.id)}
+                        className={`text-xs px-3 py-1.5 rounded-full border transition-colors ${
+                          selectedTechIds.includes(t.id)
+                            ? "bg-tecsup-cyan text-white border-tecsup-cyan"
+                            : "bg-white text-gray-600 border-gray-200 hover:border-gray-300"
+                        }`}
                       >
-                        {tech}
-                        <button
-                          onClick={() => removeTech(tech)}
-                          className="text-gray-400 hover:text-red-500 cursor-pointer"
-                        >
-                          <svg
-                            className="w-3.5 h-3.5"
-                            fill="none"
-                            stroke="currentColor"
-                            viewBox="0 0 24 24"
-                          >
-                            <path
-                              strokeLinecap="round"
-                              strokeLinejoin="round"
-                              strokeWidth={2}
-                              d="M6 18L18 6M6 6l12 12"
-                            />
-                          </svg>
-                        </button>
-                      </span>
+                        {t.nombre}
+                      </button>
                     ))}
                   </div>
-                  <div className="flex gap-2">
-                    <input
-                      type="text"
-                      value={techInput}
-                      onChange={(e) => setTechInput(e.target.value)}
-                      placeholder="Ej: Tailwind"
-                      className="flex-1 px-3 py-2 text-sm bg-white rounded-lg border border-gray-200 focus:border-tecsup-cyan/40 focus:outline-none transition-all"
-                      onKeyDown={(e) => e.key === "Enter" && addTech()}
-                    />
-                    <button
-                      onClick={addTech}
-                      className="px-3 py-2 bg-tecsup-dark text-white text-xs font-bold rounded-lg hover:bg-tecsup-dark/85"
-                    >
-                      + Agregar
-                    </button>
-                  </div>
-                </div>
-              </div>
-
-              <div className="bg-white rounded-xl border border-gray-200 p-6">
-                <h2 className="text-lg font-bold text-tecsup-dark border-b pb-3 mb-6">
-                  PASO 2: Equipo
-                </h2>
-                <div className="mb-5">
-                  <label className="block text-xs font-semibold text-gray-500 uppercase tracking-wider mb-1.5">
-                    Buscar estudiante por correo
-                  </label>
-                  <div className="flex gap-2">
-                    <input
-                      type="email"
-                      value={memberEmail}
-                      onChange={(e) => setMemberEmail(e.target.value)}
-                      placeholder="Escribe un correo..."
-                      className="flex-1 px-4 py-3 text-sm bg-white rounded-xl border border-gray-200 focus:border-tecsup-cyan/40 focus:outline-none transition-all"
-                      onKeyDown={(e) => {
-                        if (e.key === "Enter") handleAddMember();
-                      }}
-                    />
-                    <button
-                      onClick={handleAddMember}
-                      className="px-5 py-3 bg-tecsup-dark text-white text-sm font-semibold rounded-xl hover:bg-tecsup-dark/85 transition-colors"
-                    >
-                      Agregar
-                    </button>
-                  </div>
-                </div>
-                <div className="space-y-3">
-                  <div className="flex items-center justify-between p-4 bg-tecsup-gray rounded-xl border border-gray-100">
-                    <div className="flex items-center gap-3">
-                      <Avatar name="Valeria Caceres" size="md" />
-                      <div>
-                        <p className="font-semibold text-sm text-tecsup-dark">
-                          Valeria Cáceres
-                        </p>
-                        <p className="text-xs text-gray-400">
-                          vccama@tecsup.edu.pe
-                        </p>
-                      </div>
-                    </div>
-                    <div className="flex items-center gap-2">
-                      <span className="px-2.5 py-0.5 bg-tecsup-purple/15 text-tecsup-purple text-[11px] font-semibold rounded-full uppercase">
-                        Líder
-                      </span>
-                      <span
-                        className="text-gray-400"
-                        title="No se puede eliminar"
-                      >
-                        🔒
-                      </span>
-                    </div>
-                  </div>
-                  {teamMembers.map((member) => (
-                    <div
-                      key={member.email}
-                      className="flex items-center justify-between p-4 bg-white rounded-xl border border-gray-200"
-                    >
-                      <div className="flex items-center gap-3">
-                        <Avatar name={member.name} size="md" />
-                        <div>
-                          <p className="font-semibold text-sm text-tecsup-dark">
-                            {member.name}
-                          </p>
-                          <p className="text-xs text-gray-400">
-                            {member.email}
-                          </p>
-                        </div>
-                      </div>
-                      <div className="flex items-center gap-2">
-                        <span className="px-2.5 py-0.5 bg-gray-100 text-gray-500 text-[11px] font-semibold rounded-full uppercase">
-                          Miembro
-                        </span>
-                        <button
-                          onClick={() => handleRemoveMember(member.email)}
-                          className="text-gray-400 hover:text-red-500 transition-colors cursor-pointer"
-                        >
-                          <svg
-                            className="w-5 h-5"
-                            fill="none"
-                            stroke="currentColor"
-                            viewBox="0 0 24 24"
-                          >
-                            <path
-                              strokeLinecap="round"
-                              strokeLinejoin="round"
-                              strokeWidth={2}
-                              d="M6 18L18 6M6 6l12 12"
-                            />
-                          </svg>
-                        </button>
-                      </div>
-                    </div>
-                  ))}
-                </div>
-              </div>
-            </div>
-
-            {/* COLUMNA DERECHA */}
-            <div className="space-y-8">
-              <div className="bg-white rounded-xl border border-gray-200 p-6">
-                <h2 className="text-lg font-bold text-tecsup-dark border-b pb-3 mb-6">
-                  PASO 3: Multimedia
-                </h2>
-                <div className="mb-6">
-                  <label className="block text-xs font-semibold text-gray-500 uppercase tracking-wider mb-3">
-                    Galería de fotos{" "}
-                    <span className="text-gray-400 font-normal normal-case">
-                      (Máx. 5 archivos · Máx. 5MB c/u)
-                    </span>
-                  </label>
-                  <input
-                    key={`image-input-${imageInputKey}`}
-                    type="file"
-                    multiple
-                    accept="image/png, image/jpeg, image/webp"
-                    onChange={handleImageChange}
-                    className="w-full text-sm text-gray-500 file:mr-4 file:py-3 file:rounded-xl border border-dashed border-gray-300 hover:border-tecsup-cyan/50 file:bg-white file:text-gray-500 cursor-pointer"
-                  />
-                  <div className="grid grid-cols-5 gap-3 mt-3">
-                    {[...Array(5)].map((_, i) => {
-                      const img = images[i];
-                      const isEmpty = !img;
-                      return (
-                        <div
-                          key={i}
-                          className={`aspect-square rounded-xl border-2 border-dashed border-gray-200 flex flex-col items-center justify-center overflow-hidden relative group ${isEmpty ? "" : "border-tecsup-cyan border-solid"}`}
-                        >
-                          {isEmpty ? (
-                            <>
-                              <svg
-                                className="w-8 h-8 text-gray-300"
-                                fill="none"
-                                stroke="currentColor"
-                                viewBox="0 0 24 24"
-                              >
-                                <path
-                                  strokeLinecap="round"
-                                  strokeLinejoin="round"
-                                  strokeWidth={1.5}
-                                  d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z"
-                                />
-                              </svg>
-                              <span className="text-[10px] text-gray-400 mt-1">
-                                {i + 1}/5
-                              </span>
-                            </>
-                          ) : (
-                            <>
-                              <img
-                                src={img.url}
-                                alt={img.name}
-                                className="w-full h-full object-cover"
-                              />
-                              <div className="absolute bottom-0 inset-x-0 bg-gradient-to-t from-black/70 to-transparent pt-6">
-                                <p className="text-[10px] text-white text-center px-1 truncate">
-                                  {img.name}
-                                </p>
-                              </div>
-                              <button
-                                onClick={() => handleRemoveImage(i)}
-                                className="absolute top-1.5 right-1.5 bg-red-500 text-white w-5 h-5 rounded-full text-xs font-bold flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity cursor-pointer shadow-lg hover:bg-red-600"
-                              >
-                                ×
-                              </button>
-                            </>
-                          )}
-                        </div>
-                      );
-                    })}
-                  </div>
-                  <p className="text-xs text-gray-400 mt-2 text-center">
-                    {images.length}/5 imágenes seleccionadas
-                  </p>
-                </div>
-                <div className="mb-4">
-                  <label className="block text-xs font-semibold text-gray-500 uppercase tracking-wider mb-1.5">
-                    Video (YouTube) <span className="text-red-400">*</span>
-                  </label>
-                  <div className="relative">
-                    <div className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400">
-                      <svg
-                        className="w-5 h-5"
-                        viewBox="0 0 24 24"
-                        fill="currentColor"
-                      >
-                        <path d="M23.498 6.186a3.016 3.016 0 0 0-2.122-2.136C19.505 3.545 12 3.545 12 3.545s-7.505 0-9.377.505A3.017 3.017 0 0 0 .502 6.186C0 8.07 0 12 0 12s0 3.93.502 5.814a3.016 3.016 0 0 0 2.122 2.136c1.871.505 9.376.505 9.376.505s7.505 0 9.377-.505a3.015 3.015 0 0 0 2.122-2.136C24 15.93 24 12 24 12s0-3.93-.502-5.814zM9.545 15.568V8.432L15.818 12l-6.273 3.568z" />
-                      </svg>
-                    </div>
-                    <input
-                      type="url"
-                      value={youtubeUrl}
-                      onChange={(e) => setYoutubeUrl(e.target.value)}
-                      placeholder="https://youtube.com/watch?v=..."
-                      className={`w-full pl-10 pr-4 py-3 text-sm bg-white rounded-xl border transition-all focus:outline-none ${youtubeUrl && !isValidYoutubeUrl(youtubeUrl) ? "border-red-300 focus:border-red-400 bg-red-50/30" : "border-gray-200 focus:border-tecsup-cyan/40"}`}
-                    />
-                  </div>
-                  {youtubeUrl && !isValidYoutubeUrl(youtubeUrl) && (
-                    <p className="text-[11px] text-red-500 mt-1.5 flex items-center gap-1">
-                      <svg
-                        className="w-3.5 h-3.5"
-                        fill="none"
-                        stroke="currentColor"
-                        viewBox="0 0 24 24"
-                      >
-                        <path
-                          strokeLinecap="round"
-                          strokeLinejoin="round"
-                          strokeWidth={2}
-                          d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"
-                        />
-                      </svg>
-                      Ingresa un enlace válido de YouTube
-                    </p>
-                  )}
-                </div>
-                <div className="mb-4">
-                  <label className="block text-xs font-semibold text-gray-500 uppercase tracking-wider mb-1.5">
-                    Enlace a GitHub <span className="text-red-400">*</span>
-                  </label>
-                  <div className="relative">
-                    <div className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400">
-                      <svg
-                        className="w-5 h-5"
-                        viewBox="0 0 24 24"
-                        fill="currentColor"
-                      >
-                        <path d="M12 0c-6.626 0-12 5.373-12 12 0 5.302 3.438 9.8 8.207 11.387.599.111.793-.261.793-.577v-2.234c-3.338.726-4.033-1.416-4.033-1.416-.546-1.387-1.333-1.756-1.333-1.756-1.089-.745.083-.729.083-.729 1.205.084 1.839 1.237 1.839 1.237 1.07 1.834 2.807 1.304 3.492.997.107-.775.418-1.305.762-1.604-2.665-.305-5.467-1.334-5.467-5.931 0-1.311.469-2.381 1.236-3.221-.124-.303-.535-1.524.117-3.176 0 0 1.008-.322 3.301 1.23.957-.266 1.983-.399 3.003-.404 1.02.005 2.047.138 3.006.404 2.291-1.552 3.297-1.23 3.297-1.23.653 1.653.242 2.874.118 3.176.77.84 1.235 1.911 1.235 3.221 0 4.609-2.807 5.624-5.479 5.921.43.372.823 1.102.823 2.222v3.293c0 .319.192.694.801.576 4.765-1.589 8.199-6.086 8.199-11.386 0-6.627-5.373-12-12-12z" />
-                      </svg>
-                    </div>
-                    <input
-                      type="url"
-                      value={githubUrl}
-                      onChange={(e) => setGithubUrl(e.target.value)}
-                      placeholder="https://github.com/usuario/repositorio"
-                      className={`w-full pl-10 pr-4 py-3 text-sm bg-white rounded-xl border transition-all focus:outline-none ${githubUrl && !isValidGithubUrl(githubUrl) ? "border-red-300 focus:border-red-400 bg-red-50/30" : "border-gray-200 focus:border-tecsup-cyan/40"}`}
-                    />
-                  </div>
-                  {githubUrl && !isValidGithubUrl(githubUrl) && (
-                    <p className="text-[11px] text-red-500 mt-1.5 flex items-center gap-1">
-                      <svg
-                        className="w-3.5 h-3.5"
-                        fill="none"
-                        stroke="currentColor"
-                        viewBox="0 0 24 24"
-                      >
-                        <path
-                          strokeLinecap="round"
-                          strokeLinejoin="round"
-                          strokeWidth={2}
-                          d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"
-                        />
-                      </svg>
-                      Ingresa un enlace válido de GitHub (ej:
-                      github.com/user/repo)
-                    </p>
-                  )}
-                </div>
-                <div className="mb-4">
-                  <label className="block text-xs font-semibold text-gray-500 uppercase tracking-wider mb-1.5">
-                    Compilado / Build descargable
-                  </label>
-                  <input
-                    ref={zipInputRef}
-                    type="file"
-                    accept=".zip,.rar,.7z,.apk"
-                    onChange={handleZipChange}
-                    className="w-full text-sm text-gray-500 file:mr-4 file:py-3 file:rounded-xl border border-dashed border-gray-300 hover:border-tecsup-cyan/50 file:bg-white file:text-gray-500 cursor-pointer"
-                  />
-                  {zipFile && (
-                    <div className="flex items-center justify-between mt-2 p-3 bg-tecsup-green/10 rounded-lg border border-tecsup-green/20">
-                      <div className="flex items-center gap-3">
-                        <div className="w-10 h-10 bg-tecsup-green/20 rounded-lg flex items-center justify-center text-tecsup-green">
-                          <svg
-                            className="w-5 h-5"
-                            fill="none"
-                            stroke="currentColor"
-                            viewBox="0 0 24 24"
-                          >
-                            <path
-                              strokeLinecap="round"
-                              strokeLinejoin="round"
-                              strokeWidth={2}
-                              d="M5 8h14M5 8a2 2 0 110-4h14a2 2 0 110 4M5 8v10a2 2 0 002 2h10a2 2 0 002-2V8m-9 4h4"
-                            />
-                          </svg>
-                        </div>
-                        <div>
-                          <p className="text-sm font-semibold text-tecsup-dark">
-                            {zipFile.name}
-                          </p>
-                          <p className="text-xs text-gray-500">
-                            {(zipFile.size / 1024 / 1024).toFixed(2)} MB
-                          </p>
-                        </div>
-                      </div>
+                  {puedeCrearTecnologia && (
+                    <div className="flex gap-2">
+                      <input
+                        type="text"
+                        value={nuevaTechNombre}
+                        onChange={(e) => setNuevaTechNombre(e.target.value)}
+                        placeholder="Agregar tecnología nueva al catálogo..."
+                        className="flex-1 px-3 py-2 text-xs bg-white rounded-lg border border-gray-200 focus:border-tecsup-cyan/40 focus:outline-none"
+                      />
                       <button
-                        onClick={handleRemoveZip}
-                        className="text-gray-400 hover:text-red-500 transition-colors cursor-pointer"
+                        onClick={handleCrearTecnologia}
+                        disabled={creandoTech || !nuevaTechNombre.trim()}
+                        className="px-3 py-2 bg-tecsup-dark text-white text-xs font-semibold rounded-lg hover:bg-tecsup-dark/85 transition-colors disabled:opacity-50"
                       >
-                        <svg
-                          className="w-5 h-5"
-                          fill="none"
-                          stroke="currentColor"
-                          viewBox="0 0 24 24"
-                        >
-                          <path
-                            strokeLinecap="round"
-                            strokeLinejoin="round"
-                            strokeWidth={2}
-                            d="M6 18L18 6M6 6l12 12"
-                          />
-                        </svg>
+                        {creandoTech ? "..." : "+ Agregar"}
                       </button>
                     </div>
                   )}
                 </div>
               </div>
+            </div>
 
-              <div className="bg-white rounded-xl border border-gray-200 p-6">
-                <h2 className="text-lg font-bold text-tecsup-dark border-b pb-3 mb-6">
-                  PASO 4: Reflexiones
-                </h2>
-                <div className="space-y-4">
-                  <div>
-                    <label className="block text-xs font-semibold text-gray-500 uppercase tracking-wider mb-1.5">
-                      ¿Cómo lo construyeron?
-                    </label>
-                    <textarea
-                      value={howBuilt}
-                      onChange={(e) => setHowBuilt(e.target.value)}
-                      rows={3}
-                      placeholder="Describe el proceso de desarrollo..."
-                      className="w-full px-4 py-3 text-sm bg-white rounded-xl border border-gray-200 focus:border-tecsup-cyan/40 focus:outline-none transition-all resize-none"
-                    />
+            {/* PASO 2 */}
+            <div className="bg-white rounded-xl border border-gray-200 p-6">
+              <h2 className="text-lg font-bold text-tecsup-dark border-b pb-3 mb-6">
+                PASO 2: Equipo
+              </h2>
+              <div className="space-y-3 mb-4">
+                {teamMembers.map((m) => (
+                  <div
+                    key={m.usuarioId}
+                    className="flex items-center justify-between p-3 bg-tecsup-gray rounded-xl"
+                  >
+                    <div className="flex items-center gap-3">
+                      <Avatar name={m.nombre} size="sm" />
+                      <div>
+                        <p className="text-sm font-semibold text-tecsup-dark">{m.nombre}</p>
+                        <p className="text-[11px] text-gray-400">{m.rol}</p>
+                      </div>
+                    </div>
+                    <button
+                      onClick={() => handleRemoveMember(m.usuarioId)}
+                      className="text-gray-400 hover:text-red-500 transition-colors"
+                    >
+                      <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                      </svg>
+                    </button>
                   </div>
-                  <div>
-                    <label className="block text-xs font-semibold text-gray-500 uppercase tracking-wider mb-1.5">
-                      ¿Qué retos superaron?
-                    </label>
-                    <textarea
-                      value={challenges}
-                      onChange={(e) => setChallenges(e.target.value)}
-                      rows={3}
-                      placeholder="Los obstáculos que enfrentaron..."
-                      className="w-full px-4 py-3 text-sm bg-white rounded-xl border border-gray-200 focus:border-tecsup-cyan/40 focus:outline-none transition-all resize-none"
-                    />
+                ))}
+              </div>
+              <div className="relative">
+                <input
+                  type="text"
+                  value={memberEmail}
+                  onChange={(e) => setMemberEmail(e.target.value)}
+                  placeholder="Buscar estudiante por correo o nombre..."
+                  className="w-full px-4 py-3 text-sm bg-white rounded-xl border border-gray-200 focus:border-tecsup-cyan/40 focus:outline-none transition-all"
+                />
+                {buscandoMiembro && (
+                  <span className="absolute right-4 top-1/2 -translate-y-1/2 text-xs text-gray-400">
+                    Buscando...
+                  </span>
+                )}
+              </div>
+              {resultadosMiembro.length > 0 && (
+                <div className="mt-2 space-y-2">
+                  {resultadosMiembro.map((u) => (
+                    <button
+                      key={u.id}
+                      onClick={() => handleAddMember(u)}
+                      className="w-full flex items-center gap-3 p-3 bg-tecsup-gray rounded-xl hover:border-tecsup-cyan/40 border border-transparent transition-colors text-left"
+                    >
+                      <Avatar name={u.nombre} size="sm" />
+                      <div>
+                        <p className="text-sm font-semibold text-tecsup-dark">{u.nombre}</p>
+                        <p className="text-[11px] text-gray-400">{u.correo}</p>
+                      </div>
+                    </button>
+                  ))}
+                </div>
+              )}
+            </div>
+
+            {/* PASO 3 */}
+            <div className="bg-white rounded-xl border border-gray-200 p-6">
+              <h2 className="text-lg font-bold text-tecsup-dark border-b pb-3 mb-6">
+                PASO 3: Multimedia
+              </h2>
+              <div className="space-y-6">
+                <div>
+                  <label className="block text-xs font-semibold text-gray-500 uppercase tracking-wider mb-1.5">
+                    Imágenes ({imagenes.length}/5)
+                  </label>
+                  <div className="grid grid-cols-5 gap-2 mb-2">
+                    {imagenes.map((img) => (
+                      <div key={img.id} className="aspect-square rounded-lg overflow-hidden bg-gray-100 relative">
+                        <img src={img.url} alt="" className="w-full h-full object-cover" />
+                        {img.esPortada && (
+                          <span className="absolute top-1 left-1 text-[9px] bg-tecsup-cyan text-white px-1.5 py-0.5 rounded-full">
+                            Portada
+                          </span>
+                        )}
+                      </div>
+                    ))}
                   </div>
-                  <div>
-                    <label className="block text-xs font-semibold text-gray-500 uppercase tracking-wider mb-1.5">
-                      ¿Cuál fue la mayor lección aprendida?
+                  {imagenes.length < 5 && (
+                    <label className="flex items-center justify-center gap-2 px-4 py-3 border-2 border-dashed border-gray-200 rounded-xl text-xs text-gray-400 cursor-pointer hover:border-tecsup-cyan/40 transition-colors">
+                      {subiendoImagen ? "Subiendo..." : "Subir imagen"}
+                      <input
+                        type="file"
+                        accept="image/*"
+                        multiple
+                        onChange={handleImageChange}
+                        disabled={subiendoImagen}
+                        className="hidden"
+                      />
                     </label>
-                    <textarea
-                      value={lessons}
-                      onChange={(e) => setLessons(e.target.value)}
-                      rows={3}
-                      placeholder="Lo más valioso que aprendieron..."
-                      className="w-full px-4 py-3 text-sm bg-white rounded-xl border border-gray-200 focus:border-tecsup-cyan/40 focus:outline-none transition-all resize-none"
-                    />
-                  </div>
-                  <div>
-                    <label className="block text-xs font-semibold text-gray-500 uppercase tracking-wider mb-1.5">
-                      ¿Qué harían diferente?
+                  )}
+                </div>
+
+                <div>
+                  <label className="block text-xs font-semibold text-gray-500 uppercase tracking-wider mb-1.5">
+                    Build compilado (.zip)
+                  </label>
+                  {buildUrl ? (
+                    <div className="flex items-center justify-between p-3 bg-tecsup-gray rounded-xl">
+                      <span className="text-sm text-gray-600">✅ Archivo subido correctamente</span>
+                      <button
+                        onClick={() => zipInputRef.current?.click()}
+                        className="text-xs text-tecsup-cyan hover:underline"
+                      >
+                        Reemplazar
+                      </button>
+                    </div>
+                  ) : (
+                    <label className="flex items-center justify-center gap-2 px-4 py-3 border-2 border-dashed border-gray-200 rounded-xl text-xs text-gray-400 cursor-pointer hover:border-tecsup-cyan/40 transition-colors">
+                      {subiendoZip ? "Subiendo..." : "Subir archivo .zip"}
+                      <input
+                        ref={zipInputRef}
+                        type="file"
+                        accept=".zip"
+                        onChange={handleZipChange}
+                        disabled={subiendoZip}
+                        className="hidden"
+                      />
                     </label>
-                    <textarea
-                      value={future}
-                      onChange={(e) => setFuture(e.target.value)}
-                      rows={3}
-                      placeholder="Mejoras para una futura versión..."
-                      className="w-full px-4 py-3 text-sm bg-white rounded-xl border border-gray-200 focus:border-tecsup-cyan/40 focus:outline-none transition-all resize-none"
-                    />
-                  </div>
+                  )}
+                </div>
+
+                <div>
+                  <label className="block text-xs font-semibold text-gray-500 uppercase tracking-wider mb-1.5">
+                    Enlace de YouTube
+                  </label>
+                  <input
+                    type="text"
+                    value={youtubeUrl}
+                    onChange={(e) => setYoutubeUrl(e.target.value)}
+                    placeholder="https://youtube.com/watch?v=..."
+                    className="w-full px-4 py-3 text-sm bg-white rounded-xl border border-gray-200 focus:border-tecsup-cyan/40 focus:outline-none transition-all"
+                  />
+                </div>
+
+                <div>
+                  <label className="block text-xs font-semibold text-gray-500 uppercase tracking-wider mb-1.5">
+                    Enlace de GitHub
+                  </label>
+                  <input
+                    type="text"
+                    value={githubUrl}
+                    onChange={(e) => setGithubUrl(e.target.value)}
+                    placeholder="https://github.com/usuario/repo"
+                    className="w-full px-4 py-3 text-sm bg-white rounded-xl border border-gray-200 focus:border-tecsup-cyan/40 focus:outline-none transition-all"
+                  />
+                </div>
+              </div>
+            </div>
+
+            {/* PASO 4 */}
+            <div className="bg-white rounded-xl border border-gray-200 p-6">
+              <h2 className="text-lg font-bold text-tecsup-dark border-b pb-3 mb-6">
+                PASO 4: Reflexiones
+              </h2>
+              <div className="space-y-4">
+                <div>
+                  <label className="block text-xs font-semibold text-gray-500 uppercase tracking-wider mb-1.5">
+                    ¿Cómo lo construyeron?
+                  </label>
+                  <textarea
+                    value={howBuilt}
+                    onChange={(e) => setHowBuilt(e.target.value)}
+                    rows={3}
+                    placeholder="Describe el proceso de desarrollo..."
+                    className="w-full px-4 py-3 text-sm bg-white rounded-xl border border-gray-200 focus:border-tecsup-cyan/40 focus:outline-none transition-all resize-none"
+                  />
+                </div>
+                <div>
+                  <label className="block text-xs font-semibold text-gray-500 uppercase tracking-wider mb-1.5">
+                    ¿Qué retos superaron?
+                  </label>
+                  <textarea
+                    value={challenges}
+                    onChange={(e) => setChallenges(e.target.value)}
+                    rows={3}
+                    placeholder="Los obstáculos que enfrentaron..."
+                    className="w-full px-4 py-3 text-sm bg-white rounded-xl border border-gray-200 focus:border-tecsup-cyan/40 focus:outline-none transition-all resize-none"
+                  />
+                </div>
+                <div>
+                  <label className="block text-xs font-semibold text-gray-500 uppercase tracking-wider mb-1.5">
+                    ¿Cuál fue la mayor lección aprendida?
+                  </label>
+                  <textarea
+                    value={lessons}
+                    onChange={(e) => setLessons(e.target.value)}
+                    rows={3}
+                    placeholder="Lo más valioso que aprendieron..."
+                    className="w-full px-4 py-3 text-sm bg-white rounded-xl border border-gray-200 focus:border-tecsup-cyan/40 focus:outline-none transition-all resize-none"
+                  />
+                </div>
+                <div>
+                  <label className="block text-xs font-semibold text-gray-500 uppercase tracking-wider mb-1.5">
+                    ¿Qué harían diferente?
+                  </label>
+                  <textarea
+                    value={future}
+                    onChange={(e) => setFuture(e.target.value)}
+                    rows={3}
+                    placeholder="Mejoras para una futura versión..."
+                    className="w-full px-4 py-3 text-sm bg-white rounded-xl border border-gray-200 focus:border-tecsup-cyan/40 focus:outline-none transition-all resize-none"
+                  />
                 </div>
               </div>
             </div>
           </div>
 
-          {/* Botones Finales */}
+          {errorEnvio && (
+            <p className="text-sm text-red-500 mt-4">{errorEnvio}</p>
+          )}
+
           <div className="flex justify-end items-center gap-3 mt-10 pt-6 border-t border-gray-200">
             <button
               onClick={handleCancel}
-              className="px-6 py-2.5 border border-gray-300 text-gray-600 text-sm font-semibold rounded-full hover:bg-gray-50 hover:border-gray-400 transition-all flex items-center gap-2"
+              className="px-6 py-2.5 border border-gray-300 text-gray-600 text-sm font-semibold rounded-full hover:bg-gray-50 hover:border-gray-400 transition-all"
             >
-              <svg
-                className="w-4 h-4"
-                fill="none"
-                stroke="currentColor"
-                viewBox="0 0 24 24"
-              >
-                <path
-                  strokeLinecap="round"
-                  strokeLinejoin="round"
-                  strokeWidth={2}
-                  d="M6 18L18 6M6 6l12 12"
-                />
-              </svg>
               Cancelar
             </button>
             <button
-              disabled={!isFormComplete}
-              onClick={() => isFormComplete && setShowSuccessModal(true)}
-              className={`px-8 py-2.5 text-sm font-semibold rounded-full transition-all shadow-sm flex items-center gap-2 ${isFormComplete ? "bg-tecsup-cyan text-white hover:bg-tecsup-cyan/85 cursor-pointer hover:shadow-md" : "bg-gray-200 text-gray-400 cursor-not-allowed"}`}
+              disabled={!isFormComplete || enviando}
+              onClick={handleSubmit}
+              className={`px-8 py-2.5 text-sm font-semibold rounded-full transition-all shadow-sm ${
+                isFormComplete
+                  ? "bg-tecsup-cyan text-white hover:bg-tecsup-cyan/85 cursor-pointer hover:shadow-md"
+                  : "bg-gray-200 text-gray-400 cursor-not-allowed"
+              }`}
             >
-              {isFormComplete ? (
-                <>
-                  <svg
-                    className="w-4 h-4"
-                    fill="none"
-                    stroke="currentColor"
-                    viewBox="0 0 24 24"
-                  >
-                    <path
-                      strokeLinecap="round"
-                      strokeLinejoin="round"
-                      strokeWidth={2}
-                      d="M12 19l9 2-9-18-9 18 9-2zm0 0v-8"
-                    />
-                  </svg>
-                  Enviar
-                </>
-              ) : (
-                "Enviar"
-              )}
+              {enviando ? "Enviando..." : "Enviar a revisión"}
             </button>
           </div>
 
@@ -837,59 +656,37 @@ export default function EditProjectPage() {
               </p>
               <div className="flex flex-wrap gap-2">
                 {!shortDesc.trim() && (
-                  <span className="text-[11px] px-2 py-0.5 bg-amber-50 text-amber-600 rounded-full border border-amber-100">
-                    Descripción corta
-                  </span>
+                  <span className="text-[11px] px-2 py-0.5 bg-amber-50 text-amber-600 rounded-full border border-amber-100">Descripción corta</span>
                 )}
                 {longDesc.trim().length <= 20 && (
-                  <span className="text-[11px] px-2 py-0.5 bg-amber-50 text-amber-600 rounded-full border border-amber-100">
-                    Descripción larga (mín. 20 car.)
-                  </span>
+                  <span className="text-[11px] px-2 py-0.5 bg-amber-50 text-amber-600 rounded-full border border-amber-100">Descripción larga (mín. 20 car.)</span>
                 )}
-                {technologies.length === 0 && (
-                  <span className="text-[11px] px-2 py-0.5 bg-amber-50 text-amber-600 rounded-full border border-amber-100">
-                    Al menos 1 tecnología
-                  </span>
+                {selectedTechIds.length === 0 && (
+                  <span className="text-[11px] px-2 py-0.5 bg-amber-50 text-amber-600 rounded-full border border-amber-100">Al menos 1 tecnología</span>
                 )}
-                {images.length < 5 && (
-                  <span className="text-[11px] px-2 py-0.5 bg-amber-50 text-amber-600 rounded-full border border-amber-100">
-                    5 imágenes ({images.length}/5)
-                  </span>
+                {imagenes.length < 5 && (
+                  <span className="text-[11px] px-2 py-0.5 bg-amber-50 text-amber-600 rounded-full border border-amber-100">5 imágenes ({imagenes.length}/5)</span>
                 )}
-                {!zipFile && (
-                  <span className="text-[11px] px-2 py-0.5 bg-amber-50 text-amber-600 rounded-full border border-amber-100">
-                    Archivo ZIP
-                  </span>
+                {!buildUrl && (
+                  <span className="text-[11px] px-2 py-0.5 bg-amber-50 text-amber-600 rounded-full border border-amber-100">Archivo ZIP</span>
                 )}
                 {!isValidYoutubeUrl(youtubeUrl) && (
-                  <span className="text-[11px] px-2 py-0.5 bg-amber-50 text-amber-600 rounded-full border border-amber-100">
-                    Enlace de YouTube válido
-                  </span>
+                  <span className="text-[11px] px-2 py-0.5 bg-amber-50 text-amber-600 rounded-full border border-amber-100">Enlace de YouTube válido</span>
                 )}
                 {!isValidGithubUrl(githubUrl) && (
-                  <span className="text-[11px] px-2 py-0.5 bg-amber-50 text-amber-600 rounded-full border border-amber-100">
-                    Enlace de GitHub válido
-                  </span>
+                  <span className="text-[11px] px-2 py-0.5 bg-amber-50 text-amber-600 rounded-full border border-amber-100">Enlace de GitHub válido</span>
                 )}
                 {!howBuilt.trim() && (
-                  <span className="text-[11px] px-2 py-0.5 bg-amber-50 text-amber-600 rounded-full border border-amber-100">
-                    ¿Cómo lo construyeron?
-                  </span>
+                  <span className="text-[11px] px-2 py-0.5 bg-amber-50 text-amber-600 rounded-full border border-amber-100">¿Cómo lo construyeron?</span>
                 )}
                 {!challenges.trim() && (
-                  <span className="text-[11px] px-2 py-0.5 bg-amber-50 text-amber-600 rounded-full border border-amber-100">
-                    ¿Qué retos superaron?
-                  </span>
+                  <span className="text-[11px] px-2 py-0.5 bg-amber-50 text-amber-600 rounded-full border border-amber-100">¿Qué retos superaron?</span>
                 )}
                 {!lessons.trim() && (
-                  <span className="text-[11px] px-2 py-0.5 bg-amber-50 text-amber-600 rounded-full border border-amber-100">
-                    Lección aprendida
-                  </span>
+                  <span className="text-[11px] px-2 py-0.5 bg-amber-50 text-amber-600 rounded-full border border-amber-100">Lección aprendida</span>
                 )}
                 {!future.trim() && (
-                  <span className="text-[11px] px-2 py-0.5 bg-amber-50 text-amber-600 rounded-full border border-amber-100">
-                    ¿Qué harían diferente?
-                  </span>
+                  <span className="text-[11px] px-2 py-0.5 bg-amber-50 text-amber-600 rounded-full border border-amber-100">¿Qué harían diferente?</span>
                 )}
               </div>
             </div>
