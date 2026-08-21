@@ -11,6 +11,8 @@ import {
   subirBuildProyecto,
   agregarMiembro,
   quitarMiembro,
+  actualizarImagenProyecto,
+  eliminarImagenProyecto,
   type ProyectoApi,
 } from "@/lib/api-proyectos";
 import {
@@ -48,7 +50,9 @@ export default function EditProjectPage() {
     { usuarioId: string; nombre: string; rol: string }[]
   >([]);
 
-  const [imagenes, setImagenes] = useState<{ id: string; url: string; esPortada: boolean }[]>([]);
+  const [imagenes, setImagenes] = useState<{ id: string; url: string; esPortada: boolean; orden: number }[]>([]);
+  const [dragIndex, setDragIndex] = useState<number | null>(null);
+  const [procesandoImagen, setProcesandoImagen] = useState(false);
   const [subiendoImagen, setSubiendoImagen] = useState(false);
   const [buildUrl, setBuildUrl] = useState<string | null>(null);
   const [subiendoZip, setSubiendoZip] = useState(false);
@@ -155,7 +159,7 @@ export default function EditProjectPage() {
     }
   };
 
-  const handleImageChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const handleImageChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const files = Array.from(e.target.files || []);
     e.target.value = "";
     if (files.length === 0) return;
@@ -169,6 +173,59 @@ export default function EditProjectPage() {
       // silencioso
     } finally {
       setSubiendoImagen(false);
+    }
+  };
+
+  const handleRemoveImage = async (imagenId: string) => {
+    setProcesandoImagen(true);
+    try {
+      const actualizado = await eliminarImagenProyecto(id, imagenId);
+      setImagenes(actualizado.imagenes);
+    } catch {
+      // silencioso
+    } finally {
+      setProcesandoImagen(false);
+    }
+  };
+
+  const handleSetPortada = async (imagenId: string) => {
+    setProcesandoImagen(true);
+    try {
+      const actualizado = await actualizarImagenProyecto(id, imagenId, { esPortada: true });
+      setImagenes(actualizado.imagenes);
+    } catch {
+      // silencioso
+    } finally {
+      setProcesandoImagen(false);
+    }
+  };
+
+  const handleDragStart = (index: number) => setDragIndex(index);
+
+  const handleDragOver = (e: React.DragEvent) => e.preventDefault();
+
+  const handleDrop = async (dropIndex: number) => {
+    if (dragIndex === null || dragIndex === dropIndex) {
+      setDragIndex(null);
+      return;
+    }
+    const reordenadas = [...imagenes];
+    const [movida] = reordenadas.splice(dragIndex, 1);
+    reordenadas.splice(dropIndex, 0, movida);
+    setImagenes(reordenadas);
+    setDragIndex(null);
+
+    setProcesandoImagen(true);
+    try {
+      await Promise.all(
+        reordenadas.map((img, idx) =>
+          actualizarImagenProyecto(id, img.id, { orden: idx }),
+        ),
+      );
+    } catch {
+      // silencioso; el orden visual ya se aplicó
+    } finally {
+      setProcesandoImagen(false);
     }
   };
 
@@ -484,17 +541,53 @@ export default function EditProjectPage() {
                     Imágenes ({imagenes.length}/5)
                   </label>
                   <div className="grid grid-cols-5 gap-2 mb-2">
-                    {imagenes.map((img) => (
-                      <div key={img.id} className="aspect-square rounded-lg overflow-hidden bg-gray-100 relative">
-                        <img src={img.url} alt="" className="w-full h-full object-cover" />
+                    {imagenes.map((img, index) => (
+                      <div
+                        key={img.id}
+                        draggable
+                        onDragStart={() => handleDragStart(index)}
+                        onDragOver={handleDragOver}
+                        onDrop={() => handleDrop(index)}
+                        className={`aspect-square rounded-lg overflow-hidden bg-gray-100 relative cursor-move group border-2 ${
+                          dragIndex === index ? "border-tecsup-cyan opacity-50" : "border-transparent"
+                        }`}
+                      >
+                        <img src={img.url} alt="" className="w-full h-full object-cover pointer-events-none" />
                         {img.esPortada && (
                           <span className="absolute top-1 left-1 text-[9px] bg-tecsup-cyan text-white px-1.5 py-0.5 rounded-full">
                             Portada
                           </span>
                         )}
+                        <div className="absolute inset-0 bg-black/0 group-hover:bg-black/40 transition-colors flex items-center justify-center gap-1 opacity-0 group-hover:opacity-100">
+                          {!img.esPortada && (
+                            <button
+                              type="button"
+                              onClick={() => handleSetPortada(img.id)}
+                              disabled={procesandoImagen}
+                              title="Marcar como portada"
+                              className="w-6 h-6 bg-white/90 rounded-full flex items-center justify-center text-tecsup-cyan hover:bg-white text-xs"
+                            >
+                              ★
+                            </button>
+                          )}
+                          <button
+                            type="button"
+                            onClick={() => handleRemoveImage(img.id)}
+                            disabled={procesandoImagen}
+                            title="Eliminar imagen"
+                            className="w-6 h-6 bg-white/90 rounded-full flex items-center justify-center text-red-500 hover:bg-white text-xs"
+                          >
+                            ✕
+                          </button>
+                        </div>
                       </div>
                     ))}
                   </div>
+                  {imagenes.length > 1 && (
+                    <p className="text-[10px] text-gray-400 mb-2">
+                      Arrastra las imágenes para reordenarlas. Pasa el mouse sobre una para marcarla como portada o eliminarla.
+                    </p>
+                  )}
                   {imagenes.length < 5 && (
                     <label className="flex items-center justify-center gap-2 px-4 py-3 border-2 border-dashed border-gray-200 rounded-xl text-xs text-gray-400 cursor-pointer hover:border-tecsup-cyan/40 transition-colors">
                       {subiendoImagen ? "Subiendo..." : "Subir imagen"}
