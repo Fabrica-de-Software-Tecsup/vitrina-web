@@ -39,3 +39,14 @@ export function slugify(text: string): string {
     .replace(/[^a-z0-9]+/g, "-")
     .replace(/^-+|-+$/g, "");
 }
+
+/** Genera un slug legible + sufijo corto del ID, para evitar colisiones sin tocar el backend */
+export function slugConId(nombre: string, id: string): string {
+  return `${slugify(nombre)}-${id.slice(0, 6)}`;
+}
+
+/** Extrae el sufijo de ID de un slug generado con slugConId */
+export function extraerIdDeSlug(slug: string): string {
+  const partes = slug.split("-");
+  return partes[partes.length - 1];
+}
