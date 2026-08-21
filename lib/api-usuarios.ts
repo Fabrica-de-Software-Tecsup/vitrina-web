@@ -20,6 +20,9 @@ export interface EstudianteConStats {
   bio: string | null;
   ciudad: string | null;
   carrera: string | null;
+  cvUrl: string | null;
+  githubUrl: string | null;
+  linkedinUrl: string | null;
   rol: string;
   projectCount: number;
   technologies: string[];

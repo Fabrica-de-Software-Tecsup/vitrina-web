@@ -2,6 +2,16 @@ const API_URL = process.env.NEXT_PUBLIC_API_URL;
 
 let refreshPromise: Promise<string | null> | null = null;
 
+function tokenExpirado(token: string): boolean {
+  try {
+    const payload = JSON.parse(atob(token.split(".")[1]));
+    const margenSegundos = 10;
+    return Date.now() / 1000 >= payload.exp - margenSegundos;
+  } catch {
+    return true;
+  }
+}
+
 async function refrescarAccessToken(): Promise<string | null> {
   const refreshToken =
     typeof window !== "undefined" ? localStorage.getItem("refreshToken") : null;
@@ -30,13 +40,29 @@ function limpiarSesionYRedirigir() {
   window.location.href = "/auth/login";
 }
 
+async function obtenerTokenValido(): Promise<string | null> {
+  if (typeof window === "undefined") return null;
+  const token = localStorage.getItem("accessToken");
+  if (!token) return null;
+
+  if (tokenExpirado(token)) {
+    if (!refreshPromise) {
+      refreshPromise = refrescarAccessToken().finally(() => {
+        refreshPromise = null;
+      });
+    }
+    return refreshPromise;
+  }
+
+  return token;
+}
+
 export async function apiFetch(
   path: string,
   options: RequestInit = {},
   _retry = false,
 ): Promise<any> {
-  const token =
-    typeof window !== "undefined" ? localStorage.getItem("accessToken") : null;
+  const token = await obtenerTokenValido();
 
   const headers: HeadersInit = {
     ...(options.headers || {}),
