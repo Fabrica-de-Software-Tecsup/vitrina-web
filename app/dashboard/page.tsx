@@ -8,16 +8,8 @@ import Link from "next/link";
 import Header from "@/components/layout/Header";
 import Avatar from "@/components/ui/Avatar";
 import Badge from "@/components/ui/Badge";
-import {
-  slugify,
-  type Project,
-} from "@/lib/mock-data";
-import {
-  applyOverrides,
-  getProjectOverride,
-  setProjectOverride,
-  useOverridesVersion,
-} from "@/lib/project-overrides";
+import { slugify } from "@/lib/utils";
+import type { Project } from "@/lib/mock-data";
 
 /** Formato de número consistente server/client (evita hydration error) */
 function formatNumber(n: number): string {
@@ -108,9 +100,6 @@ export default function DashboardPage() {
       .finally(() => setCargandoProyectos(false));
   }, []);
 
-  /* Se recalcula cada vez que cambia un override en cualquier página */
-  const overridesVersion = useOverridesVersion();
-
   const projectList = useMemo(() => {
     const base = proyectosApi.map((p) => ({
       id: p.id,
@@ -126,10 +115,11 @@ export default function DashboardPage() {
       team: p.team,
       image: p.images[0],
       deadline: p.deadline,
+      observaciones: p.observaciones,
     }));
-    return applyOverrides(base);
+    return base;
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [proyectosApi, overridesVersion]);
+  }, [proyectosApi]);
 
   /* El backend ya filtra los proyectos visibles según el usuario autenticado */
   const visibleProjects = projectList;
@@ -186,9 +176,15 @@ export default function DashboardPage() {
 
   const stats = studentStats ?? teacherStats;
 
-  const handlePublish = (projectId: string) => {
-    setProjectOverride(projectId, { status: "Publicado" });
+  const handlePublish = async (projectId: string) => {
     setOpenMenuId(null);
+    try {
+      await actualizarProyecto(projectId, { estado: "PUBLICADO" });
+      const actualizados = await getProyectos();
+      setProyectosApi(actualizados);
+    } catch {
+      // silencioso
+    }
   };
 
   const openPostponeModal = (projectId: string, currentDeadline: string) => {
@@ -338,13 +334,10 @@ export default function DashboardPage() {
               </div>
             ) : (
               filteredProjects.map((project) => {
-                const override = !isTeacherView
-                  ? getProjectOverride(project.id)
-                  : undefined;
                 const showObservacion =
                   !isTeacherView &&
                   project.status === "En Desarrollo" &&
-                  !!override?.observaciones;
+                  !!project.observaciones;
 
                 return (
                   <div
@@ -384,7 +377,7 @@ export default function DashboardPage() {
                         </div>
                         {showObservacion && (
                           <p className="text-[11px] text-amber-600 mt-1 flex items-start gap-1">
-                            📝 Observación del docente: {override!.observaciones}
+                            📝 Observación del docente: {project.observaciones}
                           </p>
                         )}
                       </div>
