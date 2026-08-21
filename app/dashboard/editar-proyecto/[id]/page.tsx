@@ -18,11 +18,17 @@ import {
 import {
   getTecnologias,
   crearTecnologia,
+  getCursos,
+  getCategorias,
   type Tecnologia,
+  type Curso,
+  type Categoria,
 } from "@/lib/api-catalogos";
 import { buscarUsuarios, type UsuarioBusqueda } from "@/lib/api-usuarios";
 import { obtenerUsuarioDesdeToken } from "@/lib/auth";
 
+const MIN_IMAGENES = 4;
+const MAX_IMAGENES = 10;
 export default function EditProjectPage() {
   const params = useParams();
   const router = useRouter();
@@ -38,6 +44,10 @@ export default function EditProjectPage() {
 
   const [step, setStep] = useState(1);
 
+  const [cursos, setCursos] = useState<Curso[]>([]);
+  const [categorias, setCategorias] = useState<Categoria[]>([]);
+  const [cursoId, setCursoId] = useState<string>("");
+  const [categoriaId, setCategoriaId] = useState<string>("");
   const [catalogoTech, setCatalogoTech] = useState<Tecnologia[]>([]);
   const [selectedTechIds, setSelectedTechIds] = useState<number[]>([]);
   const [nuevaTechNombre, setNuevaTechNombre] = useState("");
@@ -73,10 +83,14 @@ export default function EditProjectPage() {
   const [errorEnvio, setErrorEnvio] = useState<string | null>(null);
 
   useEffect(() => {
-    Promise.all([getProyectoRawPorId(id), getTecnologias()])
-      .then(([p, techs]) => {
+    Promise.all([getProyectoRawPorId(id), getTecnologias(), getCursos(), getCategorias()])
+      .then(([p, techs, cursosData, categoriasData]) => {
         setProyecto(p);
         setCatalogoTech(techs);
+        setCursos(cursosData);
+        setCategorias(categoriasData);
+        setCursoId(p.cursos[0]?.curso.id ? String(p.cursos[0].curso.id) : "");
+        setCategoriaId(p.categorias[0]?.categoria.id ? String(p.categorias[0].categoria.id) : "");
         setSelectedTechIds(p.tecnologias.map((t) => t.tecnologia.id));
         setTeamMembers(
           p.miembros.map((m) => ({
@@ -159,15 +173,18 @@ export default function EditProjectPage() {
     }
   };
 
-    const handleImageChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
+  const handleImageChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const files = Array.from(e.target.files || []);
     e.target.value = "";
     if (files.length === 0) return;
     setSubiendoImagen(true);
+    let cantidadActual = imagenes.length;
     try {
-      for (const file of files.slice(0, 5 - imagenes.length)) {
-        const actualizado = await subirImagenProyecto(id, file, imagenes.length === 0);
-        setImagenes(actualizado.imagenes);
+      for (const file of files) {
+        if (cantidadActual >= MAX_IMAGENES) break;
+        const actualizado = await subirImagenProyecto(id, file, cantidadActual === 0);
+        setImagenes([...actualizado.imagenes].sort((a, b) => a.orden - b.orden));
+        cantidadActual = actualizado.imagenes.length;
       }
     } catch {
       // silencioso
@@ -262,7 +279,7 @@ export default function EditProjectPage() {
       setStep(2);
     } else if (step === 2 && teamMembers.length > 1) {
       setStep(3);
-    } else if (step === 3 && imagenes.length >= 5 && buildUrl) {
+    } else if (step === 3 && imagenes.length >= MIN_IMAGENES && buildUrl) {
       setStep(4);
     }
   }, [step, longDesc, selectedTechIds.length, teamMembers.length, imagenes.length, buildUrl]);
@@ -271,7 +288,7 @@ export default function EditProjectPage() {
     shortDesc.trim().length > 0 &&
     longDesc.trim().length > 20 &&
     selectedTechIds.length > 0 &&
-    imagenes.length === 5 &&
+    imagenes.length >= MIN_IMAGENES &&
     buildUrl !== null &&
     isValidYoutubeUrl(youtubeUrl) &&
     isValidGithubUrl(githubUrl) &&
@@ -289,6 +306,8 @@ export default function EditProjectPage() {
       await actualizarProyecto(id, {
         descripcion,
         tecnologiaIds: selectedTechIds,
+        cursoIds: cursoId ? [Number(cursoId)] : [],
+        categoriaIds: categoriaId ? [Number(categoriaId)] : [],
         youtubeUrl,
         githubUrl,
         comoLoConstruyeron: howBuilt,
@@ -402,6 +421,42 @@ export default function EditProjectPage() {
                 PASO 1: Descripción y Tecnologías
               </h2>
               <div className="space-y-4">
+                <div className="grid grid-cols-2 gap-4">
+                  <div>
+                    <label className="block text-xs font-semibold text-gray-500 uppercase tracking-wider mb-1.5">
+                      Curso asociado
+                    </label>
+                    <select
+                      value={cursoId}
+                      onChange={(e) => setCursoId(e.target.value)}
+                      className="w-full px-4 py-3 text-sm bg-white rounded-xl border border-gray-200 focus:border-tecsup-cyan/40 focus:outline-none transition-all text-gray-600"
+                    >
+                      <option value="">Sin curso asignado</option>
+                      {cursos.map((c) => (
+                        <option key={c.id} value={c.id}>
+                          {c.nombre} ({c.ciclo})
+                        </option>
+                      ))}
+                    </select>
+                  </div>
+                  <div>
+                    <label className="block text-xs font-semibold text-gray-500 uppercase tracking-wider mb-1.5">
+                      Categoría
+                    </label>
+                    <select
+                      value={categoriaId}
+                      onChange={(e) => setCategoriaId(e.target.value)}
+                      className="w-full px-4 py-3 text-sm bg-white rounded-xl border border-gray-200 focus:border-tecsup-cyan/40 focus:outline-none transition-all text-gray-600"
+                    >
+                      <option value="">Sin categoría asignada</option>
+                      {categorias.map((c) => (
+                        <option key={c.id} value={c.id}>
+                          {c.nombre}
+                        </option>
+                      ))}
+                    </select>
+                  </div>
+                </div>
                 <div>
                   <label className="block text-xs font-semibold text-gray-500 uppercase tracking-wider mb-1.5">
                     Descripción corta
@@ -538,7 +593,7 @@ export default function EditProjectPage() {
               <div className="space-y-6">
                 <div>
                   <label className="block text-xs font-semibold text-gray-500 uppercase tracking-wider mb-1.5">
-                    Imágenes ({imagenes.length}/5)
+                    Imágenes ({imagenes.length}/{MAX_IMAGENES}) · mínimo {MIN_IMAGENES}
                   </label>
                   <div className="grid grid-cols-5 gap-2 mb-2">
                     {imagenes.map((img, index) => (
@@ -562,6 +617,8 @@ export default function EditProjectPage() {
                           {!img.esPortada && (
                             <button
                               type="button"
+                              draggable={false}
+                              onMouseDown={(e) => e.stopPropagation()}
                               onClick={() => handleSetPortada(img.id)}
                               disabled={procesandoImagen}
                               title="Marcar como portada"
@@ -572,6 +629,8 @@ export default function EditProjectPage() {
                           )}
                           <button
                             type="button"
+                            draggable={false}
+                            onMouseDown={(e) => e.stopPropagation()}
                             onClick={() => handleRemoveImage(img.id)}
                             disabled={procesandoImagen}
                             title="Eliminar imagen"
@@ -588,7 +647,7 @@ export default function EditProjectPage() {
                       Arrastra las imágenes para reordenarlas. Pasa el mouse sobre una para marcarla como portada o eliminarla.
                     </p>
                   )}
-                  {imagenes.length < 5 && (
+                  {imagenes.length < MAX_IMAGENES && (
                     <label className="flex items-center justify-center gap-2 px-4 py-3 border-2 border-dashed border-gray-200 rounded-xl text-xs text-gray-400 cursor-pointer hover:border-tecsup-cyan/40 transition-colors">
                       {subiendoImagen ? "Subiendo..." : "Subir imagen"}
                       <input
@@ -757,8 +816,8 @@ export default function EditProjectPage() {
                 {selectedTechIds.length === 0 && (
                   <span className="text-[11px] px-2 py-0.5 bg-amber-50 text-amber-600 rounded-full border border-amber-100">Al menos 1 tecnología</span>
                 )}
-                {imagenes.length < 5 && (
-                  <span className="text-[11px] px-2 py-0.5 bg-amber-50 text-amber-600 rounded-full border border-amber-100">5 imágenes ({imagenes.length}/5)</span>
+                {imagenes.length < MIN_IMAGENES && (
+                  <span className="text-[11px] px-2 py-0.5 bg-amber-50 text-amber-600 rounded-full border border-amber-100">Mínimo {MIN_IMAGENES} imágenes ({imagenes.length}/{MIN_IMAGENES})</span>
                 )}
                 {!buildUrl && (
                   <span className="text-[11px] px-2 py-0.5 bg-amber-50 text-amber-600 rounded-full border border-amber-100">Archivo ZIP</span>
