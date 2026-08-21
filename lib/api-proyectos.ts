@@ -17,7 +17,7 @@ interface ProyectoApi {
   categorias: { categoria: { nombre: string } }[];
   tecnologias: { tecnologia: { nombre: string } }[];
   cursos: { curso: { nombre: string; ciclo: string } }[];
-  miembros: { rol: string; usuario: { nombre: string; fotoUrl: string | null } }[];
+  miembros: { usuarioId: string; rol: string; usuario: { nombre: string; fotoUrl: string | null } }[];
   imagenes: { url: string }[];
   createdAt: string;
   slug: string;
@@ -43,7 +43,7 @@ export function proyectoApiToProject(p: ProyectoApi): Project {
     description: p.descripcion ?? "",
     descriptionLong: p.descripcion ?? "",
     technologies: p.tecnologias.map((t) => t.tecnologia.nombre),
-    team: p.miembros.map((m) => ({ name: m.usuario.nombre, role: m.rol })),
+    team: p.miembros.map((m) => ({ id: m.usuarioId, name: m.usuario.nombre, role: m.rol })),
     images: p.imagenes.map((img) => img.url),
     views: p.vistas,
     shares: p.compartidos,
