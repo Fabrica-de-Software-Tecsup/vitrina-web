@@ -314,23 +314,32 @@ export default function ProjectDetailPage() {
 
               <div className="border-t border-gray-100 my-6"></div>
 
-              <button className="w-full flex items-center justify-center gap-2 px-4 py-3 bg-tecsup-dark text-white text-sm font-semibold rounded-xl hover:bg-tecsup-dark/85 transition-colors">
-                <svg
-                  className="w-5 h-5"
-                  fill="none"
-                  stroke="currentColor"
-                  viewBox="0 0 24 24"
+              {project.buildUrl ? (
+                <a
+                  href={project.buildUrl}
+                  download={`${project.slug ?? "proyecto"}.zip`}
+                  className="w-full flex items-center justify-center gap-2 px-4 py-3 bg-tecsup-dark text-white text-sm font-semibold rounded-xl hover:bg-tecsup-dark/85 transition-colors"
                 >
-                  <path
-                    strokeLinecap="round"
-                    strokeLinejoin="round"
-                    strokeWidth={2}
-                    d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"
-                  />
-                </svg>
-                Descargar compilado
-                <span className="text-white/60">(.zip · 24 MB)</span>
-              </button>
+                  <svg
+                    className="w-5 h-5"
+                    fill="none"
+                    stroke="currentColor"
+                    viewBox="0 0 24 24"
+                  >
+                    <path
+                      strokeLinecap="round"
+                      strokeLinejoin="round"
+                      strokeWidth={2}
+                      d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"
+                    />
+                  </svg>
+                  Descargar compilado
+                </a>
+              ) : (
+                <p className="text-center text-xs text-gray-400 py-2">
+                  El equipo aún no subió un compilado descargable.
+                </p>
+              )}
             </div>
           </div>
         </div>

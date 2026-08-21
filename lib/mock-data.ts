@@ -27,6 +27,7 @@ export interface Project {
   youtubeId: string;
   createdAt?: string;
   slug?: string;
+  buildUrl?: string | null;
 }
 
 // ─── Cuando el backend esté listo, reemplaza esto por:
