@@ -1,0 +1,25 @@
+name: CI
+on:
+  pull_request:
+  push:
+    branches: [main]
+jobs:
+  verificar:
+    runs-on: ubuntu-latest
+    env:
+      NEXT_PUBLIC_API_URL: https://api.example.invalid
+      NEXT_PUBLIC_GOOGLE_CLIENT_ID: ci.apps.googleusercontent.com
+      NEXT_PUBLIC_STORAGE_URL: https://archivos.example.invalid
+      NEXT_PUBLIC_SITE_URL: https://vitrina.example.invalid
+      NEXT_TELEMETRY_DISABLED: "1"
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+      - run: npm ci
+      - run: npx tsc --noEmit
+      - run: npx eslint app components lib
+      - run: npm run build
+      - run: npm audit --omit=dev --audit-level=critical
