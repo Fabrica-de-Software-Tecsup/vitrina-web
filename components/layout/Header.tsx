@@ -1,170 +1,114 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState } from "react";
 import Link from "next/link";
+import { usePathname, useRouter } from "next/navigation";
 import Avatar from "@/components/ui/Avatar";
-import { obtenerUsuarioActual, cerrarSesion, type UsuarioActual } from "@/lib/auth";
-import { useRouter } from "next/navigation";
-import { slugConId } from "@/lib/utils";
+import Button from "@/components/ui/Button";
+import { useSesion } from "@/components/sesion/SesionProvider";
+import { cn, slugConId } from "@/lib/utils";
 
-interface HeaderProps {
-  defaultView?: "public" | "session";
-}
+const nav = [
+  { href: "/proyectos", label: "Explorar" },
+  { href: "/estudiantes", label: "Estudiantes" },
+];
 
-export default function Header({ defaultView = "session" }: HeaderProps) {
-  const [usuario, setUsuario] = useState<UsuarioActual | null>(null);
-  const [viewMode, setViewMode] = useState<"public" | "session">(defaultView);
+export default function Header() {
+  const { usuario, cargando, esDocente, esAdmin, cerrarSesion } = useSesion();
+  const pathname = usePathname();
   const router = useRouter();
-  const [showMenu, setShowMenu] = useState(false);
+  const [menu, setMenu] = useState(false);
+  const [movil, setMovil] = useState(false);
+  const transparente = pathname === "/";
 
-  useEffect(() => {
-    obtenerUsuarioActual().then(setUsuario);
-  }, []);
-
-  const isSession = viewMode === "session";
-  const esDocente = usuario?.rol === "DOCENTE" || usuario?.rol === "ADMIN";
-
-  const handleCerrarSesion = () => {
+  const salir = () => {
     cerrarSesion();
-    setShowMenu(false);
+    setMenu(false);
     router.push("/");
-    router.refresh();
   };
 
   return (
-    <header className="sticky top-0 z-50 bg-tecsup-blue text-white shadow-lg relative">
-      <div className="max-w-7xl mx-auto px-6 h-14 flex items-center justify-between">
-        {/* ── Toggle Prototipo ── */}
-        <div className="absolute left-2 top-1/2 -translate-y-1/2 z-10">
-          <div className="flex items-center gap-1 bg-black/20 rounded-md px-1.5 py-1">
-            <button
-              onClick={() => setViewMode("public")}
-              className={`text-[9px] font-bold px-1.5 py-0.5 rounded cursor-pointer transition-colors ${
-                !isSession
-                  ? "bg-white text-tecsup-blue"
-                  : "text-white/50 hover:text-white/80"
-              }`}
-            >
-              Público
-            </button>
-            <button
-              onClick={() => {
-                if (usuario) {
-                  setViewMode("session");
-                } else {
-                  router.push("/auth/login");
-                }
-              }}
-              className={`text-[9px] font-bold px-1.5 py-0.5 rounded cursor-pointer transition-colors ${
-                isSession
-                  ? "bg-white text-tecsup-blue"
-                  : "text-white/50 hover:text-white/80"
-              }`}
-            >
-              Sesión
-            </button>
-          </div>
-        </div>
-
-        {/* Logo Izquierdo */}
-        <Link href="/" className="flex items-center gap-2.5 group">
-          <div className="w-7 h-7 relative">
-            <div className="absolute inset-0 bg-white/30 rounded-md rotate-45 group-hover:rotate-[55deg] transition-transform duration-300" />
-            <div className="absolute inset-1 bg-white/10 rounded-sm rotate-45" />
-          </div>
-          <span className="text-base font-bold tracking-tight text-white">
-            Vitrina
+    <header className={cn("sticky top-0 z-50 border-b backdrop-blur-xl transition-colors", transparente ? "border-white/10 bg-ink-900/60 text-white" : "border-ink-200/70 bg-white/85 text-ink-800")}>
+      <div className="mx-auto flex h-16 max-w-7xl items-center justify-between gap-4 px-4 sm:px-6 lg:px-8">
+        <Link href="/" className="flex items-center gap-2.5" aria-label="Vitrina, inicio">
+          <span className="relative flex h-8 w-8 items-center justify-center">
+            <span className="absolute inset-0 rotate-45 rounded-lg bg-gradient-to-br from-brand-500 to-violet-500" />
+            <span className="relative font-display text-sm font-extrabold text-white">V</span>
           </span>
+          <span className="font-display text-lg font-bold tracking-tight">Vitrina</span>
+          <span className={cn("hidden rounded-full px-2 py-0.5 text-[10px] font-semibold sm:inline", transparente ? "bg-white/15 text-white/90" : "bg-brand-50 text-brand-700")}>Tecsup</span>
         </Link>
 
-        {/* Navegación Central */}
-        <nav className="hidden md:flex items-center gap-1">
-          <Link
-            href="/"
-            className="px-3 py-1.5 text-sm font-medium text-white/80 hover:text-white rounded-md hover:bg-white/10 transition-colors"
-          >
-            Proyectos
-          </Link>
-          <Link
-            href="/estudiantes"
-            className="px-3 py-1.5 text-sm font-medium text-white/80 hover:text-white rounded-md hover:bg-white/10 transition-colors"
-          >
-            Estudiantes
-          </Link>
-
-          {isSession && usuario && (
-            <>
-              <Link
-                href="/dashboard"
-                className="px-3 py-1.5 text-sm font-semibold text-white bg-white/20 rounded-md"
-              >
-                Mis Proyectos
-              </Link>
-              {esDocente && (
-                <Link
-                  href="/dashboard/crear-proyecto"
-                  className="px-3 py-1.5 text-sm font-semibold text-white bg-tecsup-green rounded-md hover:bg-tecsup-green/90 transition-colors"
-                >
-                  + Nuevo Proyecto
-                </Link>
+        <nav className="hidden items-center gap-1 md:flex">
+          {nav.map((n) => (
+            <Link
+              key={n.href}
+              href={n.href}
+              className={cn(
+                "rounded-full px-3.5 py-2 text-sm font-medium transition-colors",
+                pathname.startsWith(n.href)
+                  ? transparente ? "bg-white/15 text-white" : "bg-ink-100 text-ink-900"
+                  : transparente ? "text-white/80 hover:bg-white/10 hover:text-white" : "text-ink-600 hover:bg-ink-100 hover:text-ink-900",
               )}
-            </>
+            >
+              {n.label}
+            </Link>
+          ))}
+          {usuario && (
+            <Link
+              href="/dashboard"
+              className={cn("rounded-full px-3.5 py-2 text-sm font-medium transition-colors", pathname.startsWith("/dashboard") ? (transparente ? "bg-white/15 text-white" : "bg-ink-100 text-ink-900") : transparente ? "text-white/80 hover:bg-white/10" : "text-ink-600 hover:bg-ink-100")}
+            >
+              {esDocente ? "Panel docente" : "Mis proyectos"}
+            </Link>
+          )}
+          {esAdmin && (
+            <Link href="/admin" className={cn("rounded-full px-3.5 py-2 text-sm font-medium", transparente ? "text-white/80 hover:bg-white/10" : "text-ink-600 hover:bg-ink-100")}>
+              Admin
+            </Link>
           )}
         </nav>
 
-        {/* Lado Derecho */}
-        <div>
-          {isSession && usuario ? (
+        <div className="flex items-center gap-2">
+          {usuario && !esDocente && (
+            <Button href="/dashboard/proyectos/nuevo" size="sm" className="hidden sm:inline-flex">
+              + Publicar proyecto
+            </Button>
+          )}
+          {cargando ? (
+            <div className="h-9 w-9 animate-pulse rounded-full bg-ink-200/60" />
+          ) : usuario ? (
             <div className="relative">
-              <button
-                onClick={() => setShowMenu((prev) => !prev)}
-                className="flex items-center gap-3 cursor-pointer group"
-              >
-                <div className="text-right hidden sm:block">
-                  <p className="text-sm font-semibold text-white leading-tight">
-                    {usuario.nombre.split(" ")[0]}
-                  </p>
-                  <p className="text-[10px] text-white/60 uppercase">
-                    {usuario.rol}
-                  </p>
-                </div>
-                <Avatar name={usuario.nombre} size="md" />
+              <button type="button" onClick={() => setMenu((m) => !m)} className="flex items-center gap-2 rounded-full p-0.5 pr-2 hover:bg-black/5" aria-haspopup="menu" aria-expanded={menu}>
+                <Avatar name={usuario.nombre} src={usuario.fotoUrl} size="md" />
+                <span className="hidden text-left sm:block">
+                  <span className="block max-w-[120px] truncate text-sm font-semibold leading-tight">{usuario.nombre.split(" ")[0]}</span>
+                  <span className={cn("block text-[10px] uppercase", transparente ? "text-white/60" : "text-ink-400")}>{usuario.rol.toLowerCase()}</span>
+                </span>
               </button>
-
-              {showMenu && (
+              {menu && (
                 <>
-                  <div
-                    className="fixed inset-0 z-40"
-                    onClick={() => setShowMenu(false)}
-                  />
-                  <div className="absolute right-0 top-full mt-2 w-48 bg-white rounded-xl shadow-xl border border-gray-100 py-2 z-50">
-                    <div className="px-4 py-2 border-b border-gray-100">
-                      <p className="text-xs font-semibold text-tecsup-dark truncate">
-                        {usuario.nombre}
-                      </p>
-                      <p className="text-[10px] text-gray-400 truncate">
-                        {usuario.correo}
-                      </p>
+                  <div className="fixed inset-0 z-40" onClick={() => setMenu(false)} />
+                  <div className="absolute right-0 top-full z-50 mt-2 w-56 overflow-hidden rounded-2xl border border-ink-200 bg-white py-2 text-ink-800 shadow-lift" role="menu">
+                    <div className="border-b border-ink-100 px-4 py-2">
+                      <p className="truncate text-sm font-semibold">{usuario.nombre}</p>
+                      <p className="truncate text-xs text-ink-400">{usuario.correo}</p>
                     </div>
-                    <Link
-                      href={`/perfiles/${slugConId(usuario.nombre, usuario.id)}`}
-                      onClick={() => setShowMenu(false)}
-                      className="block px-4 py-2 text-sm text-gray-600 hover:bg-gray-50 transition-colors"
-                    >
-                      Mi perfil
+                    <Link href={`/perfiles/${slugConId(usuario.nombre, usuario.id)}`} onClick={() => setMenu(false)} className="block px-4 py-2 text-sm hover:bg-ink-50">
+                      Mi perfil público
                     </Link>
-                    <Link
-                      href="/dashboard"
-                      onClick={() => setShowMenu(false)}
-                      className="block px-4 py-2 text-sm text-gray-600 hover:bg-gray-50 transition-colors"
-                    >
-                      Mis Proyectos
+                    <Link href="/dashboard" onClick={() => setMenu(false)} className="block px-4 py-2 text-sm hover:bg-ink-50">
+                      {esDocente ? "Panel docente" : "Mis proyectos"}
                     </Link>
-                    <div className="border-t border-gray-100 my-1" />
-                    <button
-                      onClick={handleCerrarSesion}
-                      className="w-full text-left px-4 py-2 text-sm text-red-500 hover:bg-red-50 transition-colors"
-                    >
+                    <Link href="/onboarding" onClick={() => setMenu(false)} className="block px-4 py-2 text-sm hover:bg-ink-50">
+                      Carrera y datos académicos
+                    </Link>
+                    {esAdmin && (
+                      <Link href="/admin" onClick={() => setMenu(false)} className="block px-4 py-2 text-sm hover:bg-ink-50">
+                        Administración
+                      </Link>
+                    )}
+                    <button type="button" onClick={salir} className="block w-full px-4 py-2 text-left text-sm text-rose-600 hover:bg-rose-50">
                       Cerrar sesión
                     </button>
                   </div>
@@ -172,15 +116,32 @@ export default function Header({ defaultView = "session" }: HeaderProps) {
               )}
             </div>
           ) : (
-            <Link
-              href="/auth/login"
-              className="px-4 py-1.5 bg-white text-tecsup-blue text-sm font-bold rounded-full hover:bg-gray-100 transition-colors"
-            >
+            <Button href="/auth/login" size="sm" variant={transparente ? "white" : "primary"}>
               Ingresar
-            </Link>
+            </Button>
           )}
+          <button type="button" className="rounded-full p-2 hover:bg-black/5 md:hidden" aria-label="Abrir menú" onClick={() => setMovil((m) => !m)}>
+            <svg className="h-5 w-5" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24"><path strokeLinecap="round" d="M4 7h16M4 12h16M4 17h16" /></svg>
+          </button>
         </div>
       </div>
+
+      {movil && (
+        <div className={cn("border-t md:hidden", transparente ? "border-white/10 bg-ink-900/90" : "border-ink-200 bg-white")}>
+          <nav className="mx-auto flex max-w-7xl flex-col px-4 py-3 sm:px-6">
+            {[...nav, ...(usuario ? [{ href: "/dashboard", label: esDocente ? "Panel docente" : "Mis proyectos" }] : []), ...(esAdmin ? [{ href: "/admin", label: "Admin" }] : [])].map((n) => (
+              <Link key={n.href} href={n.href} onClick={() => setMovil(false)} className="rounded-xl px-3 py-2.5 text-sm font-medium hover:bg-black/5">
+                {n.label}
+              </Link>
+            ))}
+            {usuario && !esDocente && (
+              <Link href="/dashboard/proyectos/nuevo" onClick={() => setMovil(false)} className="mt-1 rounded-xl bg-brand-600 px-3 py-2.5 text-center text-sm font-semibold text-white">
+                + Publicar proyecto
+              </Link>
+            )}
+          </nav>
+        </div>
+      )}
     </header>
   );
 }

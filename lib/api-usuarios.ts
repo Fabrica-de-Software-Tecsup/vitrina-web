@@ -1,39 +1,37 @@
 import { apiFetch } from "./api-client";
+import type { Perfil, PerfilDirectorio, PerfilPropio, UsuarioResumen } from "./tipos";
 
-export interface UsuarioBusqueda {
-  id: string;
-  nombre: string;
+export interface UsuarioBusqueda extends UsuarioResumen {
   correo: string;
-  fotoUrl: string | null;
+  carrera: { nombre: string } | null;
 }
 
-export async function buscarUsuarios(q: string): Promise<UsuarioBusqueda[]> {
-  if (q.trim().length < 2) return [];
-  return apiFetch(`/usuarios/buscar?q=${encodeURIComponent(q)}`);
+export interface DocenteOpcion extends UsuarioResumen {
+  carrera: { id: number; nombre: string } | null;
+  sede: string | null;
 }
 
-export interface EstudianteConStats {
-  id: string;
-  nombre: string;
-  correo: string;
-  fotoUrl: string | null;
-  bio: string | null;
-  ciudad: string | null;
-  carrera: string | null;
-  cvUrl: string | null;
-  githubUrl: string | null;
-  linkedinUrl: string | null;
-  rol: string;
-  projectCount: number;
-  technologies: string[];
+export const getMiPerfil = () => apiFetch<PerfilPropio>("/usuarios/me");
+export const getPerfil = (id: string) => apiFetch<Perfil>(`/usuarios/${id}`);
+export const getDocentes = () => apiFetch<DocenteOpcion[]>("/usuarios/docentes");
+
+export function buscarUsuarios(q: string): Promise<UsuarioBusqueda[]> {
+  if (q.trim().length < 2) return Promise.resolve([]);
+  return apiFetch<UsuarioBusqueda[]>(`/usuarios/buscar?q=${encodeURIComponent(q.trim())}`);
 }
 
-export async function getEstudiantes(): Promise<EstudianteConStats[]> {
-  return apiFetch("/usuarios?rol=ALUMNO");
+export interface FiltrosDirectorio {
+  rol?: string;
+  carreraId?: number;
+  sede?: string;
+  q?: string;
 }
 
-export async function getUsuarios(): Promise<EstudianteConStats[]> {
-  return apiFetch("/usuarios");
+export function getDirectorio(filtros: FiltrosDirectorio = {}): Promise<PerfilDirectorio[]> {
+  const qs = new URLSearchParams();
+  for (const [k, v] of Object.entries(filtros)) if (v !== undefined && v !== "") qs.set(k, String(v));
+  const s = qs.toString();
+  return apiFetch<PerfilDirectorio[]>(`/usuarios${s ? `?${s}` : ""}`);
 }
 
 export interface EditarPerfilInput {
@@ -41,15 +39,23 @@ export interface EditarPerfilInput {
   bio?: string;
   ciudad?: string;
   experiencia?: string;
-  carrera?: string;
+  carreraId?: number | null;
+  ciclo?: number | null;
+  sede?: string | null;
   githubUrl?: string;
   linkedinUrl?: string;
+  portfolioUrl?: string;
 }
 
-export async function editarPerfil(id: string, cambios: EditarPerfilInput): Promise<EstudianteConStats> {
-  return apiFetch(`/usuarios/${id}`, {
+export const editarPerfil = (id: string, cambios: EditarPerfilInput) =>
+  apiFetch<PerfilPropio>(`/usuarios/${id}`, {
     method: "PATCH",
     headers: { "Content-Type": "application/json" },
     body: JSON.stringify(cambios),
   });
+
+export function subirCV(id: string, archivo: File) {
+  const fd = new FormData();
+  fd.append("archivo", archivo);
+  return apiFetch<PerfilPropio>(`/usuarios/${id}/cv`, { method: "POST", body: fd });
 }

@@ -1,228 +1,71 @@
 "use client";
 
-import { GoogleLogin, CredentialResponse } from "@react-oauth/google";
+import { GoogleLogin, type CredentialResponse } from "@react-oauth/google";
 import { useRouter } from "next/navigation";
 import { useState } from "react";
-import Image from "next/image";
+import Link from "next/link";
+import { guardarTokens } from "@/lib/auth";
+import { useSesion } from "@/components/sesion/SesionProvider";
+
+interface RespuestaLogin {
+  accessToken: string;
+  refreshToken: string;
+  usuario: { rol: string; perfilCompleto: boolean };
+}
 
 export default function LoginPage() {
   const router = useRouter();
+  const { recargar } = useSesion();
   const [error, setError] = useState<string | null>(null);
   const [cargando, setCargando] = useState(false);
 
-  async function manejarLoginExitoso(credentialResponse: CredentialResponse) {
+  async function entrar(cred: CredentialResponse) {
     setError(null);
     setCargando(true);
-
     try {
       const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/auth/google`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ idToken: credentialResponse.credential }),
+        body: JSON.stringify({ idToken: cred.credential }),
       });
-
-      if (!res.ok) {
-        const data = await res.json();
-        throw new Error(data.message || "No se pudo iniciar sesión");
-      }
-
-      const data = await res.json();
-      localStorage.setItem("accessToken", data.accessToken);
-      localStorage.setItem("refreshToken", data.refreshToken);
-
-      router.push("/dashboard");
-    } catch (err: any) {
-      setError(err.message || "Ocurrió un error al iniciar sesión");
+      const data = (await res.json()) as RespuestaLogin & { message?: string | string[] };
+      if (!res.ok) throw new Error(Array.isArray(data.message) ? data.message.join(". ") : data.message || "No se pudo iniciar sesión");
+      guardarTokens(data.accessToken, data.refreshToken);
+      await recargar();
+      router.push(!data.usuario.perfilCompleto && data.usuario.rol === "ALUMNO" ? "/onboarding" : "/dashboard");
+    } catch (err) {
+      setError(err instanceof Error ? err.message : "Ocurrió un error al iniciar sesión");
     } finally {
       setCargando(false);
     }
   }
 
   return (
-    <div className="h-full flex flex-col bg-white">
-      <div className="flex-1 flex overflow-hidden">
-        {/* ═══════════════ PANEL IZQUIERDO ═══════════════ */}
-        <div className="hidden lg:flex lg:w-1/2 flex-col relative bg-[#17425B]">
-          {/* FRANJA CELESTE CON LOGOS */}
-          <div className="bg-tecsup-cyan px-4 py-0.05 flex items-center shrink-0">
-            <div className="w-35 h-20 relative">
-              <Image
-                src="/images/logo-tecsup.svg"
-                alt="TECSUP"
-                fill
-                className="object-contain"
-                sizes="160px"
-              />
-            </div>
-
-            <div className="ml-auto flex items-center gap-3">
-              <div className="w-15 h-15 rounded-xl bg-white/25 flex items-center justify-center p-2">
-                <Image
-                  src="/images/logo-vitrina.png"
-                  alt="Vitrina"
-                  width={80}
-                  height={80}
-                  className="object-contain"
-                />
-              </div>
-              <span className="text-white font-bold text-2xl tracking-tight">
-                Vitrina
-              </span>
-            </div>
-          </div>
-
-          {/* Texto principal */}
-          <div className="px-12 pt-3 pb-2 relative z-10">
-            <div className="absolute top-8 left-8 w-64 h-64 border border-white/5 rounded-2xl rotate-12 pointer-events-none" />
-            <div className="max-w-md">
-              <h1 className="text-3xl lg:text-2xl font-extrabold text-white leading-tight">
-                MUESTRA TU TALENTO
-                <br />
-                <span className="text-white/40">/</span> INSPIRA AL MUNDO
-              </h1>
-              <p className="mt-4 text-white/50 text-sm leading-relaxed">
-                Documenta tus proyectos, construye tu portafolio y demuestra lo
-                que sabes hacer. Tu futuro profesional empieza aquí.
-              </p>
-            </div>
-          </div>
-
-          {/* Imagen — ocupa el espacio restante */}
-          <div className="flex-1 relative min-h-0">
-            <Image
-              src="/images/login-hero.png"
-              alt="Estudiante TECSUP"
-              fill
-              className="object-cover"
-              sizes="50vw"
-              priority
-            />
-          </div>
+    <div className="grid min-h-[calc(100vh-4rem)] lg:grid-cols-2">
+      <div className="bg-mesh relative hidden overflow-hidden p-12 text-white lg:flex lg:flex-col lg:justify-between">
+        <div className="bg-grid absolute inset-0 opacity-50" />
+        <div className="relative">
+          <p className="text-xs font-bold uppercase tracking-[0.2em] text-white/70">Vitrina · Tecsup</p>
+          <h1 className="mt-4 max-w-md font-display text-4xl font-extrabold leading-tight">Tu proyecto merece una página, no una carpeta olvidada.</h1>
         </div>
-
-        {/* ═══════════════ PANEL DERECHO ═══════════════ */}
-        <div className="w-full lg:w-1/2 bg-tecsup-gray flex items-center justify-center p-6 sm:p-12 overflow-y-auto">
-          <div className="w-full max-w-md">
-            {/* Logo móvil */}
-            <div className="lg:hidden flex items-center justify-center gap-3 mb-10">
-              <div className="w-8 h-8 relative">
-                <Image
-                  src="/images/logo-vitrina.png"
-                  alt="Vitrina"
-                  fill
-                  className="object-contain"
-                  sizes="32px"
-                />
-              </div>
-            </div>
-
-            {/* Card de login */}
-            <div className="bg-white rounded-2xl shadow-sm border border-gray-100 p-8 sm:p-10">
-              <h2 className="text-2xl font-bold text-tecsup-dark text-center">
-                Inicia sesión
-              </h2>
-              <p className="mt-2 text-sm text-gray-400 text-center">
-                Accede a tu portafolio de proyectos
-              </p>
-
-              {/* Boton de Google */}
-              <div className="mt-8 flex justify-center">
-                <GoogleLogin
-                  onSuccess={manejarLoginExitoso}
-                  onError={() => setError("No se pudo conectar con Google")}
-                />
-              </div>
-
-              {cargando && (
-                <p className="text-center text-gray-500 text-sm mt-3">Verificando...</p>
-              )}
-              {error && (
-                <p className="text-center text-red-500 text-sm mt-3">{error}</p>
-              )}
-
-              {/* Separador */}
-              <div className="flex items-center gap-3 my-6">
-                <div className="flex-1 h-px bg-gray-200" />
-                <span className="text-xs text-gray-400 uppercase tracking-wider">o continúa con</span>
-                <div className="flex-1 h-px bg-gray-200" />
-              </div>
-
-              <form
-                className="space-y-5"
-                onSubmit={(e) => e.preventDefault()}
-              >
-                <div>
-                  <label
-                    htmlFor="email"
-                    className="block text-xs font-semibold text-gray-500 uppercase tracking-wider mb-1.5"
-                  >
-                    Correo institucional
-                  </label>
-                  <input
-                    id="email"
-                    type="email"
-                    placeholder="nombre@tecsup.edu.pe"
-                    className="w-full px-4 py-3 text-sm bg-tecsup-gray rounded-xl border border-transparent focus:border-tecsup-cyan/40 focus:bg-white focus:outline-none transition-all duration-200 placeholder:text-gray-400"
-                  />
-                </div>
-
-                <div>
-                  <label
-                    htmlFor="password"
-                    className="block text-xs font-semibold text-gray-500 uppercase tracking-wider mb-1.5"
-                  >
-                    Contraseña
-                  </label>
-                  <div className="relative">
-                    <input
-                      id="password"
-                      type="password"
-                      placeholder="••••••••"
-                      className="w-full px-4 py-3 text-sm bg-tecsup-gray rounded-xl border border-transparent focus:border-tecsup-cyan/40 focus:bg-white focus:outline-none transition-all duration-200 placeholder:text-gray-400 pr-12"
-                    />
-                    <button
-                      type="button"
-                      className="absolute right-4 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600"
-                    >
-                      <svg
-                        className="w-5 h-5"
-                        fill="none"
-                        stroke="currentColor"
-                        viewBox="0 0 24 24"
-                      >
-                        <path
-                          strokeLinecap="round"
-                          strokeLinejoin="round"
-                          strokeWidth={2}
-                          d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"
-                        />
-                        <path
-                          strokeLinecap="round"
-                          strokeLinejoin="round"
-                          strokeWidth={2}
-                          d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z"
-                        />
-                      </svg>
-                    </button>
-                  </div>
-                </div>
-
-                <button
-                  type="submit"
-                  className="w-full py-3 bg-tecsup-dark text-white text-sm font-semibold rounded-full hover:bg-tecsup-dark/85 transition-colors duration-200 shadow-sm"
-                >
-                  Iniciar sesión
-                </button>
-              </form>
-
-              <p className="mt-6 text-center text-sm text-gray-400">
-                ¿No tienes cuenta?{" "}
-                <span className="text-gray-500 font-medium cursor-default">
-                  Contacta a tu docente
-                </span>
-              </p>
-            </div>
+        <ul className="relative space-y-3 text-sm text-white/85">
+          {["Entra con tu correo institucional. No hay contraseñas que recordar.", "Publica en 10 minutos: frase, descripción, fotos y equipo.", "Tu docente lo revisa y te avisa por correo.", "Comparte la URL en LinkedIn y en tu CV."].map((t, i) => (
+            <li key={t} className="flex gap-3 rounded-2xl border border-white/10 bg-white/5 p-3"><span className="flex h-6 w-6 shrink-0 items-center justify-center rounded-full bg-white/15 text-xs font-bold">{i + 1}</span>{t}</li>
+          ))}
+        </ul>
+      </div>
+      <div className="flex items-center justify-center p-6 sm:p-12">
+        <div className="card w-full max-w-md p-8 sm:p-10">
+          <h2 className="font-display text-2xl font-bold text-ink-900">Inicia sesión</h2>
+          <p className="mt-1 text-sm text-ink-500">Usa tu cuenta <span className="font-semibold text-ink-800">@tecsup.edu.pe</span>. Si es tu primera vez, se crea tu perfil automáticamente.</p>
+          <div className="mt-8 flex justify-center">
+            <GoogleLogin onSuccess={entrar} onError={() => setError("No se pudo conectar con Google")} shape="pill" size="large" text="continue_with" width="320" />
           </div>
+          {cargando && <p className="mt-4 text-center text-sm text-ink-500">Verificando…</p>}
+          {error && <p className="mt-4 rounded-xl bg-rose-50 px-4 py-3 text-center text-sm text-rose-700">{error}</p>}
+          <p className="mt-8 text-center text-xs text-ink-400">
+            ¿Eres docente? Entra con tu correo: si tu administrador ya te dio de alta, verás el panel docente. <Link href="/proyectos" className="font-semibold text-brand-700">Explorar sin cuenta</Link>
+          </p>
         </div>
       </div>
     </div>

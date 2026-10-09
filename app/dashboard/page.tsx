@@ -1,607 +1,211 @@
 "use client";
 
-import { useState, useMemo, useEffect } from "react";
-import { getProyectos, actualizarProyecto } from "@/lib/api-proyectos";
-import { obtenerUsuarioActual, type UsuarioActual } from "@/lib/auth";
-import Image from "next/image";
+import { useEffect, useMemo, useState } from "react";
 import Link from "next/link";
-import Header from "@/components/layout/Header";
 import Avatar from "@/components/ui/Avatar";
-import Badge from "@/components/ui/Badge";
-import { slugify } from "@/lib/utils";
-import type { Project } from "@/lib/mock-data";
+import Button from "@/components/ui/Button";
+import { Chip, EstadoBadge } from "@/components/ui/Badge";
+import { Container, Stat } from "@/components/ui/Section";
+import { CardSkeleton, EmptyState, Tabs } from "@/components/ui/Feedback";
+import ProjectCard from "@/components/proyectos/ProjectCard";
+import { useSesion } from "@/components/sesion/SesionProvider";
+import { listarProyectos } from "@/lib/api-proyectos";
+import { fechaCorta, formatoNumero } from "@/lib/utils";
+import { ESTADO_LABEL, type EstadoProyecto, type Proyecto, portadaDe } from "@/lib/tipos";
 
-/** Formato de número consistente server/client (evita hydration error) */
-function formatNumber(n: number): string {
-  return n.toString().replace(/\B(?=(\d{3})+(?!\d))/g, ",");
-}
+type TabAlumno = "todos" | EstadoProyecto;
+type TabDocente = "revision" | "asesorados" | "publicados";
 
-function normalizeStatus(s: string): Project["status"] {
-  const map: Record<string, Project["status"]> = {
-    PUBLICADO: "Publicado",
-    EN_DESARROLLO: "En Desarrollo",
-    POR_REVISAR: "Por Revisar",
-    OCULTO: "Oculto",
-  };
-  return map[s] ?? (s as Project["status"]);
-}
-
-
-const SHORT_COURSE: Record<string, string> = {
-  "Desarrollo de Aplicaciones Web": "Desarrollo Web",
-  "Internet de las Cosas": "Internet de las Cosas",
-  "Inteligencia Artificial": "Inteligencia Artificial",
-  "Redes y Comunicaciones": "Redes y Comunicaciones",
-};
-
-
-const studentTabs = [
-  { name: "Todos", status: "all" },
-  { name: "Publicados", status: "Publicado" },
-  { name: "Borradores", status: "En Desarrollo" },
-  { name: "Ocultos", status: "Oculto" },
-];
-
-const teacherTabs = [
-  { name: "Todos", status: "all" },
-  { name: "Publicados", status: "Publicado" },
-  { name: "Por Revisar", status: "Por Revisar" },
-  { name: "En Desarrollo", status: "En Desarrollo" },
-];
-
-const teacherStats = [
-  { value: "12", label: "proyectos documentados", icon: "📁" },
-  { value: "2,928", label: "vistas acumuladas", icon: "👁️" },
-  { value: "38", label: "veces compartido", icon: "🔗" },
-  { value: "6", label: "tecnologías dominadas", icon: "⚡" },
-];
-
-/** Formatea "YYYY-MM-DD" sin usar Intl/locale del navegador,
- * para no reintroducir un hydration mismatch. */
-const MONTHS_ES = [
-  "ene", "feb", "mar", "abr", "may", "jun",
-  "jul", "ago", "sep", "oct", "nov", "dic",
-];
-function formatDeadline(dateStr: string): string {
-  if (!dateStr) return "Sin fecha asignada";
-  const [y, m, d] = dateStr.split("-").map(Number);
-  if (!y || !m || !d) return "Sin fecha asignada";
-  return `${String(d).padStart(2, "0")} ${MONTHS_ES[m - 1]}. ${y}`;
-}
-function getProjectHref(project: { id: string; slug?: string; status: string }): string {
-  if (project.status === "Publicado" && project.slug) {
-    return `/proyectos/${project.slug}`;
-  }
-  if (project.status === "Por Revisar") {
-    return `/dashboard/revision/${project.id}`;
-  }
-  return `/dashboard/editar-proyecto/${project.id}`;
-}
 export default function DashboardPage() {
-  const [isTeacherView, setIsTeacherView] = useState(false);
-  const [activeTab, setActiveTab] = useState("all");
-  const [openMenuId, setOpenMenuId] = useState<string | null>(null);
-  const [postponeProjectId, setPostponeProjectId] = useState<string | null>(
-    null,
-  );
-  const [newDeadline, setNewDeadline] = useState("");
-  const [usuarioActual, setUsuarioActual] = useState<UsuarioActual | null>(null);
-  useEffect(() => {
-    obtenerUsuarioActual().then(setUsuarioActual);
-  }, []);
-  const [proyectosApi, setProyectosApi] = useState<Project[]>([]);
-  const [cargandoProyectos, setCargandoProyectos] = useState(true);
-  const [errorProyectos, setErrorProyectos] = useState<string | null>(null);
+  const { usuario, esDocente } = useSesion();
+  if (!usuario) return null;
+  return esDocente ? <PanelDocente /> : <PanelAlumno />;
+}
+
+/* ─────────────── ALUMNO ─────────────── */
+function PanelAlumno() {
+  const { usuario } = useSesion();
+  const [proyectos, setProyectos] = useState<Proyecto[] | null>(null);
+  const [tab, setTab] = useState<TabAlumno>("todos");
 
   useEffect(() => {
-    getProyectos()
-      .then(setProyectosApi)
-      .catch((err) => setErrorProyectos(err.message || "Error al cargar proyectos"))
-      .finally(() => setCargandoProyectos(false));
+    listarProyectos({ ambito: "mios", limit: 100 }).then((r) => setProyectos(r.items)).catch(() => setProyectos([]));
   }, []);
 
-  const projectList = useMemo(() => {
-    const base = proyectosApi.map((p) => ({
-      id: p.id,
-      slug: p.slug,
-      name: p.name,
-      fullName: p.name,
-      course: SHORT_COURSE[p.course] ?? p.course,
-      status: normalizeStatus(p.status),
-      views: p.views,
-      shares: p.shares,
-      technologies: p.technologies,
-      cycle: p.cycle,
-      team: p.team,
-      image: p.images[0],
-      deadline: p.deadline,
-      observaciones: p.observaciones,
-    }));
-    return base;
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [proyectosApi]);
-
-  /* El backend ya filtra los proyectos visibles según el usuario autenticado */
-  const visibleProjects = projectList;
-
-  const currentTabs = isTeacherView ? teacherTabs : studentTabs;
-  const filteredProjects =
-    activeTab === "all"
-      ? visibleProjects
-      : visibleProjects.filter((p) => p.status === activeTab);
-
-  const counts = {
-    all: visibleProjects.length,
-    Publicado: visibleProjects.filter((p) => p.status === "Publicado").length,
-    "En Desarrollo": visibleProjects.filter(
-      (p) => p.status === "En Desarrollo",
-    ).length,
-    Oculto: visibleProjects.filter((p) => p.status === "Oculto").length,
-    "Por Revisar": visibleProjects.filter((p) => p.status === "Por Revisar")
-      .length,
-  };
-
-  /* Stats dinámicos para alumno */
-  const studentStats = useMemo(() => {
-    if (isTeacherView) return null;
-    const totalViews = visibleProjects.reduce((s, p) => s + p.views, 0);
-    const totalShares = visibleProjects.reduce((s, p) => s + p.shares, 0);
-    const techSet = new Set<string>();
-    visibleProjects.forEach((p) =>
-      p.technologies.forEach((t) => techSet.add(t)),
-    );
-    return [
-      {
-        value: String(visibleProjects.length),
-        label: "proyectos documentados",
-        icon: "📁",
-      },
-      {
-        value: formatNumber(totalViews),
-        label: "vistas acumuladas",
-        icon: "👁️",
-      },
-      {
-        value: formatNumber(totalShares),
-        label: "veces compartido",
-        icon: "🔗",
-      },
-      {
-        value: String(techSet.size),
-        label: "tecnologías dominadas",
-        icon: "⚡",
-      },
-    ];
-  }, [isTeacherView, visibleProjects]);
-
-  const stats = studentStats ?? teacherStats;
-
-  const handlePublish = async (projectId: string) => {
-    setOpenMenuId(null);
-    try {
-      await actualizarProyecto(projectId, { estado: "PUBLICADO" });
-      const actualizados = await getProyectos();
-      setProyectosApi(actualizados);
-    } catch {
-      // silencioso
-    }
-  };
-
-  const openPostponeModal = (projectId: string, currentDeadline: string) => {
-    setOpenMenuId(null);
-    setPostponeProjectId(projectId);
-    setNewDeadline(currentDeadline);
-  };
-
-  const closePostponeModal = () => {
-    setPostponeProjectId(null);
-    setNewDeadline("");
-  };
-
-  const [aplazando, setAplazando] = useState(false);
-
-  const confirmPostpone = async () => {
-    if (!postponeProjectId || !newDeadline) {
-      closePostponeModal();
-      return;
-    }
-    setAplazando(true);
-    try {
-      await actualizarProyecto(postponeProjectId, { fechaEntrega: newDeadline });
-      const actualizados = await getProyectos();
-      setProyectosApi(actualizados);
-    } catch {
-      // silencioso; el modal se cierra igual y el usuario puede reintentar
-    } finally {
-      setAplazando(false);
-      closePostponeModal();
-    }
-  };
+  const conteo = useMemo(() => {
+    const c: Record<string, number> = { todos: proyectos?.length ?? 0 };
+    for (const p of proyectos ?? []) c[p.estado] = (c[p.estado] ?? 0) + 1;
+    return c;
+  }, [proyectos]);
+  const visibles = (proyectos ?? []).filter((p) => tab === "todos" || p.estado === tab);
+  const vistas = (proyectos ?? []).reduce((s, p) => s + p.vistas, 0);
+  const conObservaciones = (proyectos ?? []).filter((p) => p.estado === "EN_DESARROLLO" && p.observaciones);
 
   return (
-    <div className="bg-tecsup-gray min-h-full flex flex-col">
-      <Header defaultView="session" />
+    <Container className="py-10">
+      <div className="flex flex-col gap-4 sm:flex-row sm:items-end sm:justify-between">
+        <div>
+          <p className="text-xs font-bold uppercase tracking-[0.18em] text-brand-600">Mi espacio</p>
+          <h1 className="mt-1 font-display text-3xl font-bold text-ink-900">Hola, {usuario!.nombre.split(" ")[0]} 👋</h1>
+          <p className="mt-1 text-sm text-ink-500">{usuario!.carrera?.nombre}{usuario!.ciclo ? ` · Ciclo ${usuario!.ciclo}` : ""}</p>
+        </div>
+        <Button href="/dashboard/proyectos/nuevo" size="lg">+ Nuevo proyecto</Button>
+      </div>
 
-      <div className="flex-1">
-        <div className="max-w-7xl mx-auto px-6 py-8">
-          {/* Toggle Prototipo */}
-          <div className="mb-6 p-3 bg-white rounded-lg border-2 border-dashed border-gray-300 flex items-center justify-between">
-            <span className="text-xs font-bold text-gray-500 uppercase tracking-wider">
-              Modo Prototipo
-            </span>
-            <div className="flex gap-2">
-              <button
-                onClick={() => setIsTeacherView(false)}
-                className={`px-3 py-1.5 text-xs font-bold rounded-md transition-colors cursor-pointer ${!isTeacherView ? "bg-tecsup-cyan text-white" : "bg-gray-100 text-gray-500 hover:bg-gray-200"}`}
-              >
-                Alumno
-              </button>
-              <button
-                onClick={() => setIsTeacherView(true)}
-                className={`px-3 py-1.5 text-xs font-bold rounded-md transition-colors cursor-pointer ${isTeacherView ? "bg-tecsup-purple text-white" : "bg-gray-100 text-gray-500 hover:bg-gray-200"}`}
-              >
-                Docente
-              </button>
-            </div>
-          </div>
+      {conObservaciones.length > 0 && (
+        <div className="mt-6 rounded-2xl border border-amber-200 bg-amber-50 p-4">
+          <p className="text-sm font-semibold text-amber-900">Tu docente dejó observaciones en {conObservaciones.length === 1 ? "un proyecto" : `${conObservaciones.length} proyectos`}</p>
+          <ul className="mt-2 space-y-1">
+            {conObservaciones.map((p) => (
+              <li key={p.id} className="text-sm text-amber-800">
+                <Link href={`/dashboard/proyectos/${p.id}`} className="font-semibold underline-offset-2 hover:underline">{p.nombre}</Link>: <span className="italic">“{p.observaciones}”</span>
+              </li>
+            ))}
+          </ul>
+        </div>
+      )}
 
-          {/* Banner de contexto */}
-          {isTeacherView ? (
-            <div className="bg-tecsup-purple/5 border border-tecsup-purple/15 rounded-xl p-4 mb-8 flex items-start gap-3">
-              <span className="text-lg mt-0.5">ℹ️</span>
-              <div>
-                <p className="text-sm font-semibold text-tecsup-purple">
-                  Gestión de proyectos — Ciclo 2026-I
-                </p>
-                <p className="text-xs text-tecsup-purple/70 mt-0.5">
-                  Puedes aperturar, aplazar o evaluar las entregas de los
-                  estudiantes.
-                </p>
-              </div>
-            </div>
-          ) : (
-            <div className="bg-amber-50 border border-amber-200 rounded-xl p-4 mb-8 flex items-start gap-3">
-              <span className="text-lg mt-0.5">🟠</span>
-              <div>
-                <p className="text-sm font-semibold text-amber-800">
-                  Ventana de edición abierta hasta el 15/08/2026 a las 11:59 PM
-                </p>
-                <p className="text-xs text-amber-600 mt-0.5">
-                  Después de esta fecha, tus proyectos del ciclo pasarán a solo
-                  lectura.
-                </p>
-              </div>
-            </div>
-          )}
+      <div className="mt-8 grid grid-cols-2 gap-4 lg:grid-cols-4">
+        <Stat valor={conteo.todos} label="proyectos" icono="📁" />
+        <Stat valor={conteo.PUBLICADO ?? 0} label="publicados" icono="✅" />
+        <Stat valor={formatoNumero(vistas)} label="vistas acumuladas" icono="👁" />
+        <Stat valor={new Set((proyectos ?? []).flatMap((p) => p.tecnologias.map((t) => t.tecnologia.nombre))).size} label="tecnologías usadas" icono="⚡" />
+      </div>
 
-          {/* Saludo */}
-          <div className="mb-8">
-            <h1 className="text-2xl font-bold text-tecsup-dark">
-              {isTeacherView ? "Panel de Gestión" : `Hola, ${usuarioActual?.nombre.split(" ")[0] ?? "..."} 👋`}
-            </h1>
-            <p className="text-sm text-gray-500 mt-1">
-              {isTeacherView ? (
-                "Administra y evalúa los proyectos de tus cursos."
-              ) : (
-                <>
-                  Tienes{" "}
-                  <span className="font-semibold text-amber-600">
-                    {counts["En Desarrollo"]} borradores sin publicar
-                  </span>
-                  . ¡Completa la información!
-                </>
-              )}
-            </p>
-          </div>
+      <div className="mt-8">
+        <Tabs
+          valor={tab}
+          onChange={setTab}
+          opciones={[
+            { id: "todos", label: "Todos", count: conteo.todos },
+            { id: "EN_DESARROLLO", label: "Borradores", count: conteo.EN_DESARROLLO ?? 0 },
+            { id: "POR_REVISAR", label: "En revisión", count: conteo.POR_REVISAR ?? 0 },
+            { id: "PUBLICADO", label: "Publicados", count: conteo.PUBLICADO ?? 0 },
+            { id: "OCULTO", label: "Ocultos", count: conteo.OCULTO ?? 0 },
+          ]}
+        />
+      </div>
 
-          {/* Tabs */}
-          <div className="flex items-center gap-2 mb-6 overflow-x-auto pb-1">
-            {currentTabs.map((tab) => (
-              <button
-                key={tab.status}
-                onClick={() => setActiveTab(tab.status)}
-                className={`px-5 py-2 rounded-full text-sm font-medium transition-all duration-200 whitespace-nowrap cursor-pointer ${
-                  activeTab === tab.status
-                    ? "bg-tecsup-dark text-white shadow-md"
-                    : "bg-white text-gray-600 border border-gray-200 hover:border-gray-400 hover:text-tecsup-dark"
-                }`}
-              >
-                {tab.name}
-                <span
-                  className={`ml-1.5 text-xs ${activeTab === tab.status ? "text-white/60" : "text-gray-400"}`}
-                >
-                  ({counts[tab.status as keyof typeof counts] ?? 0})
-                </span>
-              </button>
+      <div className="mt-6">
+        {proyectos === null ? (
+          <div className="grid gap-6 sm:grid-cols-2 lg:grid-cols-3">{[1, 2, 3].map((i) => <CardSkeleton key={i} />)}</div>
+        ) : visibles.length === 0 ? (
+          <EmptyState
+            icono="🚀"
+            titulo={proyectos.length === 0 ? "Publica tu primer proyecto" : "Nada en esta pestaña"}
+            texto={proyectos.length === 0 ? "Solo necesitas una frase, una descripción y una foto para enviarlo a revisión. Lo demás lo completas cuando quieras." : undefined}
+            accion={proyectos.length === 0 ? <Button href="/dashboard/proyectos/nuevo">Empezar ahora</Button> : undefined}
+          />
+        ) : (
+          <div className="grid gap-6 sm:grid-cols-2 lg:grid-cols-3">
+            {visibles.map((p) => (
+              <ProjectCard key={p.id} proyecto={p} mostrarEstado href={p.estado === "PUBLICADO" ? `/proyectos/${p.slug}` : `/dashboard/proyectos/${p.id}`} />
             ))}
           </div>
+        )}
+      </div>
+    </Container>
+  );
+}
 
-          {/* Tabla de proyectos */}
-          <div className="bg-white rounded-xl border border-gray-200">
-            <div className="hidden md:grid grid-cols-12 gap-4 px-6 py-3 bg-gray-50 border-b border-gray-100 text-[11px] font-semibold text-gray-400 uppercase tracking-wider">
-              <div className="col-span-4">Proyecto</div>
-              <div className="col-span-3">Curso</div>
-              <div className="col-span-2">Estado</div>
-              <div className="col-span-1 text-right">Vistas</div>
-              <div className="col-span-2 text-right">Acciones</div>
-            </div>
+/* ─────────────── DOCENTE ─────────────── */
+function PanelDocente() {
+  const { usuario, esAdmin } = useSesion();
+  const [tab, setTab] = useState<TabDocente>("revision");
+  const [revision, setRevision] = useState<Proyecto[] | null>(null);
+  const [asesorados, setAsesorados] = useState<Proyecto[] | null>(null);
+  const [publicados, setPublicados] = useState<Proyecto[] | null>(null);
 
-            {filteredProjects.length === 0 ? (
-              <div className="px-6 py-16 text-center">
-                <p className="text-gray-400 text-sm">
-                  No hay proyectos en esta categoría.
-                </p>
-              </div>
-            ) : (
-              filteredProjects.map((project) => {
-                const showObservacion =
-                  !isTeacherView &&
-                  project.status === "En Desarrollo" &&
-                  !!project.observaciones;
+  useEffect(() => {
+    listarProyectos({ ambito: "revision", limit: 100 }).then((r) => setRevision(r.items)).catch(() => setRevision([]));
+    listarProyectos({ ambito: "asesorados", limit: 100 }).then((r) => setAsesorados(r.items)).catch(() => setAsesorados([]));
+    listarProyectos({ estado: "PUBLICADO", orden: "recientes", limit: 12 }).then((r) => setPublicados(r.items)).catch(() => setPublicados([]));
+  }, []);
 
-                return (
-                  <div
-                    key={project.id}
-                    className="grid grid-cols-1 md:grid-cols-12 gap-4 px-6 py-4 border-b border-gray-50 hover:bg-tecsup-gray/50 transition-colors items-center"
-                  >
-                    {/* Proyecto */}
-                    <Link
-                      href={getProjectHref(project)}
-                      className="col-span-4 flex items-center gap-3 hover:opacity-80 transition-opacity"
-                    >
-                      <div className="w-12 h-12 rounded-lg overflow-hidden bg-gray-100 shrink-0 relative flex items-center justify-center">
-                        {project.image ? (
-                          <Image
-                            src={project.image}
-                            alt={project.name}
-                            fill
-                            className="object-cover"
-                            sizes="48px"
-                          />
-                        ) : (
-                          <span className="text-gray-300 text-lg">📁</span>
-                        )}
-                      </div>
-                      <div className="min-w-0">
-                        <p className="text-sm font-semibold text-tecsup-dark truncate">
-                          {project.name}
-                        </p>
-                        <div className="text-[11px] text-gray-400 mt-0.5 flex items-center gap-2">
-                          <span className="flex -space-x-1.5">
-                            {project.team.slice(0, 3).map((m) => (
-                              <Avatar key={m.name} name={m.name} size="sm" />
-                            ))}
-                          </span>
-                          {project.team.length} integrantes · Ciclo{" "}
-                          {project.cycle}
-                        </div>
-                        {showObservacion && (
-                          <p className="text-[11px] text-amber-600 mt-1 flex items-start gap-1">
-                            📝 Observación del docente: {project.observaciones}
-                          </p>
-                        )}
-                      </div>
-                    </Link>
+  const lista = tab === "revision" ? revision : tab === "asesorados" ? asesorados : publicados;
 
-                    {/* Curso */}
-
-                    {/* Curso */}
-                    <div className="col-span-3">
-                      <p className="text-sm text-gray-600">{project.course}</p>
-                      <p className="text-[11px] text-gray-400 mt-0.5">
-                        Vence: {formatDeadline(project.deadline)}
-                      </p>
-                    </div>
-
-                    {/* Estado */}
-                    <div className="col-span-2">
-                      <Badge variant={project.status}>{project.status}</Badge>
-                    </div>
-
-                    {/* Vistas */}
-                    <div className="col-span-1 text-right">
-                      <span className="text-sm font-medium text-gray-600">
-                        {project.views > 0 ? formatNumber(project.views) : "—"}
-                      </span>
-                    </div>
-
-                    {/* Acciones */}
-                    <div className="col-span-2 flex items-center justify-end gap-2">
-                      {isTeacherView ? (
-                        <>
-                          {project.status === "Por Revisar" && (
-                            <Link
-                              href={"/dashboard/revision/" + project.id}
-                              className="text-tecsup-cyan hover:text-tecsup-cyan/80 font-medium text-sm"
-                            >
-                              Ver
-                            </Link>
-                          )}
-                          <button
-                            onClick={() =>
-                              openPostponeModal(project.id, project.deadline)
-                            }
-                            className="text-amber-600 hover:text-amber-700 font-medium text-sm cursor-pointer"
-                          >
-                            Aplazar
-                          </button>
-                          <div className="relative">
-                            <button
-                              onClick={() =>
-                                setOpenMenuId(
-                                  openMenuId === project.id ? null : project.id,
-                                )
-                              }
-                              className="text-gray-400 hover:text-gray-600 cursor-pointer p-1"
-                            >
-                              <svg
-                                className="w-5 h-5"
-                                fill="currentColor"
-                                viewBox="0 0 20 20"
-                              >
-                                <path d="M10 6a2 2 0 110-4 2 2 0 010 4zM10 12a2 2 0 110-4 2 2 0 010 4zM10 18a2 2 0 110-4 2 2 0 010 4z" />
-                              </svg>
-                            </button>
-                            {openMenuId === project.id && (
-                              <>
-                                <div
-                                  className="fixed inset-0 z-10"
-                                  onClick={() => setOpenMenuId(null)}
-                                />
-                                <div className="absolute right-0 top-full mt-1 z-20 bg-white rounded-lg shadow-lg border border-gray-200 py-1 w-44">
-                                  {project.status === "Por Revisar" && (
-                                    <button
-                                      onClick={() => handlePublish(project.id)}
-                                      className="w-full text-left px-4 py-2.5 text-sm text-gray-700 hover:bg-gray-50 flex items-center gap-2.5"
-                                    >
-                                      <svg
-                                        className="w-4 h-4 text-tecsup-green"
-                                        fill="none"
-                                        stroke="currentColor"
-                                        viewBox="0 0 24 24"
-                                      >
-                                        <path
-                                          strokeLinecap="round"
-                                          strokeLinejoin="round"
-                                          strokeWidth={2}
-                                          d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"
-                                        />
-                                      </svg>
-                                      Publicar
-                                    </button>
-                                  )}
-                                  <Link
-                                    href={`/dashboard/editar-proyecto/${project.id}`}
-                                    className="w-full text-left px-4 py-2.5 text-sm text-gray-700 hover:bg-gray-50 flex items-center gap-2.5"
-                                    onClick={() => setOpenMenuId(null)}
-                                  >
-                                    <svg
-                                      className="w-4 h-4 text-tecsup-cyan"
-                                      fill="none"
-                                      stroke="currentColor"
-                                      viewBox="0 0 24 24"
-                                    >
-                                      <path
-                                        strokeLinecap="round"
-                                        strokeLinejoin="round"
-                                        strokeWidth={2}
-                                        d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z"
-                                      />
-                                    </svg>
-                                    Editar
-                                  </Link>
-                                </div>
-                              </>
-                            )}
-                          </div>
-                        </>
-                      ) : project.status === "Publicado" ? (
-                        <Link
-                          href={"/proyectos/" + slugify(project.fullName)}
-                          className="text-tecsup-cyan hover:text-tecsup-cyan/80 font-medium text-sm"
-                        >
-                          Ver
-                        </Link>
-                      ) : project.status === "En Desarrollo" ? (
-                        <Link
-                          href={"/dashboard/editar-proyecto/" + project.id}
-                          className="inline-flex items-center gap-1.5 px-3 py-1.5 text-xs font-semibold text-tecsup-cyan hover:bg-tecsup-cyan/10 rounded-lg transition-colors"
-                        >
-                          <svg
-                            className="w-3.5 h-3.5"
-                            fill="none"
-                            stroke="currentColor"
-                            viewBox="0 0 24 24"
-                          >
-                            <path
-                              strokeLinecap="round"
-                              strokeLinejoin="round"
-                              strokeWidth={2}
-                              d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z"
-                            />
-                          </svg>
-                          Editar
-                        </Link>
-                      ) : project.status === "Oculto" ? (
-                        <Link
-                          href={"/proyectos/" + slugify(project.fullName)}
-                          className="text-tecsup-cyan hover:text-tecsup-cyan/80 font-medium text-sm"
-                        >
-                          Ver
-                        </Link>
-                      ) : (
-                        <span className="text-xs text-gray-300">—</span>
-                      )}
-                    </div>
-                  </div>
-                );
-              })
-            )}
-          </div>
-
-          {/* Stat cards */}
-          <div className="grid grid-cols-2 lg:grid-cols-4 gap-4 mt-8">
-            {stats.map((stat) => (
-              <div
-                key={stat.label}
-                className="bg-white rounded-xl border border-gray-200 p-5 flex items-center gap-4"
-              >
-                <span className="text-2xl">{stat.icon}</span>
-                <div>
-                  <p className="text-xl font-bold text-tecsup-dark">
-                    {stat.value}
-                  </p>
-                  <p className="text-xs text-gray-400 mt-0.5">{stat.label}</p>
-                </div>
-              </div>
-            ))}
-          </div>
+  return (
+    <Container className="py-10">
+      <div className="flex flex-col gap-4 sm:flex-row sm:items-end sm:justify-between">
+        <div>
+          <p className="text-xs font-bold uppercase tracking-[0.18em] text-brand-600">Panel docente</p>
+          <h1 className="mt-1 font-display text-3xl font-bold text-ink-900">Hola, {usuario!.nombre.split(" ")[0]}</h1>
+          <p className="mt-1 max-w-xl text-sm text-ink-500">Los alumnos crean y documentan sus proyectos solos. Tu trabajo es revisar la cola: publicar o devolver con observaciones. Nada más.</p>
+        </div>
+        <div className="flex gap-2">
+          {esAdmin && <Button href="/admin" variant="outline">Administración</Button>}
+          <Button href="/dashboard/proyectos/nuevo" variant="outline">+ Proyecto propio</Button>
         </div>
       </div>
 
-      {/* Modal: Aplazar entrega */}
-      {postponeProjectId && (
-        <>
-          <div
-            className="fixed inset-0 bg-black/40 z-40"
-            onClick={closePostponeModal}
-          />
-          <div className="fixed top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 z-50 bg-white rounded-2xl p-6 w-full max-w-sm shadow-2xl">
-            <h3 className="text-lg font-bold text-tecsup-dark mb-1">
-              Aplazar fecha de entrega
-            </h3>
-            <p className="text-sm text-gray-500 mb-4">
-              Selecciona la nueva fecha límite para este proyecto.
-            </p>
-            <input
-              type="date"
-              lang="es-PE"
-              value={newDeadline}
-              onChange={(e) => setNewDeadline(e.target.value)}
-              className="w-full px-4 py-2.5 text-sm bg-white rounded-xl border border-gray-200 focus:border-tecsup-cyan/40 focus:outline-none transition-all"
-            />
-            <div className="flex gap-3 mt-6">
-              <button
-                onClick={closePostponeModal}
-                className="flex-1 px-4 py-2.5 border border-gray-200 text-gray-600 text-sm font-semibold rounded-xl hover:bg-gray-50 transition-colors"
-              >
-                Cancelar
-              </button>
-              <button
-                onClick={confirmPostpone}
-                disabled={!newDeadline || aplazando}
-                className={`flex-1 px-4 py-2.5 text-sm font-semibold rounded-xl transition-colors ${
-                  newDeadline && !aplazando
-                    ? "bg-tecsup-cyan text-white hover:bg-tecsup-cyan/85"
-                    : "bg-gray-200 text-gray-400 cursor-not-allowed"
-                }`}
-              >
-                {aplazando ? "Guardando..." : "Confirmar"}
-              </button>
-            </div>
+      <div className="mt-8 grid grid-cols-2 gap-4 lg:grid-cols-4">
+        <Stat valor={revision?.length ?? "—"} label="esperan tu revisión" icono="📬" />
+        <Stat valor={asesorados?.length ?? "—"} label="proyectos donde estás involucrado" icono="🧭" />
+        <Stat valor={(asesorados ?? []).filter((p) => p.estado === "PUBLICADO").length} label="de ellos, publicados" icono="✅" />
+        <Stat valor={formatoNumero((asesorados ?? []).reduce((s, p) => s + p.vistas, 0))} label="vistas acumuladas" icono="👁" />
+      </div>
+
+      <div className="mt-8">
+        <Tabs
+          valor={tab}
+          onChange={setTab}
+          opciones={[
+            { id: "revision", label: "Por revisar", count: revision?.length },
+            { id: "asesorados", label: "Donde estoy involucrado", count: asesorados?.length },
+            { id: "publicados", label: "Publicados recientes", count: publicados?.length },
+          ]}
+        />
+      </div>
+
+      <div className="mt-6">
+        {lista === null ? (
+          <div className="grid gap-6 sm:grid-cols-2 lg:grid-cols-3">{[1, 2, 3].map((i) => <CardSkeleton key={i} />)}</div>
+        ) : lista.length === 0 ? (
+          <EmptyState icono={tab === "revision" ? "🎉" : "📭"} titulo={tab === "revision" ? "No hay nada por revisar" : "Nada por aquí"} texto={tab === "revision" ? "Cuando un equipo envíe su proyecto te avisaremos por correo." : "Los alumnos pueden sumarte como docente involucrado al crear o actualizar su proyecto."} />
+        ) : tab === "revision" ? (
+          <ul className="card divide-y divide-ink-100">
+            {lista.map((p) => {
+              const portada = portadaDe(p);
+              return (
+                <li key={p.id} className="flex flex-col gap-4 p-4 sm:flex-row sm:items-center">
+                  <div className="h-16 w-24 shrink-0 overflow-hidden rounded-xl bg-ink-100">
+                    {/* eslint-disable-next-line @next/next/no-img-element */}
+                    {portada && <img src={portada} alt="" className="h-full w-full object-cover" />}
+                  </div>
+                  <div className="min-w-0 flex-1">
+                    <div className="flex flex-wrap items-center gap-2">
+                      <p className="font-display text-base font-bold text-ink-900">{p.nombre}</p>
+                      {p.carrera && <Chip color={p.carrera.color}>{p.carrera.nombre}</Chip>}
+                      {p.docentes.some((d) => d.usuarioId === usuario!.id) && <Chip className="border-brand-200 bg-brand-50 text-brand-700">Te eligió como docente</Chip>}
+                      {p.versionActual > 0 && <Chip className="border-violet-500/30 bg-violet-500/10 text-violet-500">Nueva versión (v{p.versionActual + 1})</Chip>}
+                    </div>
+                    <p className="mt-0.5 line-clamp-1 text-sm text-ink-600">{p.tagline ?? p.descripcion}</p>
+                    <div className="mt-1.5 flex items-center gap-2 text-xs text-ink-500">
+                      <Avatar name={p.creador.nombre} src={p.creador.fotoUrl} size="xs" />
+                      {p.creador.nombre} · {p.miembros.length} integrante{p.miembros.length === 1 ? "" : "s"} · enviado el {fechaCorta(p.updatedAt)}
+                    </div>
+                  </div>
+                  <Button href={`/dashboard/revision/${p.id}`}>Revisar</Button>
+                </li>
+              );
+            })}
+          </ul>
+        ) : (
+          <div className="grid gap-6 sm:grid-cols-2 lg:grid-cols-3">
+            {lista.map((p) => (
+              <div key={p.id} className="relative">
+                <ProjectCard proyecto={p} mostrarEstado href={p.estado === "POR_REVISAR" ? `/dashboard/revision/${p.id}` : p.estado === "PUBLICADO" ? `/proyectos/${p.slug}` : `/dashboard/proyectos/${p.id}`} />
+                {tab === "asesorados" && (
+                  <div className="absolute right-3 top-3 flex gap-1">
+                    <Link href={`/dashboard/revision/${p.id}`} className="rounded-full bg-white/95 px-2.5 py-1 text-[11px] font-semibold text-ink-800 shadow-sm hover:bg-white">{ESTADO_LABEL[p.estado]} · gestionar</Link>
+                  </div>
+                )}
+              </div>
+            ))}
           </div>
-        </>
-      )}
-    </div>
+        )}
+      </div>
+      <p className="mt-6 text-xs text-ink-400">¿Un estado no coincide? <EstadoBadge estado="POR_REVISAR" className="align-middle" /> significa que el equipo ya terminó y espera tu decisión.</p>
+    </Container>
   );
 }

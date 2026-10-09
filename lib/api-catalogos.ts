@@ -1,39 +1,30 @@
 import { apiFetch } from "./api-client";
+import type { Carrera, Categoria, Tecnologia } from "./tipos";
 
-export interface Curso {
-  id: number;
+export const getCarreras = (todas = false) => apiFetch<Carrera[]>(`/academico/carreras${todas ? "?todas=true" : ""}`);
+export const getCategorias = () => apiFetch<Categoria[]>("/catalogos/categorias");
+export const getTecnologias = () => apiFetch<Tecnologia[]>("/catalogos/tecnologias");
+
+const json = (body: unknown): RequestInit => ({ headers: { "Content-Type": "application/json" }, body: JSON.stringify(body) });
+
+export const crearTecnologia = (nombre: string, tipo = "herramienta") =>
+  apiFetch<Tecnologia>("/catalogos/tecnologias", { method: "POST", ...json({ nombre, tipo }) });
+
+// Solo admin
+export const crearCategoria = (datos: { nombre: string; color?: string }) =>
+  apiFetch<Categoria>("/catalogos/categorias", { method: "POST", ...json(datos) });
+export const eliminarCategoria = (id: number) => apiFetch(`/catalogos/categorias/${id}`, { method: "DELETE" });
+export const eliminarTecnologia = (id: number) => apiFetch(`/catalogos/tecnologias/${id}`, { method: "DELETE" });
+
+export interface DatosCarrera {
   nombre: string;
-  ciclo: string;
-  periodo: string;
+  area: string;
+  sedes?: string[];
+  descripcion?: string;
+  url?: string;
+  color?: string;
+  estado?: boolean;
 }
-
-export interface Categoria {
-  id: number;
-  nombre: string;
-}
-
-export async function getCursos(): Promise<Curso[]> {
-  return apiFetch("/academico/cursos");
-}
-
-export async function getCategorias(): Promise<Categoria[]> {
-  return apiFetch("/catalogos/categorias");
-}
-
-export interface Tecnologia {
-  id: number;
-  nombre: string;
-  tipo: string;
-}
-
-export async function getTecnologias(): Promise<Tecnologia[]> {
-  return apiFetch("/catalogos/tecnologias");
-}
-
-export async function crearTecnologia(nombre: string, tipo: string): Promise<Tecnologia> {
-  return apiFetch("/catalogos/tecnologias", {
-    method: "POST",
-    headers: { "Content-Type": "application/json" },
-    body: JSON.stringify({ nombre, tipo }),
-  });
-}
+export const crearCarrera = (datos: DatosCarrera) => apiFetch<Carrera>("/academico/carreras", { method: "POST", ...json(datos) });
+export const actualizarCarrera = (id: number, datos: Partial<DatosCarrera>) =>
+  apiFetch<Carrera>(`/academico/carreras/${id}`, { method: "PATCH", ...json(datos) });

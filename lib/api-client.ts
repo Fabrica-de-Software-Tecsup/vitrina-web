@@ -2,9 +2,14 @@ const API_URL = process.env.NEXT_PUBLIC_API_URL;
 
 let refreshPromise: Promise<string | null> | null = null;
 
+interface TokensRespuesta {
+  accessToken: string;
+  refreshToken: string;
+}
+
 function tokenExpirado(token: string): boolean {
   try {
-    const payload = JSON.parse(atob(token.split(".")[1]));
+    const payload = JSON.parse(atob(token.split(".")[1])) as { exp: number };
     const margenSegundos = 10;
     return Date.now() / 1000 >= payload.exp - margenSegundos;
   } catch {
@@ -24,7 +29,7 @@ async function refrescarAccessToken(): Promise<string | null> {
       body: JSON.stringify({ refreshToken }),
     });
     if (!res.ok) return null;
-    const data = await res.json();
+    const data = (await res.json()) as TokensRespuesta;
     localStorage.setItem("accessToken", data.accessToken);
     localStorage.setItem("refreshToken", data.refreshToken);
     return data.accessToken;
@@ -57,11 +62,21 @@ async function obtenerTokenValido(): Promise<string | null> {
   return token;
 }
 
-export async function apiFetch(
+/** Mensaje de error legible a partir de la respuesta del API (class-validator manda arrays). */
+function mensajeDeError(data: unknown, status: number): string {
+  if (data && typeof data === "object" && "message" in data) {
+    const m = (data as { message: unknown }).message;
+    if (Array.isArray(m)) return m.join(". ");
+    if (typeof m === "string") return m;
+  }
+  return `Error ${status}`;
+}
+
+export async function apiFetch<T = unknown>(
   path: string,
   options: RequestInit = {},
   _retry = false,
-): Promise<any> {
+): Promise<T> {
   const token = await obtenerTokenValido();
 
   const headers: HeadersInit = {
@@ -72,6 +87,8 @@ export async function apiFetch(
   const res = await fetch(`${API_URL}${path}`, { ...options, headers });
 
   if (res.status === 401 && !_retry) {
+    // Solo tiene sentido reintentar si habia sesion; un anonimo con 401 no debe ir al login a la fuerza.
+    if (!token) throw new Error("No autorizado");
     if (!refreshPromise) {
       refreshPromise = refrescarAccessToken().finally(() => {
         refreshPromise = null;
@@ -79,16 +96,17 @@ export async function apiFetch(
     }
     const nuevoToken = await refreshPromise;
     if (nuevoToken) {
-      return apiFetch(path, options, true);
+      return apiFetch<T>(path, options, true);
     }
     limpiarSesionYRedirigir();
     throw new Error("Sesion expirada, redirigiendo al login");
   }
 
   if (!res.ok) {
-    const data = await res.json().catch(() => ({}));
-    throw new Error(data.message || `Error ${res.status}`);
+    const data: unknown = await res.json().catch(() => ({}));
+    throw new Error(mensajeDeError(data, res.status));
   }
 
-  return res.json();
+  if (res.status === 204) return undefined as T;
+  return (await res.json()) as T;
 }
