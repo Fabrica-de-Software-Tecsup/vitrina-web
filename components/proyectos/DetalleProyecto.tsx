@@ -178,14 +178,14 @@ export default function DetalleProyecto({ slug, inicial }: Props) {
 
         {/* Capa 1: la lámina a sangre de la columna y el título como pie */}
         <header>
-          <div className="relative isolate -mx-4 sm:mx-0" style={{ "--dominante": dominante } as React.CSSProperties}>
+          <div className="relative isolate" style={{ "--dominante": dominante } as React.CSSProperties}>
             <div className="lavado" aria-hidden />
-            <Portada id={proyecto.id} nombre={proyecto.nombre} imagen={portada} sizes={SIZES_COLUMNA} preload alt={`Portada de ${proyecto.nombre}`} />
+            <Portada id={proyecto.id} nombre={proyecto.nombre} imagen={portada} sizes={SIZES_COLUMNA} preload alt={`Portada de ${proyecto.nombre}`} className="sm:rounded-cabecera" />
             {galeria.length > 0 && (
               <button
                 type="button"
                 onClick={() => setLightbox(0)}
-                className="absolute inset-0 cursor-zoom-in"
+                className="absolute inset-0 cursor-zoom-in rounded-lamina sm:rounded-cabecera"
                 aria-label={`Ampliar la portada de ${proyecto.nombre}`}
               />
             )}
@@ -266,7 +266,7 @@ export default function DetalleProyecto({ slug, inicial }: Props) {
               const lqip = placeholderDe(img.placeholder);
               return (
                 <figure key={img.id} className="my-12">
-                  <button type="button" onClick={() => setLightbox(i + (portada ? 1 : 0))} className="block w-full cursor-zoom-in" aria-label={`Ampliar imagen ${i + 2} de ${galeria.length}`}>
+                  <button type="button" onClick={() => setLightbox(i + (portada ? 1 : 0))} className="block w-full cursor-zoom-in rounded-lamina" aria-label={`Ampliar imagen ${i + 2} de ${galeria.length}`}>
                     <span
                       className="lamina"
                       style={{ backgroundColor: img.colorDominante ?? undefined, backgroundImage: lqip ? `url(${lqip})` : undefined, "--dominante": img.colorDominante ?? undefined } as React.CSSProperties}
@@ -286,7 +286,7 @@ export default function DetalleProyecto({ slug, inicial }: Props) {
                 <h2 id="titulo-video" className="seccion-t mb-4 text-ink-default">
                   Video
                 </h2>
-                <div className="aspect-video overflow-hidden bg-surface-sunken shadow-[0_0_0_1px_var(--c-marco)]">
+                <div className="aspect-video overflow-hidden rounded-lamina bg-surface-sunken">
                   <iframe
                     src={video}
                     title={`Video de ${proyecto.nombre}`}
@@ -451,7 +451,7 @@ export default function DetalleProyecto({ slug, inicial }: Props) {
               <div className="carril flex gap-3 overflow-x-auto">
                 {versionAbierta.imagenes.map((u) => (
                   // eslint-disable-next-line @next/next/no-img-element -- versiones antiguas, sin variantes
-                  <img key={u} src={u} alt="" className="aspect-[4/3] h-40 shrink-0 object-cover shadow-[0_0_0_1px_var(--c-marco)]" />
+                  <img key={u} src={u} alt="" className="aspect-[4/3] h-40 shrink-0 rounded-lamina object-cover" />
                 ))}
               </div>
             )}
@@ -484,7 +484,7 @@ export default function DetalleProyecto({ slug, inicial }: Props) {
       <Modal abierto={lightbox !== null} onCerrar={() => setLightbox(null)} titulo={proyecto.nombre} descripcion={lightbox !== null ? `Imagen ${lightbox + 1} de ${galeria.length}` : undefined} ancho="lg">
         {lightbox !== null && galeria[lightbox] && (
           // eslint-disable-next-line @next/next/no-img-element -- original a tamaño completo
-          <img src={galeria[lightbox].variantes?.l?.webp ?? galeria[lightbox].url} alt="" className="max-h-[70vh] w-full bg-surface-sunken object-contain" />
+          <img src={galeria[lightbox].variantes?.l?.webp ?? galeria[lightbox].url} alt="" className="max-h-[70vh] w-full rounded-lg bg-surface-sunken object-contain" />
         )}
         {galeria.length > 1 && lightbox !== null && (
           <div className="mt-4 flex justify-between">

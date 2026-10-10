@@ -81,7 +81,7 @@ export function Modal({ abierto, onCerrar, titulo, descripcion, children, accion
       onClick={(e) => e.target === ref.current && onCerrar()}
       aria-label={titulo}
       className={cn(
-        "m-auto mb-0 w-full max-w-none rounded-t-lg bg-surface-overlay p-0 text-ink-default shadow-lg backdrop:bg-[oklch(15%_0.01_60/0.45)] sm:mb-auto sm:rounded-lg",
+        "m-auto mb-0 w-full max-w-none rounded-t-xl bg-surface-overlay p-0 text-ink-default shadow-lg backdrop:bg-[oklch(15%_0.01_60/0.45)] sm:mb-auto sm:rounded-xl",
         ancho === "sm" && "sm:max-w-sm",
         ancho === "md" && "sm:max-w-lg",
         ancho === "lg" && "sm:max-w-3xl",
@@ -138,7 +138,7 @@ export function Skeleton({ className }: { className?: string }) {
 export function CardSkeleton({ className }: { className?: string }) {
   return (
     <div aria-hidden className={className}>
-      <div className="cargando aspect-[4/3] shadow-[0_0_0_1px_var(--c-marco)]" />
+      <div className="cargando aspect-[4/3] rounded-lamina" />
       <div className="cargando mt-4 h-5 w-3/4 rounded-sm" />
       <div className="cargando mt-2 h-3.5 w-1/2 rounded-sm" />
     </div>

@@ -173,7 +173,7 @@ function PanelDocente() {
               const portada = portadaDe(p);
               return (
                 <li key={p.id} className="flex flex-col gap-4 p-4 sm:flex-row sm:items-center">
-                  <div className="aspect-[4/3] w-24 shrink-0 overflow-hidden bg-surface-sunken shadow-[0_0_0_1px_var(--c-marco)]">
+                  <div className="aspect-[4/3] w-24 shrink-0 overflow-hidden rounded-sm bg-surface-sunken shadow-[0_0_0_1px_var(--c-marco)]">
                     {/* eslint-disable-next-line @next/next/no-img-element */}
                     {portada && <img src={portada} alt="" className="h-full w-full object-cover" />}
                   </div>

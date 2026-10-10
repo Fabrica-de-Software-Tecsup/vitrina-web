@@ -192,6 +192,8 @@ textarea.field {
   display: block;
   aspect-ratio: 4 / 3;
   overflow: hidden;
+  /* El radio va en el mismo elemento que lleva el nombre de la transición: el morph lo conserva. */
+  border-radius: var(--radius-lamina);
   background-color: var(--c-surface-sunken);
   background-size: cover;
   background-position: center;

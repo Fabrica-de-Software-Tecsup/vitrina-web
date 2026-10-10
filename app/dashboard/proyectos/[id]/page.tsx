@@ -531,7 +531,7 @@ function GaleriaEditor({ proyecto, onCambio }: { proyecto: Proyecto; onCambio: (
               <div className="lamina" style={{ backgroundColor: img.colorDominante ?? undefined }}>
                 {/* eslint-disable-next-line @next/next/no-img-element -- miniatura del editor */}
                 <img src={img.url} alt="" style={{ objectPosition: posicionFocal(img) }} />
-                {img.esPortada && <span className="absolute left-2 top-2 rounded-[4px] bg-surface-default px-2 py-0.5 text-caption font-semibold text-ink-default shadow-[0_0_0_0.5px_var(--c-marco)]">Portada</span>}
+                {img.esPortada && <span className="absolute left-2 top-2 rounded-sm bg-surface-default px-2 py-0.5 text-caption font-semibold text-ink-default shadow-[0_0_0_0.5px_var(--c-marco)]">Portada</span>}
               </div>
               <div className="mt-2 flex flex-wrap gap-x-3 gap-y-1 text-body-small">
                 {!img.esPortada && (
@@ -551,7 +551,7 @@ function GaleriaEditor({ proyecto, onCambio }: { proyecto: Proyecto; onCambio: (
           ))}
           {proyecto.imagenes.length < 10 && (
             <li>
-              <label className="flex aspect-[4/3] cursor-pointer flex-col items-center justify-center gap-2 rounded-sm border border-linea bg-surface-sunken text-center text-body-small text-ink-muted hover:border-ink-muted hover:text-ink-default">
+              <label className="flex aspect-[4/3] cursor-pointer flex-col items-center justify-center gap-2 rounded-lamina border border-linea bg-surface-sunken text-center text-body-small text-ink-muted hover:border-ink-muted hover:text-ink-default">
                 <Icono nombre={subiendo ? "reloj" : "subir"} tam={24} />
                 {subiendo ? `Reduciendo y subiendo ${subiendo}…` : "Subir o arrastrar"}
                 <input type="file" accept="image/png,image/jpeg,image/gif,image/webp" multiple className="sr-only" onChange={(e) => { void subir(e.target.files); e.target.value = ""; }} />
@@ -579,7 +579,7 @@ function GaleriaEditor({ proyecto, onCambio }: { proyecto: Proyecto; onCambio: (
         <div className="mt-4 grid gap-5 rounded-md border border-linea p-4 md:grid-cols-[3fr_2fr]">
           <div>
             <p className="text-label text-ink-default">Toca lo más importante de la imagen</p>
-            <button type="button" onClick={fijarFoco} className="relative mt-2 block w-full cursor-crosshair bg-surface-sunken" aria-label="Elegir punto focal">
+            <button type="button" onClick={fijarFoco} className="relative mt-2 block w-full cursor-crosshair overflow-hidden rounded-md bg-surface-sunken" aria-label="Elegir punto focal">
               {/* eslint-disable-next-line @next/next/no-img-element -- imagen completa para elegir el foco */}
               <img src={enFoco.url} alt="" className="block max-h-80 w-full object-contain" />
               <span

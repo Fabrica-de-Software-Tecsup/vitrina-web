@@ -28,7 +28,7 @@ export function Sello({ estado, className }: { estado: EstadoProyecto; className
   return (
     <span
       className={cn(
-        "absolute left-2 top-2 z-[1] inline-flex h-6 items-center gap-1.5 rounded-[4px] bg-surface-default px-2 text-caption font-semibold text-ink-default shadow-[0_0_0_0.5px_var(--c-marco)]",
+        "absolute left-2 top-2 z-[1] inline-flex h-6 items-center gap-1.5 rounded-sm bg-surface-default px-2 text-caption font-semibold text-ink-default shadow-[0_0_0_0.5px_var(--c-marco)]",
         className,
       )}
     >
