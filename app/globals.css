@@ -157,6 +157,15 @@ h3,
   margin-bottom: 0;
 }
 
+/* Carrusel horizontal: sin barra de scroll visible pero desplazable */
+.carrusel {
+  scrollbar-width: none;
+  -webkit-overflow-scrolling: touch;
+}
+.carrusel::-webkit-scrollbar {
+  display: none;
+}
+
 ::selection {
   background: rgb(0 179 224 / 0.25);
 }

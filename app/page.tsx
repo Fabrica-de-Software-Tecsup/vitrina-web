@@ -7,7 +7,7 @@ import Button from "@/components/ui/Button";
 import { Chip } from "@/components/ui/Badge";
 import { Container, SectionHeading } from "@/components/ui/Section";
 import { CardSkeleton, EmptyState } from "@/components/ui/Feedback";
-import ProjectCard from "@/components/proyectos/ProjectCard";
+import CarruselProyectos from "@/components/proyectos/CarruselProyectos";
 import { getEstadisticas, listarProyectos } from "@/lib/api-proyectos";
 import { getCarreras } from "@/lib/api-catalogos";
 import type { Carrera, Estadisticas, Proyecto } from "@/lib/tipos";
@@ -23,8 +23,8 @@ export default function LandingPage() {
   const [busqueda, setBusqueda] = useState("");
 
   useEffect(() => {
-    listarProyectos({ orden: "destacados", limit: 4 }).then((r) => setDestacados(r.items)).catch(() => setDestacados([]));
-    listarProyectos({ orden: "recientes", limit: 8 }).then((r) => setRecientes(r.items)).catch(() => setRecientes([]));
+    listarProyectos({ orden: "destacados", limit: 8 }).then((r) => setDestacados(r.items)).catch(() => setDestacados([]));
+    listarProyectos({ orden: "recientes", limit: 12 }).then((r) => setRecientes(r.items)).catch(() => setRecientes([]));
     getEstadisticas().then(setStats).catch(() => null);
     getCarreras().then(setCarreras).catch(() => null);
   }, []);
@@ -93,18 +93,21 @@ export default function LandingPage() {
       </section>
 
       {/* ═══ DESTACADOS ═══ */}
-      <section className="py-16">
-        <Container>
-          <SectionHeading eyebrow="Seleccionados por docentes" titulo="Proyectos destacados" texto="Los que mejor cuentan el problema, la solución y lo aprendido." accion={<Button href="/proyectos?orden=destacados" variant="outline">Ver todos</Button>} />
-          {destacados === null ? (
+      {destacados === null ? (
+        <section className="py-16">
+          <Container>
             <div className="grid gap-6 sm:grid-cols-2 lg:grid-cols-4">{[1, 2, 3, 4].map((i) => <CardSkeleton key={i} />)}</div>
-          ) : destacados.length === 0 ? (
+          </Container>
+        </section>
+      ) : destacados.length === 0 ? (
+        <section className="py-16">
+          <Container>
             <EmptyState titulo="Aún no hay proyectos publicados" texto="Sé el primero: entra con tu correo Tecsup y publica el tuyo." accion={<Button href="/auth/login">Publicar mi proyecto</Button>} />
-          ) : (
-            <div className="grid gap-6 sm:grid-cols-2 lg:grid-cols-4">{destacados.map((p) => <ProjectCard key={p.id} proyecto={p} />)}</div>
-          )}
-        </Container>
-      </section>
+          </Container>
+        </section>
+      ) : (
+        <CarruselProyectos eyebrow="Recién salidos de las aulas" titulo="Lo que construyeron los estudiantes" proyectos={destacados} verTodosHref="/proyectos?orden=destacados" verTodosTexto="Ver todos los proyectos" />
+      )}
 
       {/* ═══ CARRERAS ═══ */}
       <section className="border-y border-ink-200 bg-white py-16">
@@ -139,27 +142,22 @@ export default function LandingPage() {
       </section>
 
       {/* ═══ RECIENTES ═══ */}
-      <section className="py-16">
-        <Container>
-          <SectionHeading eyebrow="Lo último" titulo="Recién publicados" accion={<Button href="/proyectos" variant="outline">Explorar todo</Button>} />
-          {recientes === null ? (
-            <div className="grid gap-6 sm:grid-cols-2 lg:grid-cols-4">{[1, 2, 3, 4].map((i) => <CardSkeleton key={i} />)}</div>
-          ) : recientes.length === 0 ? (
-            <p className="text-sm text-ink-500">Todavía no hay proyectos publicados.</p>
-          ) : (
-            <div className="grid gap-6 sm:grid-cols-2 lg:grid-cols-4">{recientes.map((p) => <ProjectCard key={p.id} proyecto={p} />)}</div>
-          )}
+      {recientes !== null && recientes.length > 0 && (
+        <div className="bg-white">
+          <CarruselProyectos eyebrow="Lo último" titulo="Recién publicados" proyectos={recientes} verTodosHref="/proyectos" verTodosTexto="Explorar todo" />
           {carrerasConProyectos.length > 0 && (
-            <div className="mt-8 flex flex-wrap gap-2">
-              {carrerasConProyectos.map((c) => (
-                <Link key={c.id} href={`/proyectos?carreraId=${c.id}`}>
-                  <Chip color={c.color} size="md">{c.nombre} · {c.proyectosPublicados}</Chip>
-                </Link>
-              ))}
-            </div>
+            <Container className="pb-16">
+              <div className="flex flex-wrap gap-2">
+                {carrerasConProyectos.map((c) => (
+                  <Link key={c.id} href={`/proyectos?carreraId=${c.id}`}>
+                    <Chip color={c.color} size="md">{c.nombre} · {c.proyectosPublicados}</Chip>
+                  </Link>
+                ))}
+              </div>
+            </Container>
           )}
-        </Container>
-      </section>
+        </div>
+      )}
 
       {/* ═══ CTA ═══ */}
       <section className="pb-8">
