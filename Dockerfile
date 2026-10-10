@@ -1,6 +1,8 @@
 # ─── Etapa 1: dependencias ───
 FROM node:24-alpine AS deps
 WORKDIR /app
+# Misma version de npm que genero package-lock.json (ver vitrina-api/Dockerfile)
+RUN npm install -g npm@11.6.2
 COPY package*.json ./
 RUN npm ci
 
