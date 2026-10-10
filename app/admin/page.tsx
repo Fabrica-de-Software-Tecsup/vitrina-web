@@ -10,7 +10,7 @@ import { Container, Stat } from "@/components/ui/Section";
 import { Field, Input, Select, Textarea } from "@/components/ui/Field";
 import { EmptyState, Pagination, Skeleton, Tabs, useToast } from "@/components/ui/Feedback";
 import { useSesion } from "@/components/sesion/SesionProvider";
-import { cambiarRol, getPreasignados, getResumenAdmin, getUsuariosAdmin, preasignarRoles, quitarPreasignado, type ResumenAdmin, type RolPreasignado, type UsuarioAdmin } from "@/lib/api-admin";
+import { cambiarRol, enviarCorreoPrueba, getPreasignados, getResumenAdmin, getUsuariosAdmin, preasignarRoles, quitarPreasignado, type ResultadoCorreoPrueba, type ResumenAdmin, type RolPreasignado, type UsuarioAdmin } from "@/lib/api-admin";
 import { actualizarCarrera, crearCarrera, crearCategoria, eliminarCategoria, getCarreras, getCategorias } from "@/lib/api-catalogos";
 import { editarPerfil } from "@/lib/api-usuarios";
 import { ESTADO_LABEL, SEDES, type Carrera, type Categoria, type EstadoProyecto, type Rol } from "@/lib/tipos";
@@ -78,6 +78,38 @@ function Resumen() {
           <ul className="mt-3 divide-y divide-ink-100">{r.porRevisarMasAntiguos.map((p) => <li key={p.id} className="flex items-center justify-between py-2 text-sm"><span><span className="font-medium text-ink-900">{p.nombre}</span><span className="ml-2 text-xs text-ink-500">{p.carrera?.nombre ?? "Sin carrera"} · desde {fechaCorta(p.updatedAt)}</span></span><Link href={`/dashboard/revision/${p.id}`} className="text-brand-700 hover:underline">Revisar</Link></li>)}</ul>
         )}
       </div>
+      <CorreoPrueba />
+    </div>
+  );
+}
+
+/** Diagnóstico de correos: envía uno al admin y muestra la respuesta del proveedor sin tener que mirar logs del servidor. */
+function CorreoPrueba() {
+  const { usuario } = useSesion();
+  const [enviando, setEnviando] = useState(false);
+  const [resultado, setResultado] = useState<ResultadoCorreoPrueba | null>(null);
+  const [error, setError] = useState<string | null>(null);
+  const probar = async () => {
+    setEnviando(true); setError(null); setResultado(null);
+    try { setResultado(await enviarCorreoPrueba()); } catch (e) { setError(e instanceof Error ? e.message : "No se pudo contactar al API"); } finally { setEnviando(false); }
+  };
+  return (
+    <div className="card p-5">
+      <div className="flex flex-wrap items-center justify-between gap-3">
+        <div>
+          <h3 className="font-display text-sm font-bold text-ink-900">Correos de notificación</h3>
+          <p className="mt-1 text-sm text-ink-500">Envía un correo de prueba a <span className="font-medium text-ink-700">{usuario?.correo ?? "tu cuenta"}</span> y muestra qué respondió el proveedor.</p>
+        </div>
+        <Button size="sm" variant="secondary" onClick={probar} loading={enviando}>Enviar correo de prueba</Button>
+      </div>
+      {error && <p className="mt-3 rounded-xl bg-red-50 px-3 py-2 text-sm text-red-700">{error}</p>}
+      {resultado && (
+        <div className={`mt-3 rounded-xl px-4 py-3 text-sm ${resultado.ok ? "bg-emerald-50 text-emerald-800" : "bg-amber-50 text-amber-900"}`}>
+          <p className="font-semibold">{resultado.ok ? "Correo enviado. Revisa tu bandeja (y spam)." : resultado.configurado ? "El proveedor rechazó el envío." : "Los correos no están configurados en el servidor."}</p>
+          <p className="mt-1">{resultado.detalle}</p>
+          <p className="mt-2 text-xs opacity-80">Remitente: {resultado.remitente} · Destinatario: {resultado.destinatarios.join(", ") || "—"}</p>
+        </div>
+      )}
     </div>
   );
 }

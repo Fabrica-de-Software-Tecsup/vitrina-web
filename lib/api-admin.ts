@@ -41,3 +41,14 @@ export const preasignarRoles = (correos: string[], rol: Rol, carreraId?: number)
   });
 export const quitarPreasignado = (correo: string) =>
   apiFetch(`/admin/roles-preasignados/${encodeURIComponent(correo)}`, { method: "DELETE" });
+
+export interface ResultadoCorreoPrueba {
+  ok: boolean;
+  configurado: boolean;
+  remitente: string;
+  destinatarios: string[];
+  detalle: string;
+}
+
+/** Envía un correo de prueba al admin autenticado y devuelve qué respondió el proveedor. */
+export const enviarCorreoPrueba = () => apiFetch<ResultadoCorreoPrueba>("/admin/correo-prueba", { method: "POST" });
