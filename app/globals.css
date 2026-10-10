@@ -142,6 +142,13 @@ dialog,
   }
 }
 
+/* ─── Panel (modo Operar): superficie con línea fina, sin sombra ─── */
+.card {
+  background: var(--c-surface-raised);
+  border: 1px solid var(--c-linea);
+  border-radius: var(--radius-md);
+}
+
 /* ─── Campos ─── */
 .field {
   width: 100%;

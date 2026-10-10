@@ -173,7 +173,6 @@ const secciones: SeccionLegal[] = [
 export default function PrivacidadPage() {
   return (
     <PaginaLegal
-      eyebrow="Legal"
       titulo="Política de privacidad"
       resumen={<p>En corto: usamos tu cuenta de Tecsup para que tengas un portafolio público de tus proyectos. Nada de publicidad ni analítica de terceros, y puedes borrar tu cuenta cuando quieras.</p>}
       actualizado="10 de octubre de 2026"

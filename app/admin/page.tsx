@@ -30,9 +30,8 @@ export default function AdminPage() {
 
   return (
     <Container className="py-10">
-      <p className="text-xs font-bold uppercase tracking-[0.18em] text-brand-600">Administración</p>
-      <h1 className="mt-1 font-display text-3xl font-bold text-ink-900">Vitrina</h1>
-      <p className="mt-1 max-w-2xl text-sm text-ink-500">Lo único que necesita un admin: dar de alta docentes por correo, corregir roles y mantener carreras y catálogos. Los alumnos se registran solos al entrar con Google.</p>
+      <h1 className="mt-1 titular-2 text-ink-default">Vitrina</h1>
+      <p className="mt-1 max-w-2xl text-sm text-ink-muted">Lo único que necesita un admin: dar de alta docentes por correo, corregir roles y mantener carreras y catálogos. Los alumnos se registran solos al entrar con Google.</p>
       <div className="mt-6">
         <Tabs valor={tab} onChange={setTab} opciones={[{ id: "resumen", label: "Resumen" }, { id: "usuarios", label: "Usuarios" }, { id: "docentes", label: "Alta de docentes" }, { id: "carreras", label: "Carreras" }, { id: "catalogos", label: "Categorías" }]} />
       </div>
@@ -54,28 +53,28 @@ function Resumen() {
   const estados = Object.keys(ESTADO_LABEL) as EstadoProyecto[];
   return (
     <div className="space-y-6">
-      <div className="grid grid-cols-2 gap-4 lg:grid-cols-4">
-        <Stat valor={r.usuarios.ALUMNO ?? 0} label="alumnos" icono="🎓" />
-        <Stat valor={r.usuarios.DOCENTE ?? 0} label="docentes" icono="🧑‍🏫" />
-        <Stat valor={r.proyectos.PUBLICADO ?? 0} label="proyectos publicados" icono="✅" />
-        <Stat valor={r.proyectos.POR_REVISAR ?? 0} label="esperando revisión" icono="📬" />
-      </div>
+      <dl className="grid grid-cols-2 gap-x-8 gap-y-6 lg:grid-cols-4">
+        <Stat valor={r.usuarios.ALUMNO ?? 0} label="alumnos" />
+        <Stat valor={r.usuarios.DOCENTE ?? 0} label="docentes" />
+        <Stat valor={r.proyectos.PUBLICADO ?? 0} label="proyectos publicados" />
+        <Stat valor={r.proyectos.POR_REVISAR ?? 0} label="esperando revisión" />
+      </dl>
       <div className="grid gap-6 lg:grid-cols-2">
         <div className="card p-5">
-          <h3 className="font-display text-sm font-bold text-ink-900">Proyectos por estado</h3>
-          <ul className="mt-3 space-y-2 text-sm">{estados.map((e) => <li key={e} className="flex justify-between"><span className="text-ink-600">{ESTADO_LABEL[e]}</span><span className="font-semibold">{r.proyectos[e] ?? 0}</span></li>)}</ul>
+          <h3 className="font-display text-title font-medium text-ink-default">Proyectos por estado</h3>
+          <ul className="mt-3 space-y-2 text-sm">{estados.map((e) => <li key={e} className="flex justify-between"><span className="text-ink-muted">{ESTADO_LABEL[e]}</span><span className="font-semibold">{r.proyectos[e] ?? 0}</span></li>)}</ul>
         </div>
         <div className="card p-5">
-          <h3 className="font-display text-sm font-bold text-ink-900">Publicados por carrera</h3>
-          {r.publicadosPorCarrera.length === 0 ? <p className="mt-2 text-sm text-ink-500">Todavía nada publicado.</p> : (
-            <ul className="mt-3 space-y-2 text-sm">{r.publicadosPorCarrera.map((c) => <li key={c.carrera} className="flex justify-between gap-3"><span className="truncate text-ink-600">{c.carrera}</span><span className="font-semibold">{c.total}</span></li>)}</ul>
+          <h3 className="font-display text-title font-medium text-ink-default">Publicados por carrera</h3>
+          {r.publicadosPorCarrera.length === 0 ? <p className="mt-2 text-sm text-ink-muted">Todavía nada publicado.</p> : (
+            <ul className="mt-3 space-y-2 text-sm">{r.publicadosPorCarrera.map((c) => <li key={c.carrera} className="flex justify-between gap-3"><span className="truncate text-ink-muted">{c.carrera}</span><span className="font-semibold">{c.total}</span></li>)}</ul>
           )}
         </div>
       </div>
       <div className="card p-5">
-        <h3 className="font-display text-sm font-bold text-ink-900">Esperando revisión hace más tiempo</h3>
-        {r.porRevisarMasAntiguos.length === 0 ? <p className="mt-2 text-sm text-ink-500">La cola está vacía 🎉</p> : (
-          <ul className="mt-3 divide-y divide-ink-100">{r.porRevisarMasAntiguos.map((p) => <li key={p.id} className="flex items-center justify-between py-2 text-sm"><span><span className="font-medium text-ink-900">{p.nombre}</span><span className="ml-2 text-xs text-ink-500">{p.carrera?.nombre ?? "Sin carrera"} · desde {fechaCorta(p.updatedAt)}</span></span><Link href={`/dashboard/revision/${p.id}`} className="text-brand-700 hover:underline">Revisar</Link></li>)}</ul>
+        <h3 className="font-display text-title font-medium text-ink-default">Esperando revisión hace más tiempo</h3>
+        {r.porRevisarMasAntiguos.length === 0 ? <p className="mt-2 text-sm text-ink-muted">La cola está vacía.</p> : (
+          <ul className="mt-3 divide-y divide-linea">{r.porRevisarMasAntiguos.map((p) => <li key={p.id} className="flex items-center justify-between py-2 text-sm"><span><span className="font-medium text-ink-default">{p.nombre}</span><span className="ml-2 text-xs text-ink-muted">{p.carrera?.nombre ?? "Sin carrera"} · desde {fechaCorta(p.updatedAt)}</span></span><Link href={`/dashboard/revision/${p.id}`} className="text-brand-primary hover:underline">Revisar</Link></li>)}</ul>
         )}
       </div>
       <CorreoPrueba />
@@ -97,14 +96,14 @@ function CorreoPrueba() {
     <div className="card p-5">
       <div className="flex flex-wrap items-center justify-between gap-3">
         <div>
-          <h3 className="font-display text-sm font-bold text-ink-900">Correos de notificación</h3>
-          <p className="mt-1 text-sm text-ink-500">Envía un correo de prueba a <span className="font-medium text-ink-700">{usuario?.correo ?? "tu cuenta"}</span> y muestra qué respondió el proveedor.</p>
+          <h3 className="font-display text-title font-medium text-ink-default">Correos de notificación</h3>
+          <p className="mt-1 text-sm text-ink-muted">Envía un correo de prueba a <span className="font-medium text-ink-default">{usuario?.correo ?? "tu cuenta"}</span> y muestra qué respondió el proveedor.</p>
         </div>
         <Button size="sm" variant="secondary" onClick={probar} loading={enviando}>Enviar correo de prueba</Button>
       </div>
-      {error && <p className="mt-3 rounded-xl bg-red-50 px-3 py-2 text-sm text-red-700">{error}</p>}
+      {error && <p className="mt-3 rounded-sm bg-surface-sunken px-3 py-2 text-sm text-state-danger">{error}</p>}
       {resultado && (
-        <div className={`mt-3 rounded-xl px-4 py-3 text-sm ${resultado.ok ? "bg-emerald-50 text-emerald-800" : "bg-amber-50 text-amber-900"}`}>
+        <div className={`mt-3 rounded-sm px-4 py-3 text-sm ${resultado.ok ? "bg-surface-sunken text-state-success" : "bg-surface-sunken text-ink-default"}`}>
           <p className="font-semibold">{resultado.ok ? "Correo enviado. Revisa tu bandeja (y spam)." : resultado.configurado ? "El proveedor rechazó el envío." : "Los correos no están configurados en el servidor."}</p>
           <p className="mt-1">{resultado.detalle}</p>
           <p className="mt-2 text-xs opacity-80">Proveedor: {resultado.proveedor === "smtp" ? "SMTP" : resultado.proveedor === "resend" ? "Resend" : "ninguno"} · Remitente: {resultado.remitente} · Destinatario: {resultado.destinatarios.join(", ") || "—"}</p>
@@ -141,13 +140,13 @@ function Usuarios() {
         <Select value={rol} onChange={(e) => { setRol(e.target.value); setOffset(0); }}><option value="">Todos los roles</option><option value="ALUMNO">Alumnos</option><option value="DOCENTE">Docentes</option><option value="ADMIN">Admins</option></Select>
       </div>
       {datos === null ? <Skeleton className="mt-4 h-40" /> : datos.items.length === 0 ? <EmptyState className="mt-4" titulo="Sin usuarios" /> : (
-        <ul className="card mt-4 divide-y divide-ink-100">
+        <ul className="card mt-4 divide-y divide-linea">
           {datos.items.map((u) => (
             <li key={u.id} className="flex flex-col gap-3 p-3 sm:flex-row sm:items-center">
               <Avatar name={u.nombre} src={u.fotoUrl} size="md" />
               <div className="min-w-0 flex-1">
-                <p className="truncate text-sm font-semibold text-ink-900">{u.nombre}</p>
-                <p className="truncate text-xs text-ink-500">{u.correo} · {u.carrera?.nombre ?? "sin carrera"} · {u._count.membresias} proyecto(s)</p>
+                <p className="truncate text-sm font-semibold text-ink-default">{u.nombre}</p>
+                <p className="truncate text-xs text-ink-muted">{u.correo} · {u.carrera?.nombre ?? "sin carrera"} · {u._count.membresias} proyecto(s)</p>
               </div>
               <Select value={u.carreraId ?? ""} onChange={(e) => cambiarCarrera(u, Number(e.target.value) || null)} className="sm:w-64" aria-label="Carrera">
                 <option value="">Sin carrera</option>
@@ -190,8 +189,8 @@ function AltaDocentes() {
   return (
     <div className="grid gap-6 lg:grid-cols-2">
       <div className="card p-6">
-        <h3 className="font-display text-base font-bold text-ink-900">Dar de alta docentes</h3>
-        <p className="mt-1 text-sm text-ink-500">Pega los correos @tecsup.edu.pe (uno por línea o separados por coma) y la carrera que dictan. Si ya entraron a Vitrina se aplica ahora; si no, en cuanto entren con Google. No hay que crear usuarios ni contraseñas.</p>
+        <h3 className="font-display text-title font-medium text-ink-default">Dar de alta docentes</h3>
+        <p className="mt-1 text-sm text-ink-muted">Pega los correos @tecsup.edu.pe (uno por línea o separados por coma) y la carrera que dictan. Si ya entraron a Vitrina se aplica ahora; si no, en cuanto entren con Google. No hay que crear usuarios ni contraseñas.</p>
         <Field label="Correos" htmlFor="correos" className="mt-4"><Textarea id="correos" rows={6} value={texto} onChange={(e) => setTexto(e.target.value)} placeholder={"juan.perez@tecsup.edu.pe\nmaria.lopez@tecsup.edu.pe"} /></Field>
         <div className="mt-3 grid gap-3 sm:grid-cols-[140px_1fr]">
           <Select value={rol} onChange={(e) => setRol(e.target.value as Rol)}><option value="DOCENTE">Docente</option><option value="ADMIN">Admin</option></Select>
@@ -205,9 +204,9 @@ function AltaDocentes() {
         <div className="mt-3 flex justify-end"><Button onClick={enviar} loading={enviando} disabled={!texto.trim()}>Dar de alta</Button></div>
       </div>
       <div className="card p-6">
-        <h3 className="font-display text-base font-bold text-ink-900">Pendientes de primer ingreso</h3>
-        {lista.length === 0 ? <p className="mt-2 text-sm text-ink-500">Nadie pendiente.</p> : (
-          <ul className="mt-3 divide-y divide-ink-100">{lista.map((p) => <li key={p.correo} className="flex items-center justify-between py-2 text-sm"><span><span className="font-medium text-ink-900">{p.correo}</span> <Chip className="ml-2">{p.rol.toLowerCase()}</Chip>{nombreCarrera(p.carreraId) && <span className="ml-2 text-xs text-ink-500">{nombreCarrera(p.carreraId)}</span>}</span><button type="button" className="text-xs text-rose-600 hover:underline" onClick={async () => { await quitarPreasignado(p.correo); void cargar(); }}>Quitar</button></li>)}</ul>
+        <h3 className="font-display text-title font-medium text-ink-default">Pendientes de primer ingreso</h3>
+        {lista.length === 0 ? <p className="mt-2 text-sm text-ink-muted">Nadie pendiente.</p> : (
+          <ul className="mt-3 divide-y divide-linea">{lista.map((p) => <li key={p.correo} className="flex items-center justify-between py-2 text-sm"><span><span className="font-medium text-ink-default">{p.correo}</span> <Chip className="ml-2">{p.rol.toLowerCase()}</Chip>{nombreCarrera(p.carreraId) && <span className="ml-2 text-xs text-ink-muted">{nombreCarrera(p.carreraId)}</span>}</span><button type="button" className="text-xs text-state-danger hover:underline" onClick={async () => { await quitarPreasignado(p.correo); void cargar(); }}>Quitar</button></li>)}</ul>
         )}
       </div>
     </div>
@@ -224,20 +223,20 @@ function Carreras() {
 
   return (
     <div className="grid gap-6 lg:grid-cols-[1fr_360px]">
-      <ul className="card divide-y divide-ink-100">
+      <ul className="card divide-y divide-linea">
         {carreras.map((c) => (
           <li key={c.id} className="flex items-center gap-3 p-3">
             <span className="h-3 w-3 shrink-0 rounded-full" style={{ backgroundColor: c.color ?? "#00B3E0" }} />
             <div className="min-w-0 flex-1">
-              <p className={`truncate text-sm font-semibold ${c.estado ? "text-ink-900" : "text-ink-400 line-through"}`}>{c.nombre}</p>
-              <p className="truncate text-xs text-ink-500">{c.area} · {c.sedes.join(", ") || "sede sin definir"} · {c.proyectosPublicados} publicados · {c.estudiantes} estudiantes</p>
+              <p className={`truncate text-sm font-semibold ${c.estado ? "text-ink-default" : "text-ink-subtle line-through"}`}>{c.nombre}</p>
+              <p className="truncate text-xs text-ink-muted">{c.area} · {c.sedes.join(", ") || "sede sin definir"} · {c.proyectosPublicados} publicados · {c.estudiantes} estudiantes</p>
             </div>
             <Button size="sm" variant="ghost" onClick={async () => { await actualizarCarrera(c.id, { estado: !c.estado }); void cargar(); }}>{c.estado ? "Desactivar" : "Activar"}</Button>
           </li>
         ))}
       </ul>
       <div className="card h-fit p-5">
-        <h3 className="font-display text-sm font-bold text-ink-900">Nueva carrera</h3>
+        <h3 className="font-display text-title font-medium text-ink-default">Nueva carrera</h3>
         <div className="mt-3 space-y-3">
           <Input value={nueva.nombre} onChange={(e) => setNueva({ ...nueva, nombre: e.target.value })} placeholder="Nombre oficial" />
           <Input value={nueva.area} onChange={(e) => setNueva({ ...nueva, area: e.target.value })} placeholder="Área (ej. Tecnología Digital)" list="areas" />
@@ -254,17 +253,17 @@ function Catalogos() {
   const { avisar } = useToast();
   const [categorias, setCategorias] = useState<Categoria[]>([]);
   const [nombre, setNombre] = useState("");
-  const [color, setColor] = useState("#00B3E0");
+  const [color, setColor] = useState("#A24019");
   const cargar = () => getCategorias().then(setCategorias).catch(() => null);
   useEffect(() => { void cargar(); }, []);
   return (
     <div className="grid gap-6 lg:grid-cols-[1fr_320px]">
       <div className="card p-5">
-        <h3 className="font-display text-sm font-bold text-ink-900">Categorías</h3>
-        <p className="mt-1 text-xs text-ink-500">Transversales a todas las carreras. Las tecnologías las agregan los propios alumnos al editar su proyecto.</p>
+        <h3 className="font-display text-title font-medium text-ink-default">Categorías</h3>
+        <p className="mt-1 text-xs text-ink-muted">Transversales a todas las carreras. Las tecnologías las agregan los propios alumnos al editar su proyecto.</p>
         <div className="mt-4 flex flex-wrap gap-2">
           {categorias.map((c) => (
-            <span key={c.id} className="inline-flex items-center gap-2 rounded-full border px-3 py-1 text-xs font-medium" style={{ backgroundColor: `${c.color ?? "#999"}1a`, color: c.color ?? "#333", borderColor: `${c.color ?? "#999"}40` }}>
+            <span key={c.id} className="inline-flex items-center gap-2 rounded-sm border px-3 py-1 text-xs font-medium" style={{ backgroundColor: `${c.color ?? "#999"}1a`, color: c.color ?? "#333", borderColor: `${c.color ?? "#999"}40` }}>
               {c.nombre}
               <button type="button" aria-label={`Eliminar ${c.nombre}`} className="opacity-60 hover:opacity-100" onClick={async () => { try { await eliminarCategoria(c.id); void cargar(); } catch (e) { avisar(e instanceof Error ? e.message : "No se puede eliminar: tiene proyectos", "error"); } }}>×</button>
             </span>
@@ -272,10 +271,10 @@ function Catalogos() {
         </div>
       </div>
       <div className="card h-fit p-5">
-        <h3 className="font-display text-sm font-bold text-ink-900">Nueva categoría</h3>
+        <h3 className="font-display text-title font-medium text-ink-default">Nueva categoría</h3>
         <div className="mt-3 space-y-3">
           <Input value={nombre} onChange={(e) => setNombre(e.target.value)} placeholder="Nombre" />
-          <div className="flex items-center gap-3"><input type="color" value={color} onChange={(e) => setColor(e.target.value)} className="h-10 w-14 cursor-pointer rounded-lg border border-ink-200" aria-label="Color" /><span className="text-xs text-ink-500">{color}</span></div>
+          <div className="flex items-center gap-3"><input type="color" value={color} onChange={(e) => setColor(e.target.value)} className="h-10 w-14 cursor-pointer rounded-lg border border-linea" aria-label="Color" /><span className="text-xs text-ink-muted">{color}</span></div>
           <Button className="w-full" disabled={!nombre.trim()} onClick={async () => { try { await crearCategoria({ nombre: nombre.trim(), color }); setNombre(""); avisar("Categoría creada"); void cargar(); } catch (e) { avisar(e instanceof Error ? e.message : "Error", "error"); } }}>Crear</Button>
         </div>
       </div>

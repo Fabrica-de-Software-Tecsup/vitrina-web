@@ -98,7 +98,6 @@ const secciones: SeccionLegal[] = [
 export default function EliminarCuentaPage() {
   return (
     <PaginaLegal
-      eyebrow="Tu cuenta"
       titulo="Eliminar tu cuenta de Vitrina"
       resumen={<p>Puedes borrar tu cuenta en cualquier momento desde la app o la web. Aquí te contamos cómo y qué pasa con tus datos y proyectos.</p>}
       actualizado="10 de octubre de 2026"

@@ -40,8 +40,8 @@ export default function ProyectosFiltrables({ proyectos, titulo, vacio, mostrarE
   return (
     <section>
       <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
-        <h2 className="font-display text-xl font-bold text-ink-900">
-          {titulo} <span className="text-base font-medium text-ink-400">({visibles.length}{visibles.length !== proyectos.length ? ` de ${proyectos.length}` : ""})</span>
+        <h2 className="font-display text-xl font-medium text-ink-default">
+          {titulo} <span className="text-base font-medium text-ink-subtle">({visibles.length}{visibles.length !== proyectos.length ? ` de ${proyectos.length}` : ""})</span>
         </h2>
         {hayFiltros && (
           <div className="flex flex-wrap gap-2">
@@ -70,7 +70,7 @@ export default function ProyectosFiltrables({ proyectos, titulo, vacio, mostrarE
         {proyectos.length === 0 ? (
           <EmptyState icono="carpeta" titulo={vacio.titulo} texto={vacio.texto} accion={vacio.accion} />
         ) : visibles.length === 0 ? (
-          <p className="rounded-2xl border border-dashed border-ink-200 p-6 text-center text-sm text-ink-500">Ningún proyecto coincide con esos filtros.</p>
+          <p className="rounded-md border border-dashed border-linea p-6 text-center text-sm text-ink-muted">Ningún proyecto coincide con esos filtros.</p>
         ) : (
           <div className="grid gap-6 sm:grid-cols-2">{visibles.map((p) => <ProjectCard key={p.id} proyecto={p} mostrarEstado={mostrarEstado && p.estado !== "PUBLICADO"} href={hrefDe?.(p)} />)}</div>
         )}

@@ -41,6 +41,6 @@ export default function EsperaHistorial() {
     const evento = window.event;
     if (evento?.type === "popstate" && !window.matchMedia("(prefers-reduced-motion: reduce)").matches) promesa = esperaDe(evento);
   }
-  use(promesa);
+  use(promesa as Promise<void>);
   return null;
 }

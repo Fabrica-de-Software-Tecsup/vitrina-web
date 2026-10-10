@@ -134,7 +134,6 @@ const secciones: SeccionLegal[] = [
 export default function TerminosPage() {
   return (
     <PaginaLegal
-      eyebrow="Legal"
       titulo="Términos de uso"
       resumen={<p>Las reglas para usar Vitrina: tu trabajo sigue siendo tuyo, los docentes revisan antes de publicar y todos cuidamos lo que se comparte.</p>}
       actualizado="10 de octubre de 2026"
