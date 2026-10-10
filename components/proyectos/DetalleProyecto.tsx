@@ -11,6 +11,7 @@ import { EmptyState, Modal, Skeleton, useToast } from "@/components/ui/Feedback"
 import Portada from "@/components/proyectos/Portada";
 import ProjectCard from "@/components/proyectos/ProjectCard";
 import Compartir from "@/components/proyectos/Compartir";
+import EsperaHistorial from "@/components/proyectos/EsperaHistorial";
 import { useSesion } from "@/components/sesion/SesionProvider";
 import { getProyectoPorSlug, getRelacionados, getVersion, getVersiones, incrementarVistas } from "@/lib/api-proyectos";
 import { proyectoEnCache, recordarProyectos, urlExplorar } from "@/lib/cache-proyectos";
@@ -152,6 +153,7 @@ export default function DetalleProyecto({ slug, inicial }: Props) {
 
   return (
     <>
+      <EsperaHistorial />
       <article className="mx-auto max-w-[65rem] px-4 sm:px-8 lg:px-0">
         {/* Barra: volver y contexto */}
         <div className="flex min-h-16 flex-wrap items-center justify-between gap-x-4 gap-y-2 py-2">

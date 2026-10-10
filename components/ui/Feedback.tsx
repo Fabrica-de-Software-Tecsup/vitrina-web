@@ -168,17 +168,17 @@ export function Pagination({ total, limit, offset, hrefDe, onChange }: Paginacio
   }
 
   const celda = "inline-flex h-10 min-w-10 items-center justify-center gap-1.5 rounded-sm px-3 text-label transition-colors";
-  const Destino = ({ pagina, children, className, label }: { pagina: number; children: React.ReactNode; className?: string; label?: string }) => {
+  const destino = (pagina: number, children: React.ReactNode, className: string, label?: string, key?: number) => {
     const off = (pagina - 1) * limit;
     if (hrefDe) {
       return (
-        <Link href={hrefDe(off)} scroll className={className} aria-label={label} aria-current={pagina === actual ? "page" : undefined}>
+        <Link key={key} href={hrefDe(off)} scroll className={className} aria-label={label} aria-current={pagina === actual ? "page" : undefined}>
           {children}
         </Link>
       );
     }
     return (
-      <button type="button" onClick={() => onChange?.(off)} className={className} aria-label={label} aria-current={pagina === actual ? "page" : undefined}>
+      <button key={key} type="button" onClick={() => onChange?.(off)} className={className} aria-label={label} aria-current={pagina === actual ? "page" : undefined}>
         {children}
       </button>
     );
@@ -187,10 +187,15 @@ export function Pagination({ total, limit, offset, hrefDe, onChange }: Paginacio
   return (
     <nav className="flex flex-wrap items-center justify-center gap-1" aria-label="Paginación">
       {actual > 1 ? (
-        <Destino pagina={actual - 1} className={cn(celda, "text-ink-default hover:bg-surface-sunken")} label="Página anterior">
-          <Icono nombre="chevron-izq" tam={18} />
-          <span className="hidden sm:inline">Anterior</span>
-        </Destino>
+        destino(
+          actual - 1,
+          <>
+            <Icono nombre="chevron-izq" tam={18} />
+            <span className="hidden sm:inline">Anterior</span>
+          </>,
+          cn(celda, "text-ink-default hover:bg-surface-sunken"),
+          "Página anterior",
+        )
       ) : (
         <span className={cn(celda, "text-ink-subtle")} aria-hidden>
           <Icono nombre="chevron-izq" tam={18} />
@@ -203,21 +208,19 @@ export function Pagination({ total, limit, offset, hrefDe, onChange }: Paginacio
             …
           </span>
         ) : (
-          <Destino
-            key={p}
-            pagina={p}
-            label={`Página ${p}`}
-            className={cn(celda, p === actual ? "bg-ink-default text-ink-inverse" : "text-ink-default hover:bg-surface-sunken")}
-          >
-            {p}
-          </Destino>
+          destino(p, p, cn(celda, p === actual ? "bg-ink-default text-ink-inverse" : "text-ink-default hover:bg-surface-sunken"), `Página ${p}`, p)
         ),
       )}
       {actual < paginas ? (
-        <Destino pagina={actual + 1} className={cn(celda, "text-ink-default hover:bg-surface-sunken")} label="Página siguiente">
-          <span className="hidden sm:inline">Siguiente</span>
-          <Icono nombre="chevron-der" tam={18} />
-        </Destino>
+        destino(
+          actual + 1,
+          <>
+            <span className="hidden sm:inline">Siguiente</span>
+            <Icono nombre="chevron-der" tam={18} />
+          </>,
+          cn(celda, "text-ink-default hover:bg-surface-sunken"),
+          "Página siguiente",
+        )
       ) : (
         <span className={cn(celda, "text-ink-subtle")} aria-hidden>
           <span className="hidden sm:inline">Siguiente</span>

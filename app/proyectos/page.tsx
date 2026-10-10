@@ -8,6 +8,7 @@ import { Select } from "@/components/ui/Field";
 import Button from "@/components/ui/Button";
 import Icono from "@/components/ui/Icono";
 import ProjectCard from "@/components/proyectos/ProjectCard";
+import EsperaHistorial from "@/components/proyectos/EsperaHistorial";
 import { getEstadisticas, getProyectoAleatorio, listarProyectos, type FiltrosProyectos } from "@/lib/api-proyectos";
 import { getCarreras, getCategorias, getTecnologias } from "@/lib/api-catalogos";
 import { listaEnCache, recordarExplorar, recordarLista, recordarProyectos } from "@/lib/cache-proyectos";
@@ -302,19 +303,23 @@ function ExplorarContenido() {
 }
 
 export default function ExplorarPage() {
+  // EsperaHistorial va fuera del Suspense: si suspendiera dentro de un límite recién montado, React mostraría el fallback.
   return (
-    <Suspense
-      fallback={
-        <Container className="pt-20">
-          <div className="reticula">
-            {[1, 2, 3, 4].map((i) => (
-              <CardSkeleton key={i} />
-            ))}
-          </div>
-        </Container>
-      }
-    >
-      <ExplorarContenido />
-    </Suspense>
+    <>
+      <EsperaHistorial />
+      <Suspense
+        fallback={
+          <Container className="pt-20">
+            <div className="reticula">
+              {[1, 2, 3, 4].map((i) => (
+                <CardSkeleton key={i} />
+              ))}
+            </div>
+          </Container>
+        }
+      >
+        <ExplorarContenido />
+      </Suspense>
+    </>
   );
 }
