@@ -8,7 +8,7 @@ export const metadata: Metadata = {
   alternates: { canonical: "/terminos" },
 };
 
-const CONTACTO = "contact@coresearch.studio";
+const CONTACTO = "bpareja.me@gmail.com";
 
 const secciones: SeccionLegal[] = [
   {
