@@ -107,7 +107,7 @@ function CorreoPrueba() {
         <div className={`mt-3 rounded-xl px-4 py-3 text-sm ${resultado.ok ? "bg-emerald-50 text-emerald-800" : "bg-amber-50 text-amber-900"}`}>
           <p className="font-semibold">{resultado.ok ? "Correo enviado. Revisa tu bandeja (y spam)." : resultado.configurado ? "El proveedor rechazó el envío." : "Los correos no están configurados en el servidor."}</p>
           <p className="mt-1">{resultado.detalle}</p>
-          <p className="mt-2 text-xs opacity-80">Remitente: {resultado.remitente} · Destinatario: {resultado.destinatarios.join(", ") || "—"}</p>
+          <p className="mt-2 text-xs opacity-80">Proveedor: {resultado.proveedor === "smtp" ? "SMTP" : resultado.proveedor === "resend" ? "Resend" : "ninguno"} · Remitente: {resultado.remitente} · Destinatario: {resultado.destinatarios.join(", ") || "—"}</p>
         </div>
       )}
     </div>

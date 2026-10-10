@@ -45,6 +45,7 @@ export const quitarPreasignado = (correo: string) =>
 export interface ResultadoCorreoPrueba {
   ok: boolean;
   configurado: boolean;
+  proveedor: "smtp" | "resend" | "simulado";
   remitente: string;
   destinatarios: string[];
   detalle: string;
