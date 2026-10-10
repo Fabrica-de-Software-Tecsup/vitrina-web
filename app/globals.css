@@ -33,12 +33,14 @@
   -webkit-tap-highlight-color: transparent;
 }
 
+@layer base {
 html {
   background: var(--c-surface-default);
 }
 
 body {
   margin: 0;
+  overflow-x: clip;
   background: var(--c-surface-default);
   color: var(--c-ink-default);
   font-family: var(--font-sans);
@@ -91,6 +93,9 @@ dialog,
   overscroll-behavior: contain;
 }
 
+}
+
+@layer components {
 /* ─── Tipografía de marca ─── */
 .titular {
   font-family: var(--font-display);
@@ -119,17 +124,20 @@ dialog,
   letter-spacing: -0.01em;
 }
 
-.lectura p {
+.lectura > p,
+.lectura section > p {
   font-size: 1.0625rem;
   line-height: 1.65;
   max-width: 68ch;
   margin: 0 0 1em;
 }
-.lectura p:last-child {
+.lectura > p:last-child,
+.lectura section > p:last-child {
   margin-bottom: 0;
 }
 @media (min-width: 768px) {
-  .lectura p {
+  .lectura > p,
+.lectura section > p {
     font-size: 1.125rem;
   }
 }
@@ -209,8 +217,8 @@ textarea.field {
 /* Lavado radial bajo la portada del detalle (solo oscuro, ≤ 12 % de alfa). */
 .lavado {
   position: absolute;
-  inset: -4rem -20vw auto;
-  height: 140%;
+  inset: -3rem -3rem auto;
+  height: 135%;
   z-index: -1;
   pointer-events: none;
   background: none;
@@ -298,6 +306,8 @@ textarea.field {
 }
 .carril::-webkit-scrollbar {
   display: none;
+}
+
 }
 
 /* ─── View Transitions: el gesto de firma «abrir la vitrina» ─── */
