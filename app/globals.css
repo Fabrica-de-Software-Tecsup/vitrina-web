@@ -1,180 +1,372 @@
 @import "tailwindcss";
+@import "./tokens.css";
 
 /*
-  Sistema de diseño de Vitrina.
-  Paleta tomada del CSS del sitio oficial de Tecsup (celeste #00B3E0 / azul #0097D0 y neutros)
-  mas dos acentos propios (violeta y lima) para estados y carreras.
+  Vitrina · dirección A «Lámina».
+  Los colores, radios, escala tipográfica y duraciones vienen de tokens.css (generado desde vitrina-infra/design).
+  Aquí solo van las familias de next/font, dos derivados de línea fina y los detalles de página construida.
 */
-@theme {
-  --font-sans: var(--font-inter), ui-sans-serif, system-ui, sans-serif;
-  --font-display: var(--font-jakarta), var(--font-inter), ui-sans-serif, system-ui, sans-serif;
 
-  --color-brand-50: #eefaff;
-  --color-brand-100: #dcf3ff;
-  --color-brand-200: #c0e4f7;
-  --color-brand-300: #8ed0f1;
-  --color-brand-400: #3cc0e8;
-  --color-brand-500: #00b3e0;
-  --color-brand-600: #0097d0;
-  --color-brand-700: #0082ce;
-  --color-brand-800: #065f8f;
-  --color-brand-900: #0b3c5a;
+/* Familias reales de next/font (las variables se definen en <html> desde layout.tsx). */
+@theme inline {
+  /* next/font define --font-display y --font-sans en <html>; esa declaración (sin capa) gana a la de @layer theme. */
+  --font-display: var(--font-display), Newsreader, Georgia, serif;
+  --font-sans: var(--font-sans), "Instrument Sans", system-ui, sans-serif;
+  --font-body: var(--font-sans), "Instrument Sans", system-ui, sans-serif;
 
-  --color-ink-900: #0f172a;
-  --color-ink-800: #1e293b;
-  --color-ink-700: #334155;
-  --color-ink-600: #475569;
-  --color-ink-500: #64748b;
-  --color-ink-400: #94a3b8;
-  --color-ink-300: #cbd5e1;
-  --color-ink-200: #e2e8f0;
-  --color-ink-100: #f1f5f9;
-  --color-ink-50: #f8fafc;
-
-  --color-violet-500: #7f44d8;
-  --color-lime-500: #87d328;
-
-  --shadow-soft: 0 1px 2px rgb(15 23 42 / 0.04), 0 8px 24px -12px rgb(15 23 42 / 0.12);
-  --shadow-lift: 0 2px 4px rgb(15 23 42 / 0.05), 0 20px 40px -16px rgb(0 130 206 / 0.25);
-
-  --animate-fade-up: fade-up 0.5s ease-out both;
-  @keyframes fade-up {
-    from {
-      opacity: 0;
-      transform: translateY(10px);
-    }
-    to {
-      opacity: 1;
-      transform: translateY(0);
-    }
-  }
+  /* Línea fina y marco de lámina: derivados del par tinta/superficie (no hay token propio todavía). */
+  --color-linea: var(--c-linea);
+  --color-marco: var(--c-marco);
 }
 
 :root {
-  color-scheme: light;
+  --c-linea: light-dark(
+    color-mix(in oklch, var(--c-ink-default) 13%, var(--c-surface-default)),
+    color-mix(in oklch, var(--c-ink-default) 17%, var(--c-surface-default))
+  );
+  --c-marco: color-mix(in oklch, var(--c-ink-default) 18%, transparent);
+  --ease-salida: cubic-bezier(0.16, 1, 0.3, 1);
+
+  accent-color: var(--c-brand-primary);
+  scrollbar-color: color-mix(in oklch, var(--c-ink-default) 28%, transparent) transparent;
+  scroll-padding-top: 5rem;
+  -webkit-tap-highlight-color: transparent;
 }
 
 html {
-  scroll-behavior: smooth;
+  background: var(--c-surface-default);
 }
 
 body {
   margin: 0;
-  background: #f8fafc;
-  color: var(--color-ink-800);
+  background: var(--c-surface-default);
+  color: var(--c-ink-default);
   font-family: var(--font-sans);
+  font-optical-sizing: auto;
   -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
   text-rendering: optimizeLegibility;
 }
 
 h1,
 h2,
 h3,
-.font-display {
-  font-family: var(--font-display);
-  letter-spacing: -0.02em;
+h4 {
+  text-wrap: balance;
 }
 
-/* Fondo de la portada: malla suave de la marca */
-.bg-mesh {
-  background-color: #0b3c5a;
-  background-image:
-    radial-gradient(at 15% 20%, rgb(0 179 224 / 0.55) 0, transparent 50%),
-    radial-gradient(at 85% 10%, rgb(127 68 216 / 0.45) 0, transparent 45%),
-    radial-gradient(at 70% 90%, rgb(0 151 208 / 0.5) 0, transparent 50%),
-    radial-gradient(at 20% 85%, rgb(135 211 40 / 0.25) 0, transparent 40%);
+p,
+li,
+dd,
+figcaption {
+  text-wrap: pretty;
 }
 
-.bg-grid {
-  background-image:
-    linear-gradient(rgb(255 255 255 / 0.06) 1px, transparent 1px),
-    linear-gradient(90deg, rgb(255 255 255 / 0.06) 1px, transparent 1px);
-  background-size: 48px 48px;
-}
-
-/* Texto con degradado de marca */
-.text-gradient {
-  background: linear-gradient(90deg, #00b3e0, #7f44d8);
-  -webkit-background-clip: text;
-  background-clip: text;
-  color: transparent;
-}
-
-/* Tarjeta base */
-.card {
-  background: #fff;
-  border: 1px solid var(--color-ink-200);
-  border-radius: 1.25rem;
-  box-shadow: var(--shadow-soft);
-}
-
-.card-hover {
-  transition:
-    transform 0.25s ease,
-    box-shadow 0.25s ease,
-    border-color 0.25s ease;
-}
-.card-hover:hover {
-  transform: translateY(-4px);
-  box-shadow: var(--shadow-lift);
-  border-color: var(--color-brand-200);
-}
-
-/* Campos de formulario */
-.field {
-  width: 100%;
-  border-radius: 0.875rem;
-  border: 1px solid var(--color-ink-200);
-  background: #fff;
-  padding: 0.7rem 0.95rem;
-  font-size: 0.925rem;
-  color: var(--color-ink-900);
-  transition:
-    border-color 0.15s,
-    box-shadow 0.15s;
-}
-.field::placeholder {
-  color: var(--color-ink-400);
-}
-.field:focus {
-  outline: none;
-  border-color: var(--color-brand-500);
-  box-shadow: 0 0 0 4px rgb(0 179 224 / 0.15);
-}
-.field[aria-invalid="true"] {
-  border-color: #ef4444;
-}
-.field:disabled {
-  background: var(--color-ink-50);
-  color: var(--color-ink-500);
-}
-
-.prose-vitrina p {
-  margin: 0 0 0.9em;
-  line-height: 1.7;
-}
-.prose-vitrina p:last-child {
-  margin-bottom: 0;
-}
-
-/* Carrusel horizontal: sin barra de scroll visible pero desplazable */
-.carrusel {
-  scrollbar-width: none;
-  -webkit-overflow-scrolling: touch;
-}
-.carrusel::-webkit-scrollbar {
-  display: none;
+a {
+  text-underline-offset: 0.2em;
+  text-decoration-thickness: from-font;
 }
 
 ::selection {
-  background: rgb(0 179 224 / 0.25);
+  background: color-mix(in oklch, var(--c-brand-primary) 26%, transparent);
+  color: var(--c-ink-default);
+}
+
+:focus-visible {
+  outline: 2px solid var(--c-brand-primary);
+  outline-offset: 3px;
+  border-radius: 4px;
+}
+
+time,
+.num,
+table,
+nav[aria-label="Paginación"] {
+  font-variant-numeric: tabular-nums;
+}
+
+dialog,
+[role="dialog"],
+.panel-filtros {
+  overscroll-behavior: contain;
+}
+
+/* ─── Tipografía de marca ─── */
+.titular {
+  font-family: var(--font-display);
+  font-weight: 400;
+  font-size: clamp(2.5rem, 1.6rem + 3.6vw, 4.5rem);
+  line-height: 1.02;
+  letter-spacing: -0.025em;
+  font-optical-sizing: auto;
+  text-wrap: balance;
+}
+
+.titular-2 {
+  font-family: var(--font-display);
+  font-weight: 400;
+  font-size: clamp(2rem, 1.5rem + 2vw, 3rem);
+  line-height: 1.08;
+  letter-spacing: -0.02em;
+  text-wrap: balance;
+}
+
+.seccion-t {
+  font-family: var(--font-display);
+  font-weight: 500;
+  font-size: clamp(1.5rem, 1.3rem + 0.7vw, 1.875rem);
+  line-height: 1.2;
+  letter-spacing: -0.01em;
+}
+
+.lectura p {
+  font-size: 1.0625rem;
+  line-height: 1.65;
+  max-width: 68ch;
+  margin: 0 0 1em;
+}
+.lectura p:last-child {
+  margin-bottom: 0;
+}
+@media (min-width: 768px) {
+  .lectura p {
+    font-size: 1.125rem;
+  }
+}
+
+/* ─── Campos ─── */
+.field {
+  width: 100%;
+  min-height: 2.75rem;
+  border-radius: var(--radius-sm);
+  border: 1px solid var(--c-surface-outline);
+  background: var(--c-surface-raised);
+  padding: 0.6rem 0.8rem;
+  font-size: 0.9375rem;
+  line-height: 1.4;
+  color: var(--c-ink-default);
+  transition:
+    border-color var(--duration-fast) var(--ease-standard),
+    box-shadow var(--duration-fast) var(--ease-standard);
+}
+.field::placeholder {
+  color: var(--c-ink-subtle);
+}
+.field:hover:not(:disabled) {
+  border-color: var(--c-ink-muted);
+}
+.field:focus {
+  outline: none;
+  border-color: var(--c-brand-primary);
+  box-shadow: 0 0 0 3px color-mix(in oklch, var(--c-brand-primary) 22%, transparent);
+}
+.field[aria-invalid="true"] {
+  border-color: var(--c-state-danger);
+}
+.field:disabled {
+  background: var(--c-surface-sunken);
+  color: var(--c-ink-muted);
+}
+textarea.field {
+  field-sizing: content;
+}
+
+/* ─── Lámina: la tarjeta del proyecto ─── */
+.lamina {
+  position: relative;
+  display: block;
+  aspect-ratio: 4 / 3;
+  overflow: hidden;
+  background-color: var(--c-surface-sunken);
+  background-size: cover;
+  background-position: center;
+  box-shadow: 0 0 0 1px var(--c-marco);
+}
+.lamina img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+/*
+  Modo oscuro: gesto de la dirección C. La lámina pierde el marco y proyecta un halo estático
+  de su color dominante (--dominante, definido por tarjeta). En claro se mantiene el marco.
+*/
+.lamina {
+  --halo:
+    0 8px 24px -4px color-mix(in oklch, var(--dominante, transparent) 60%, transparent),
+    0 24px 64px -12px color-mix(in oklch, var(--dominante, transparent) 25%, transparent);
+}
+[data-theme="dark"] .lamina {
+  box-shadow: var(--halo);
+}
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) .lamina {
+    box-shadow: var(--halo);
+  }
+}
+
+/* Lavado radial bajo la portada del detalle (solo oscuro, ≤ 12 % de alfa). */
+.lavado {
+  position: absolute;
+  inset: -4rem -20vw auto;
+  height: 140%;
+  z-index: -1;
+  pointer-events: none;
+  background: none;
+}
+[data-theme="dark"] .lavado {
+  background: radial-gradient(60% 55% at 50% 45%, color-mix(in oklch, var(--dominante, transparent) 12%, transparent), transparent 75%);
+}
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) .lavado {
+    background: radial-gradient(60% 55% at 50% 45%, color-mix(in oklch, var(--dominante, transparent) 12%, transparent), transparent 75%);
+  }
+}
+
+/* Física al tocar: la lámina cede un poco al pulsar y vuelve con una salida rápida. */
+.lamina-enlace {
+  display: block;
+  transition: transform var(--duration-base) var(--ease-salida);
+}
+.lamina-enlace:active {
+  transform: scale(0.985);
+  transition-duration: var(--duration-fast);
+}
+.lamina-enlace:hover .pie-t {
+  text-decoration: underline;
+  text-decoration-color: var(--c-brand-primary);
+  text-decoration-thickness: 1px;
+  text-underline-offset: 0.18em;
+}
+
+.pie-t {
+  font-family: var(--font-display);
+  font-weight: 500;
+  font-size: 1.25rem;
+  line-height: 1.2;
+  letter-spacing: -0.005em;
+  text-wrap: balance;
+}
+
+/* Retícula de Explorar: auto-fill en escritorio; en teléfono dos columnas con una lámina a todo ancho cada seis. */
+.reticula {
+  display: grid;
+  gap: 2.5rem 1.5rem;
+  grid-template-columns: repeat(auto-fill, minmax(min(100%, 18rem), 1fr));
+}
+@media (max-width: 639px) {
+  .reticula {
+    grid-template-columns: 1fr 1fr;
+    gap: 2rem 1rem;
+  }
+  .reticula > .destacada {
+    grid-column: 1 / -1;
+  }
+  .reticula .pie-t {
+    font-size: 1.0625rem;
+  }
+  .reticula > .destacada .pie-t {
+    font-size: 1.375rem;
+  }
+}
+
+/* Barras de carga */
+@keyframes pulso {
+  50% {
+    opacity: 0.55;
+  }
+}
+.cargando {
+  animation: pulso 1.6s ease-in-out infinite;
+  background: var(--c-surface-sunken);
+}
+
+@keyframes aparecer {
+  from {
+    opacity: 0;
+    transform: translateY(6px);
+  }
+}
+.aparece {
+  animation: aparecer var(--duration-base) var(--ease-salida) both;
+}
+
+/* Carril horizontal sin barra visible */
+.carril {
+  scrollbar-width: none;
+}
+.carril::-webkit-scrollbar {
+  display: none;
+}
+
+/* ─── View Transitions: el gesto de firma «abrir la vitrina» ─── */
+::view-transition {
+  pointer-events: none;
+}
+::view-transition-group(.morph) {
+  animation-duration: var(--duration-focal);
+  animation-timing-function: var(--ease-salida);
+}
+::view-transition-image-pair(.morph) {
+  animation-name: morph-velo;
+  animation-duration: var(--duration-focal);
+}
+::view-transition-old(.morph),
+::view-transition-new(.morph) {
+  /* Las dos capturas comparten 4:3: se estiran sin deformarse y se funden. */
+  height: 100%;
+  object-fit: cover;
+}
+@keyframes morph-velo {
+  35% {
+    filter: blur(2px);
+  }
+}
+
+/* Resultados de Explorar al cambiar filtros: fundido corto. */
+::view-transition-old(.resultados) {
+  animation: var(--duration-fast) var(--ease-standard) both salir-fundido;
+}
+::view-transition-new(.resultados) {
+  animation: var(--duration-base) var(--ease-salida) var(--duration-fast) both entrar-fundido;
+}
+@keyframes salir-fundido {
+  to {
+    opacity: 0;
+  }
+}
+@keyframes entrar-fundido {
+  from {
+    opacity: 0;
+    transform: translateY(8px);
+  }
 }
 
 @media (prefers-reduced-motion: reduce) {
+  /* El morph se vuelve un fundido cruzado: sin desplazamiento ni cambio de tamaño. */
+  ::view-transition-group(*) {
+    animation: none !important;
+  }
+  ::view-transition-old(*) {
+    animation: var(--duration-base) ease both salir-fundido !important;
+  }
+  ::view-transition-new(*) {
+    animation: var(--duration-base) ease both reverse salir-fundido !important;
+  }
+  ::view-transition-image-pair(*) {
+    animation: none !important;
+  }
   *,
   *::before,
   *::after {
-    animation-duration: 0.01ms !important;
     transition-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+  }
+  .lamina-enlace:active {
+    transform: none;
+  }
+  html {
+    scroll-behavior: auto;
   }
 }
