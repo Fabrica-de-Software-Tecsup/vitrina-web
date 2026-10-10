@@ -144,7 +144,7 @@ export default function RevisionPage() {
           <section className="grid gap-4 sm:grid-cols-2">
             {([["comoLoConstruyeron", "Cómo lo construyeron"], ["retosSuperados", "Retos"], ["leccionAprendida", "Aprendizajes"], ["queHarianDiferente", "Qué harían diferente"]] as const).map(([campo, titulo]) => (
               <div key={campo} className="card p-5">
-                <h3 className="font-display text-title font-medium text-ink-default">{titulo}</h3>
+                <h2 className="font-display text-title font-medium text-ink-default">{titulo}</h2>
                 <p className="mt-2 whitespace-pre-line text-sm text-ink-default">{proyecto[campo] || <span className="text-ink-subtle">No completado</span>}</p>
               </div>
             ))}
@@ -153,7 +153,7 @@ export default function RevisionPage() {
 
         <aside className="space-y-4 lg:sticky lg:top-24 lg:self-start">
           <div className="card p-5">
-            <h3 className="font-display text-title font-medium text-ink-default">Checklist de calidad</h3>
+            <h2 className="font-display text-title font-medium text-ink-default">Checklist de calidad</h2>
             <ul className="mt-3 space-y-2">
               {checklist.map((c) => (
                 <li key={c.label} className="flex items-start gap-2 text-sm">
@@ -164,7 +164,7 @@ export default function RevisionPage() {
             </ul>
           </div>
           <div className="card p-5">
-            <h3 className="font-display text-title font-medium text-ink-default">Equipo</h3>
+            <h2 className="font-display text-title font-medium text-ink-default">Equipo</h2>
             <ul className="mt-3 space-y-2">
               {proyecto.miembros.map((m) => (
                 <li key={m.usuarioId} className="flex items-center gap-2 text-sm"><Avatar name={m.usuario.nombre} src={m.usuario.fotoUrl} size="sm" /><span className="min-w-0"><span className="block truncate font-medium text-ink-default">{m.usuario.nombre}</span><span className="block truncate text-xs text-ink-muted">{m.rol}</span></span></li>
@@ -174,14 +174,14 @@ export default function RevisionPage() {
           </div>
           {enlaces.length > 0 && (
             <div className="card p-5">
-              <h3 className="font-display text-title font-medium text-ink-default">Enlaces</h3>
+              <h2 className="font-display text-title font-medium text-ink-default">Enlaces</h2>
               <ul className="mt-2 space-y-1">{enlaces.map(([l, h]) => <li key={l}><a href={h} target="_blank" rel="noopener noreferrer" className="text-sm text-brand-primary hover:underline">{l}</a></li>)}</ul>
             </div>
           )}
-          {proyecto.tecnologias.length > 0 && <div className="card p-5"><h3 className="font-display text-title font-medium text-ink-default">Tecnologías</h3><div className="mt-2 flex flex-wrap gap-1.5">{proyecto.tecnologias.map((t) => <Chip key={t.tecnologia.id}>{t.tecnologia.nombre}</Chip>)}</div></div>}
+          {proyecto.tecnologias.length > 0 && <div className="card p-5"><h2 className="font-display text-title font-medium text-ink-default">Tecnologías</h2><div className="mt-2 flex flex-wrap gap-1.5">{proyecto.tecnologias.map((t) => <Chip key={t.tecnologia.id}>{t.tecnologia.nombre}</Chip>)}</div></div>}
           {historial.length > 0 && (
             <div className="card p-5">
-              <h3 className="font-display text-title font-medium text-ink-default">Historial</h3>
+              <h2 className="font-display text-title font-medium text-ink-default">Historial</h2>
               <ol className="mt-3 space-y-3 border-l border-linea pl-4">
                 {historial.map((h) => (
                   <li key={h.id} className="relative text-xs"><span className="absolute -left-[21px] top-1 h-2.5 w-2.5 rounded-full border-2 border-white bg-brand-primary" /><p className="font-semibold text-ink-default">{ESTADO_LABEL[h.aEstado]}</p><p className="text-ink-muted">{h.actor?.nombre ?? "Sistema"} · {fechaCorta(h.createdAt)}</p>{h.observaciones && <p className="mt-1 rounded-lg bg-surface-sunken p-2 text-ink-default">{h.observaciones}</p>}</li>

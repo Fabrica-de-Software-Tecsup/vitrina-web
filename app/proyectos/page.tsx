@@ -159,7 +159,7 @@ function ExplorarContenido() {
           </Button>
           <p className="hidden min-w-0 flex-1 truncate text-[0.9375rem] text-ink-muted sm:block">{resumen}</p>
           <div className="ml-auto flex items-center gap-2 sm:gap-3">
-            <label htmlFor="orden" className="hidden text-[0.9375rem] text-ink-muted md:block">
+            <label htmlFor="orden" className="sr-only text-[0.9375rem] text-ink-muted md:not-sr-only">
               Ordenar por
             </label>
             <Select id="orden" value={filtros.orden} onChange={(e) => setParam({ orden: e.target.value === "recientes" ? undefined : e.target.value })} className="w-auto">

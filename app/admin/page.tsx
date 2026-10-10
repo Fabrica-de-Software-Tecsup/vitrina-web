@@ -61,18 +61,18 @@ function Resumen() {
       </dl>
       <div className="grid gap-6 lg:grid-cols-2">
         <div className="card p-5">
-          <h3 className="font-display text-title font-medium text-ink-default">Proyectos por estado</h3>
+          <h2 className="font-display text-title font-medium text-ink-default">Proyectos por estado</h2>
           <ul className="mt-3 space-y-2 text-sm">{estados.map((e) => <li key={e} className="flex justify-between"><span className="text-ink-muted">{ESTADO_LABEL[e]}</span><span className="font-semibold">{r.proyectos[e] ?? 0}</span></li>)}</ul>
         </div>
         <div className="card p-5">
-          <h3 className="font-display text-title font-medium text-ink-default">Publicados por carrera</h3>
+          <h2 className="font-display text-title font-medium text-ink-default">Publicados por carrera</h2>
           {r.publicadosPorCarrera.length === 0 ? <p className="mt-2 text-sm text-ink-muted">Todavía nada publicado.</p> : (
             <ul className="mt-3 space-y-2 text-sm">{r.publicadosPorCarrera.map((c) => <li key={c.carrera} className="flex justify-between gap-3"><span className="truncate text-ink-muted">{c.carrera}</span><span className="font-semibold">{c.total}</span></li>)}</ul>
           )}
         </div>
       </div>
       <div className="card p-5">
-        <h3 className="font-display text-title font-medium text-ink-default">Esperando revisión hace más tiempo</h3>
+        <h2 className="font-display text-title font-medium text-ink-default">Esperando revisión hace más tiempo</h2>
         {r.porRevisarMasAntiguos.length === 0 ? <p className="mt-2 text-sm text-ink-muted">La cola está vacía.</p> : (
           <ul className="mt-3 divide-y divide-linea">{r.porRevisarMasAntiguos.map((p) => <li key={p.id} className="flex items-center justify-between py-2 text-sm"><span><span className="font-medium text-ink-default">{p.nombre}</span><span className="ml-2 text-xs text-ink-muted">{p.carrera?.nombre ?? "Sin carrera"} · desde {fechaCorta(p.updatedAt)}</span></span><Link href={`/dashboard/revision/${p.id}`} className="text-brand-primary hover:underline">Revisar</Link></li>)}</ul>
         )}
@@ -96,7 +96,7 @@ function CorreoPrueba() {
     <div className="card p-5">
       <div className="flex flex-wrap items-center justify-between gap-3">
         <div>
-          <h3 className="font-display text-title font-medium text-ink-default">Correos de notificación</h3>
+          <h2 className="font-display text-title font-medium text-ink-default">Correos de notificación</h2>
           <p className="mt-1 text-sm text-ink-muted">Envía un correo de prueba a <span className="font-medium text-ink-default">{usuario?.correo ?? "tu cuenta"}</span> y muestra qué respondió el proveedor.</p>
         </div>
         <Button size="sm" variant="secondary" onClick={probar} loading={enviando}>Enviar correo de prueba</Button>
@@ -189,7 +189,7 @@ function AltaDocentes() {
   return (
     <div className="grid gap-6 lg:grid-cols-2">
       <div className="card p-6">
-        <h3 className="font-display text-title font-medium text-ink-default">Dar de alta docentes</h3>
+        <h2 className="font-display text-title font-medium text-ink-default">Dar de alta docentes</h2>
         <p className="mt-1 text-sm text-ink-muted">Pega los correos @tecsup.edu.pe (uno por línea o separados por coma) y la carrera que dictan. Si ya entraron a Vitrina se aplica ahora; si no, en cuanto entren con Google. No hay que crear usuarios ni contraseñas.</p>
         <Field label="Correos" htmlFor="correos" className="mt-4"><Textarea id="correos" rows={6} value={texto} onChange={(e) => setTexto(e.target.value)} placeholder={"juan.perez@tecsup.edu.pe\nmaria.lopez@tecsup.edu.pe"} /></Field>
         <div className="mt-3 grid gap-3 sm:grid-cols-[140px_1fr]">
@@ -204,7 +204,7 @@ function AltaDocentes() {
         <div className="mt-3 flex justify-end"><Button onClick={enviar} loading={enviando} disabled={!texto.trim()}>Dar de alta</Button></div>
       </div>
       <div className="card p-6">
-        <h3 className="font-display text-title font-medium text-ink-default">Pendientes de primer ingreso</h3>
+        <h2 className="font-display text-title font-medium text-ink-default">Pendientes de primer ingreso</h2>
         {lista.length === 0 ? <p className="mt-2 text-sm text-ink-muted">Nadie pendiente.</p> : (
           <ul className="mt-3 divide-y divide-linea">{lista.map((p) => <li key={p.correo} className="flex items-center justify-between py-2 text-sm"><span><span className="font-medium text-ink-default">{p.correo}</span> <Chip className="ml-2">{p.rol.toLowerCase()}</Chip>{nombreCarrera(p.carreraId) && <span className="ml-2 text-xs text-ink-muted">{nombreCarrera(p.carreraId)}</span>}</span><button type="button" className="text-xs text-state-danger hover:underline" onClick={async () => { await quitarPreasignado(p.correo); void cargar(); }}>Quitar</button></li>)}</ul>
         )}
@@ -236,7 +236,7 @@ function Carreras() {
         ))}
       </ul>
       <div className="card h-fit p-5">
-        <h3 className="font-display text-title font-medium text-ink-default">Nueva carrera</h3>
+        <h2 className="font-display text-title font-medium text-ink-default">Nueva carrera</h2>
         <div className="mt-3 space-y-3">
           <Input value={nueva.nombre} onChange={(e) => setNueva({ ...nueva, nombre: e.target.value })} placeholder="Nombre oficial" />
           <Input value={nueva.area} onChange={(e) => setNueva({ ...nueva, area: e.target.value })} placeholder="Área (ej. Tecnología Digital)" list="areas" />
@@ -259,7 +259,7 @@ function Catalogos() {
   return (
     <div className="grid gap-6 lg:grid-cols-[1fr_320px]">
       <div className="card p-5">
-        <h3 className="font-display text-title font-medium text-ink-default">Categorías</h3>
+        <h2 className="font-display text-title font-medium text-ink-default">Categorías</h2>
         <p className="mt-1 text-xs text-ink-muted">Transversales a todas las carreras. Las tecnologías las agregan los propios alumnos al editar su proyecto.</p>
         <div className="mt-4 flex flex-wrap gap-2">
           {categorias.map((c) => (
@@ -271,7 +271,7 @@ function Catalogos() {
         </div>
       </div>
       <div className="card h-fit p-5">
-        <h3 className="font-display text-title font-medium text-ink-default">Nueva categoría</h3>
+        <h2 className="font-display text-title font-medium text-ink-default">Nueva categoría</h2>
         <div className="mt-3 space-y-3">
           <Input value={nombre} onChange={(e) => setNombre(e.target.value)} placeholder="Nombre" />
           <div className="flex items-center gap-3"><input type="color" value={color} onChange={(e) => setColor(e.target.value)} className="h-10 w-14 cursor-pointer rounded-lg border border-linea" aria-label="Color" /><span className="text-xs text-ink-muted">{color}</span></div>

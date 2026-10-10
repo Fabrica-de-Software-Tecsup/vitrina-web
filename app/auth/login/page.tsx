@@ -43,7 +43,7 @@ export default function LoginPage() {
   return (
     <div className="grid min-h-[calc(100vh-4rem)] lg:grid-cols-2">
       <div className="hidden border-r border-linea p-12 lg:flex lg:flex-col lg:justify-between xl:p-20">
-        <h1 className="titular max-w-[12ch] text-ink-default">Tu proyecto merece una página, no una carpeta olvidada.</h1>
+        <p className="titular max-w-[12ch] text-ink-default">Tu proyecto merece una página, no una carpeta olvidada.</p>
         <ol className="max-w-md divide-y divide-linea border-y border-linea">
           {["Entra con tu correo institucional. No hay contraseñas que recordar.", "Publica en 10 minutos: frase, descripción, fotos y equipo.", "Tu docente lo revisa y te avisa por correo.", "Comparte el enlace en LinkedIn y en tu CV."].map((t, i) => (
             <li key={t} className="flex gap-4 py-3.5 text-ink-default"><span className="num w-5 shrink-0 font-display text-title leading-none text-ink-muted">{i + 1}</span>{t}</li>
@@ -52,7 +52,7 @@ export default function LoginPage() {
       </div>
       <div className="flex items-center justify-center p-6 sm:p-12">
         <div className="w-full max-w-md">
-          <h2 className="titular-2 text-ink-default">Entrar</h2>
+          <h1 className="titular-2 text-ink-default">Entrar</h1>
           <p className="mt-3 text-ink-muted">Usa tu cuenta <span className="font-semibold text-ink-default">@tecsup.edu.pe</span>. Si es tu primera vez, se crea tu perfil automáticamente.</p>
           <div className="mt-8">
             <GoogleLogin onSuccess={entrar} onError={() => setError("No se pudo conectar con Google")} shape="rectangular" size="large" text="continue_with" width="320" />

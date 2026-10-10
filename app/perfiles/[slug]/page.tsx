@@ -169,12 +169,12 @@ export default function PerfilPage() {
           </div>
           <aside className="space-y-4">
             <div className="card p-5">
-              <h3 className="font-display text-title font-medium text-ink-default">Tecnologías</h3>
+              <h2 className="font-display text-title font-medium text-ink-default">Tecnologías</h2>
               {techs.length ? <div className="mt-3 flex flex-wrap gap-1.5">{techs.map((t) => <Chip key={t} size="md">{t}</Chip>)}</div> : <p className="mt-2 text-sm text-ink-muted">Aparecen al publicar proyectos.</p>}
             </div>
             {perfil.experiencia && (
               <div className="card p-5">
-                <h3 className="font-display text-title font-medium text-ink-default">Experiencia</h3>
+                <h2 className="font-display text-title font-medium text-ink-default">Experiencia</h2>
                 <p className="mt-2 whitespace-pre-line text-sm text-ink-default">{perfil.experiencia}</p>
               </div>
             )}
