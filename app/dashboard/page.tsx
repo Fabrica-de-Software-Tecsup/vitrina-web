@@ -4,6 +4,7 @@ import { useEffect, useMemo, useState } from "react";
 import Link from "next/link";
 import Avatar from "@/components/ui/Avatar";
 import Button from "@/components/ui/Button";
+import Icono from "@/components/ui/Icono";
 import { Chip, EstadoBadge } from "@/components/ui/Badge";
 import { Container, Stat } from "@/components/ui/Section";
 import { CardSkeleton, EmptyState, Tabs } from "@/components/ui/Feedback";
@@ -43,35 +44,37 @@ function PanelAlumno() {
   const conObservaciones = (proyectos ?? []).filter((p) => p.estado === "EN_DESARROLLO" && p.observaciones);
 
   return (
-    <Container className="py-10">
+    <Container className="pt-12 sm:pt-16">
       <div className="flex flex-col gap-4 sm:flex-row sm:items-end sm:justify-between">
         <div>
-          <p className="text-xs font-bold uppercase tracking-[0.18em] text-brand-600">Mi espacio</p>
-          <h1 className="mt-1 font-display text-3xl font-bold text-ink-900">Hola, {usuario!.nombre.split(" ")[0]} 👋</h1>
-          <p className="mt-1 text-sm text-ink-500">{usuario!.carrera?.nombre}{usuario!.ciclo ? ` · Ciclo ${usuario!.ciclo}` : ""}</p>
+          <h1 className="titular-2 text-ink-default">Hola, {usuario!.nombre.split(" ")[0]}</h1>
+          <p className="mt-2 text-ink-muted">{usuario!.carrera?.nombre}{usuario!.ciclo ? ` · Ciclo ${usuario!.ciclo}` : ""}</p>
         </div>
-        <Button href="/dashboard/proyectos/nuevo" size="lg">+ Nuevo proyecto</Button>
+        <Button href="/dashboard/proyectos/nuevo" size="lg" icon={<Icono nombre="mas" tam={18} />}>Nuevo proyecto</Button>
       </div>
 
       {conObservaciones.length > 0 && (
-        <div className="mt-6 rounded-2xl border border-amber-200 bg-amber-50 p-4">
-          <p className="text-sm font-semibold text-amber-900">Tu docente dejó observaciones en {conObservaciones.length === 1 ? "un proyecto" : `${conObservaciones.length} proyectos`}</p>
+        <div className="mt-8 flex gap-3 rounded-md border border-linea bg-surface-raised p-4" role="status">
+          <Icono nombre="alerta" className="mt-0.5 text-state-warning" />
+          <div>
+          <p className="text-sm font-semibold text-ink-default">Tu docente dejó observaciones en {conObservaciones.length === 1 ? "un proyecto" : `${conObservaciones.length} proyectos`}</p>
           <ul className="mt-2 space-y-1">
             {conObservaciones.map((p) => (
-              <li key={p.id} className="text-sm text-amber-800">
+              <li key={p.id} className="text-sm text-ink-default">
                 <Link href={`/dashboard/proyectos/${p.id}`} className="font-semibold underline-offset-2 hover:underline">{p.nombre}</Link>: <span className="italic">“{p.observaciones}”</span>
               </li>
             ))}
           </ul>
+          </div>
         </div>
       )}
 
-      <div className="mt-8 grid grid-cols-2 gap-4 lg:grid-cols-4">
-        <Stat valor={conteo.todos} label="proyectos" icono="📁" />
-        <Stat valor={conteo.PUBLICADO ?? 0} label="publicados" icono="✅" />
-        <Stat valor={formatoNumero(vistas)} label="vistas acumuladas" icono="👁" />
-        <Stat valor={new Set((proyectos ?? []).flatMap((p) => p.tecnologias.map((t) => t.tecnologia.nombre))).size} label="tecnologías usadas" icono="⚡" />
-      </div>
+      <dl className="mt-10 grid grid-cols-2 gap-x-8 gap-y-6 lg:grid-cols-4">
+        <Stat valor={conteo.todos} label={conteo.todos === 1 ? "proyecto" : "proyectos"} />
+        <Stat valor={conteo.PUBLICADO ?? 0} label={(conteo.PUBLICADO ?? 0) === 1 ? "publicado" : "publicados"} />
+        <Stat valor={formatoNumero(vistas)} label="vistas acumuladas" />
+        <Stat valor={new Set((proyectos ?? []).flatMap((p) => p.tecnologias.map((t) => t.tecnologia.nombre))).size} label="tecnologías usadas" />
+      </dl>
 
       <div className="mt-8">
         <Tabs
@@ -89,16 +92,16 @@ function PanelAlumno() {
 
       <div className="mt-6">
         {proyectos === null ? (
-          <div className="grid gap-6 sm:grid-cols-2 lg:grid-cols-3">{[1, 2, 3].map((i) => <CardSkeleton key={i} />)}</div>
+          <div className="reticula">{[1, 2, 3].map((i) => <CardSkeleton key={i} />)}</div>
         ) : visibles.length === 0 ? (
           <EmptyState
-            icono="🚀"
+            icono="carpeta"
             titulo={proyectos.length === 0 ? "Publica tu primer proyecto" : "Nada en esta pestaña"}
             texto={proyectos.length === 0 ? "Solo necesitas una frase, una descripción y una foto para enviarlo a revisión. Lo demás lo completas cuando quieras." : undefined}
             accion={proyectos.length === 0 ? <Button href="/dashboard/proyectos/nuevo">Empezar ahora</Button> : undefined}
           />
         ) : (
-          <div className="grid gap-6 sm:grid-cols-2 lg:grid-cols-3">
+          <div className="reticula">
             {visibles.map((p) => (
               <ProjectCard key={p.id} proyecto={p} mostrarEstado href={p.estado === "PUBLICADO" ? `/proyectos/${p.slug}` : `/dashboard/proyectos/${p.id}`} />
             ))}
@@ -128,25 +131,24 @@ function PanelDocente() {
   const lista = tab === "revision" ? revision : tab === "asesorados" ? asesorados : publicados;
 
   return (
-    <Container className="py-10">
+    <Container className="pt-12 sm:pt-16">
       <div className="flex flex-col gap-4 sm:flex-row sm:items-end sm:justify-between">
         <div>
-          <p className="text-xs font-bold uppercase tracking-[0.18em] text-brand-600">Panel docente</p>
-          <h1 className="mt-1 font-display text-3xl font-bold text-ink-900">Hola, {usuario!.nombre.split(" ")[0]}</h1>
-          <p className="mt-1 max-w-xl text-sm text-ink-500">Los alumnos crean y documentan sus proyectos solos. Tu trabajo es revisar la cola: publicar o devolver con observaciones. Nada más.</p>
+          <h1 className="titular-2 text-ink-default">Hola, {usuario!.nombre.split(" ")[0]}</h1>
+          <p className="mt-3 max-w-xl text-ink-muted">Los alumnos crean y documentan sus proyectos solos. Tu trabajo es revisar la cola: publicar o devolver con observaciones. Nada más.</p>
         </div>
         <div className="flex gap-2">
           {esAdmin && <Button href="/admin" variant="outline">Administración</Button>}
-          <Button href="/dashboard/proyectos/nuevo" variant="outline">+ Proyecto propio</Button>
+          <Button href="/dashboard/proyectos/nuevo" variant="outline" icon={<Icono nombre="mas" tam={18} />}>Proyecto propio</Button>
         </div>
       </div>
 
-      <div className="mt-8 grid grid-cols-2 gap-4 lg:grid-cols-4">
-        <Stat valor={revision?.length ?? "—"} label="esperan tu revisión" icono="📬" />
-        <Stat valor={asesorados?.length ?? "—"} label="proyectos donde estás involucrado" icono="🧭" />
-        <Stat valor={(asesorados ?? []).filter((p) => p.estado === "PUBLICADO").length} label="de ellos, publicados" icono="✅" />
-        <Stat valor={formatoNumero((asesorados ?? []).reduce((s, p) => s + p.vistas, 0))} label="vistas acumuladas" icono="👁" />
-      </div>
+      <dl className="mt-10 grid grid-cols-2 gap-x-8 gap-y-6 lg:grid-cols-4">
+        <Stat valor={revision?.length ?? "—"} label="esperan tu revisión" />
+        <Stat valor={asesorados?.length ?? "—"} label="proyectos donde participas" />
+        <Stat valor={(asesorados ?? []).filter((p) => p.estado === "PUBLICADO").length} label="de ellos, publicados" />
+        <Stat valor={formatoNumero((asesorados ?? []).reduce((s, p) => s + p.vistas, 0))} label="vistas acumuladas" />
+      </dl>
 
       <div className="mt-8">
         <Tabs
@@ -162,28 +164,28 @@ function PanelDocente() {
 
       <div className="mt-6">
         {lista === null ? (
-          <div className="grid gap-6 sm:grid-cols-2 lg:grid-cols-3">{[1, 2, 3].map((i) => <CardSkeleton key={i} />)}</div>
+          <div className="reticula">{[1, 2, 3].map((i) => <CardSkeleton key={i} />)}</div>
         ) : lista.length === 0 ? (
-          <EmptyState icono={tab === "revision" ? "🎉" : "📭"} titulo={tab === "revision" ? "No hay nada por revisar" : "Nada por aquí"} texto={tab === "revision" ? "Cuando un equipo envíe su proyecto te avisaremos por correo." : "Los alumnos pueden sumarte como docente involucrado al crear o actualizar su proyecto."} />
+          <EmptyState icono="bandeja" titulo={tab === "revision" ? "No hay nada por revisar" : "Nada por aquí"} texto={tab === "revision" ? "Cuando un equipo envíe su proyecto te avisaremos por correo." : "Los alumnos pueden sumarte como docente involucrado al crear o actualizar su proyecto."} />
         ) : tab === "revision" ? (
-          <ul className="card divide-y divide-ink-100">
+          <ul className="card divide-y divide-linea">
             {lista.map((p) => {
               const portada = portadaDe(p);
               return (
                 <li key={p.id} className="flex flex-col gap-4 p-4 sm:flex-row sm:items-center">
-                  <div className="h-16 w-24 shrink-0 overflow-hidden rounded-xl bg-ink-100">
+                  <div className="aspect-[4/3] w-24 shrink-0 overflow-hidden rounded-sm bg-surface-sunken shadow-[0_0_0_1px_var(--c-marco)]">
                     {/* eslint-disable-next-line @next/next/no-img-element */}
                     {portada && <img src={portada} alt="" className="h-full w-full object-cover" />}
                   </div>
                   <div className="min-w-0 flex-1">
                     <div className="flex flex-wrap items-center gap-2">
-                      <p className="font-display text-base font-bold text-ink-900">{p.nombre}</p>
+                      <p className="font-display text-[1.1875rem] font-medium text-ink-default">{p.nombre}</p>
                       {p.carrera && <Chip color={p.carrera.color}>{p.carrera.nombre}</Chip>}
-                      {p.docentes.some((d) => d.usuarioId === usuario!.id) && <Chip className="border-brand-200 bg-brand-50 text-brand-700">Te eligió como docente</Chip>}
-                      {p.versionActual > 0 && <Chip className="border-violet-500/30 bg-violet-500/10 text-violet-500">Nueva versión (v{p.versionActual + 1})</Chip>}
+                      {p.docentes.some((d) => d.usuarioId === usuario!.id) && <Chip className="border-linea bg-brand-container text-brand-primary">Te eligió como docente</Chip>}
+                      {p.versionActual > 0 && <Chip className="border-linea bg-surface-sunken text-ink-muted">Nueva versión (v{p.versionActual + 1})</Chip>}
                     </div>
-                    <p className="mt-0.5 line-clamp-1 text-sm text-ink-600">{p.tagline ?? p.descripcion}</p>
-                    <div className="mt-1.5 flex items-center gap-2 text-xs text-ink-500">
+                    <p className="mt-0.5 line-clamp-1 text-sm text-ink-muted">{p.tagline ?? p.descripcion}</p>
+                    <div className="mt-1.5 flex items-center gap-2 text-xs text-ink-muted">
                       <Avatar name={p.creador.nombre} src={p.creador.fotoUrl} size="xs" />
                       {p.creador.nombre} · {p.miembros.length} integrante{p.miembros.length === 1 ? "" : "s"} · enviado el {fechaCorta(p.updatedAt)}
                     </div>
@@ -194,13 +196,13 @@ function PanelDocente() {
             })}
           </ul>
         ) : (
-          <div className="grid gap-6 sm:grid-cols-2 lg:grid-cols-3">
+          <div className="reticula">
             {lista.map((p) => (
               <div key={p.id} className="relative">
                 <ProjectCard proyecto={p} mostrarEstado href={p.estado === "POR_REVISAR" ? `/dashboard/revision/${p.id}` : p.estado === "PUBLICADO" ? `/proyectos/${p.slug}` : `/dashboard/proyectos/${p.id}`} />
                 {tab === "asesorados" && (
                   <div className="absolute right-3 top-3 flex gap-1">
-                    <Link href={`/dashboard/revision/${p.id}`} className="rounded-full bg-white/95 px-2.5 py-1 text-[11px] font-semibold text-ink-800 shadow-sm hover:bg-white">{ESTADO_LABEL[p.estado]} · gestionar</Link>
+                    <Link href={`/dashboard/revision/${p.id}`} className="rounded-sm bg-surface-raised px-2.5 py-1 text-caption font-semibold text-ink-default shadow-sm hover:bg-surface-sunken">{ESTADO_LABEL[p.estado]} · gestionar</Link>
                   </div>
                 )}
               </div>
@@ -208,7 +210,7 @@ function PanelDocente() {
           </div>
         )}
       </div>
-      <p className="mt-6 text-xs text-ink-400">¿Un estado no coincide? <EstadoBadge estado="POR_REVISAR" className="align-middle" /> significa que el equipo ya terminó y espera tu decisión.</p>
+      <p className="mt-8 text-body-small text-ink-muted">¿Un estado no coincide? <EstadoBadge estado="POR_REVISAR" className="align-middle" /> significa que el equipo ya terminó y espera tu decisión.</p>
 
       <SeccionCuenta />
     </Container>

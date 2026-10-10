@@ -1,9 +1,11 @@
 "use client";
 
-import { createContext, useCallback, useContext, useMemo, useState } from "react";
+import { createContext, useCallback, useContext, useEffect, useMemo, useRef, useState } from "react";
+import Link from "next/link";
+import Icono, { type NombreIcono } from "@/components/ui/Icono";
 import { cn } from "@/lib/utils";
 
-/* ─── Toasts ─── */
+/* ─── Avisos (toasts) ─── */
 type Tipo = "ok" | "error" | "info";
 interface Toast {
   id: number;
@@ -14,6 +16,8 @@ interface ToastCtx {
   avisar: (texto: string, tipo?: Tipo) => void;
 }
 const Ctx = createContext<ToastCtx | null>(null);
+
+const ICONO_AVISO: Record<Tipo, NombreIcono> = { ok: "check", error: "alerta", info: "info" };
 
 export function ToastProvider({ children }: { children: React.ReactNode }) {
   const [toasts, setToasts] = useState<Toast[]>([]);
@@ -26,18 +30,16 @@ export function ToastProvider({ children }: { children: React.ReactNode }) {
   return (
     <Ctx.Provider value={valor}>
       {children}
-      <div className="pointer-events-none fixed inset-x-0 bottom-5 z-[100] flex flex-col items-center gap-2 px-4" aria-live="polite">
+      <div className="pointer-events-none fixed inset-x-0 bottom-5 z-[100] flex flex-col items-center gap-2 px-4" role="status" aria-live="polite">
         {toasts.map((t) => (
           <div
             key={t.id}
             className={cn(
-              "pointer-events-auto flex max-w-md items-center gap-3 rounded-2xl px-4 py-3 text-sm font-medium shadow-lift animate-fade-up",
-              t.tipo === "ok" && "bg-ink-900 text-white",
-              t.tipo === "error" && "bg-rose-600 text-white",
-              t.tipo === "info" && "bg-white text-ink-800 ring-1 ring-ink-200",
+              "aparece pointer-events-auto flex max-w-md items-center gap-3 rounded-sm px-4 py-3 text-label shadow-lg",
+              t.tipo === "error" ? "bg-state-danger text-state-on-danger" : "bg-ink-default text-ink-inverse",
             )}
           >
-            <span aria-hidden>{t.tipo === "ok" ? "✓" : t.tipo === "error" ? "!" : "i"}</span>
+            <Icono nombre={ICONO_AVISO[t.tipo]} tam={18} />
             {t.texto}
           </div>
         ))}
@@ -52,7 +54,7 @@ export function useToast() {
   return ctx;
 }
 
-/* ─── Modal ─── */
+/* ─── Modal (dialog nativo: foco atrapado y Escape gratis) ─── */
 interface ModalProps {
   abierto: boolean;
   onCerrar: () => void;
@@ -64,123 +66,175 @@ interface ModalProps {
 }
 
 export function Modal({ abierto, onCerrar, titulo, descripcion, children, acciones, ancho = "md" }: ModalProps) {
-  if (!abierto) return null;
+  const ref = useRef<HTMLDialogElement>(null);
+  useEffect(() => {
+    const d = ref.current;
+    if (!d) return;
+    if (abierto && !d.open) d.showModal();
+    if (!abierto && d.open) d.close();
+  }, [abierto]);
+
   return (
-    <div className="fixed inset-0 z-[90] flex items-end justify-center p-4 sm:items-center" role="dialog" aria-modal="true" aria-label={titulo}>
-      <div className="absolute inset-0 bg-ink-900/50 backdrop-blur-sm" onClick={onCerrar} />
-      <div
-        className={cn(
-          "relative w-full rounded-3xl bg-white p-6 shadow-lift animate-fade-up",
-          ancho === "sm" && "max-w-sm",
-          ancho === "md" && "max-w-lg",
-          ancho === "lg" && "max-w-2xl",
-        )}
-      >
-        <h3 className="text-lg font-bold text-ink-900">{titulo}</h3>
-        {descripcion && <p className="mt-1 text-sm text-ink-600">{descripcion}</p>}
-        {children && <div className="mt-4">{children}</div>}
-        {acciones && <div className="mt-6 flex flex-wrap justify-end gap-2">{acciones}</div>}
-      </div>
-    </div>
+    <dialog
+      ref={ref}
+      onClose={onCerrar}
+      onClick={(e) => e.target === ref.current && onCerrar()}
+      aria-label={titulo}
+      className={cn(
+        "m-auto mb-0 w-full max-w-none rounded-t-xl bg-surface-overlay p-0 text-ink-default shadow-lg backdrop:bg-[oklch(15%_0.01_60/0.45)] sm:mb-auto sm:rounded-xl",
+        ancho === "sm" && "sm:max-w-sm",
+        ancho === "md" && "sm:max-w-lg",
+        ancho === "lg" && "sm:max-w-3xl",
+      )}
+    >
+      {abierto && (
+        <div className="p-6">
+          <div className="flex items-start justify-between gap-4">
+            <div>
+              <h2 className="font-display text-title font-medium">{titulo}</h2>
+              {descripcion && <p className="mt-1 text-body-small text-ink-muted">{descripcion}</p>}
+            </div>
+            <button type="button" onClick={onCerrar} className="-m-2 grid h-10 w-10 shrink-0 place-items-center rounded-sm text-ink-muted hover:bg-surface-sunken hover:text-ink-default" aria-label="Cerrar">
+              <Icono nombre="cerrar" />
+            </button>
+          </div>
+          {children && <div className="mt-4">{children}</div>}
+          {acciones && <div className="mt-6 flex flex-wrap justify-end gap-2">{acciones}</div>}
+        </div>
+      )}
+    </dialog>
   );
 }
 
-/* ─── Estados vacios y carga ─── */
+/* ─── Estados vacíos y carga ─── */
 export function EmptyState({
-  icono = "✦",
+  icono = "carpeta",
   titulo,
   texto,
   accion,
   className,
 }: {
-  icono?: React.ReactNode;
+  icono?: NombreIcono;
   titulo: string;
   texto?: string;
   accion?: React.ReactNode;
   className?: string;
 }) {
   return (
-    <div className={cn("card flex flex-col items-center px-6 py-14 text-center", className)}>
-      <div className="flex h-14 w-14 items-center justify-center rounded-2xl bg-brand-50 text-2xl text-brand-600">{icono}</div>
-      <h3 className="mt-4 text-base font-bold text-ink-900">{titulo}</h3>
-      {texto && <p className="mt-1 max-w-sm text-sm text-ink-500">{texto}</p>}
-      {accion && <div className="mt-5">{accion}</div>}
+    <div className={cn("flex flex-col items-center border-y border-linea px-6 py-14 text-center", className)}>
+      <Icono nombre={icono} tam={28} className="text-ink-subtle" />
+      <h2 className="mt-4 font-display text-title font-medium text-ink-default">{titulo}</h2>
+      {texto && <p className="mt-2 max-w-sm text-body-small text-ink-muted">{texto}</p>}
+      {accion && <div className="mt-6">{accion}</div>}
     </div>
   );
 }
 
 export function Skeleton({ className }: { className?: string }) {
-  return <div className={cn("animate-pulse rounded-xl bg-ink-200/70", className)} />;
+  return <div aria-hidden className={cn("cargando rounded-sm", className)} />;
 }
 
-export function CardSkeleton() {
+/** Hueco de una lámina mientras llegan los datos. */
+export function CardSkeleton({ className }: { className?: string }) {
   return (
-    <div className="card overflow-hidden">
-      <Skeleton className="aspect-[16/10] rounded-none" />
-      <div className="space-y-2 p-4">
-        <Skeleton className="h-3 w-24" />
-        <Skeleton className="h-4 w-3/4" />
-        <Skeleton className="h-3 w-full" />
-        <Skeleton className="h-3 w-2/3" />
-      </div>
+    <div aria-hidden className={className}>
+      <div className="cargando aspect-[4/3] rounded-lamina" />
+      <div className="cargando mt-4 h-5 w-3/4 rounded-sm" />
+      <div className="cargando mt-2 h-3.5 w-1/2 rounded-sm" />
     </div>
   );
 }
 
-/* ─── Paginacion ─── */
-export function Pagination({ total, limit, offset, onChange }: { total: number; limit: number; offset: number; onChange: (offset: number) => void }) {
+/* ─── Paginación ─── */
+interface PaginacionProps {
+  total: number;
+  limit: number;
+  offset: number;
+  /** Con enlaces reales (Explorar): funciona sin JS y el «atrás» devuelve la página exacta. */
+  hrefDe?: (offset: number) => string;
+  onChange?: (offset: number) => void;
+}
+
+export function Pagination({ total, limit, offset, hrefDe, onChange }: PaginacionProps) {
   const paginas = Math.max(1, Math.ceil(total / limit));
   const actual = Math.floor(offset / limit) + 1;
   if (paginas <= 1) return null;
   const rango = Array.from({ length: paginas }, (_, i) => i + 1).filter((p) => p === 1 || p === paginas || Math.abs(p - actual) <= 1);
   const items: (number | "…")[] = [];
   for (const p of rango) {
-    if (items.length && typeof items[items.length - 1] === "number" && (items[items.length - 1] as number) + 1 < p) items.push("…");
+    const ultimo = items[items.length - 1];
+    if (typeof ultimo === "number" && ultimo + 1 < p) items.push("…");
     items.push(p);
   }
-  return (
-    <nav className="flex items-center justify-center gap-1" aria-label="Paginación">
-      <button
-        type="button"
-        onClick={() => onChange((actual - 2) * limit)}
-        disabled={actual === 1}
-        className="h-9 rounded-full px-3 text-sm text-ink-600 hover:bg-ink-100 disabled:opacity-40"
-      >
-        ← Anterior
+
+  const celda = "inline-flex h-10 min-w-10 items-center justify-center gap-1.5 rounded-sm px-3 text-label transition-colors";
+  const destino = (pagina: number, children: React.ReactNode, className: string, label?: string, key?: number) => {
+    const off = (pagina - 1) * limit;
+    if (hrefDe) {
+      return (
+        <Link key={key} href={hrefDe(off)} scroll className={className} aria-label={label} aria-current={pagina === actual ? "page" : undefined}>
+          {children}
+        </Link>
+      );
+    }
+    return (
+      <button key={key} type="button" onClick={() => onChange?.(off)} className={className} aria-label={label} aria-current={pagina === actual ? "page" : undefined}>
+        {children}
       </button>
+    );
+  };
+
+  return (
+    <nav className="flex flex-wrap items-center justify-center gap-1" aria-label="Paginación">
+      {actual > 1 ? (
+        destino(
+          actual - 1,
+          <>
+            <Icono nombre="chevron-izq" tam={18} />
+            <span className="hidden sm:inline">Anterior</span>
+          </>,
+          cn(celda, "text-ink-default hover:bg-surface-sunken"),
+          "Página anterior",
+        )
+      ) : (
+        <span className={cn(celda, "text-ink-subtle")} aria-hidden>
+          <Icono nombre="chevron-izq" tam={18} />
+          <span className="hidden sm:inline">Anterior</span>
+        </span>
+      )}
       {items.map((p, i) =>
         p === "…" ? (
-          <span key={`e${i}`} className="px-1 text-ink-400">
+          <span key={`e${i}`} className="px-1 text-ink-subtle">
             …
           </span>
         ) : (
-          <button
-            key={p}
-            type="button"
-            onClick={() => onChange((p - 1) * limit)}
-            aria-current={p === actual ? "page" : undefined}
-            className={cn("h-9 min-w-9 rounded-full px-3 text-sm font-medium", p === actual ? "bg-ink-900 text-white" : "text-ink-700 hover:bg-ink-100")}
-          >
-            {p}
-          </button>
+          destino(p, p, cn(celda, p === actual ? "bg-ink-default text-ink-inverse" : "text-ink-default hover:bg-surface-sunken"), `Página ${p}`, p)
         ),
       )}
-      <button
-        type="button"
-        onClick={() => onChange(actual * limit)}
-        disabled={actual === paginas}
-        className="h-9 rounded-full px-3 text-sm text-ink-600 hover:bg-ink-100 disabled:opacity-40"
-      >
-        Siguiente →
-      </button>
+      {actual < paginas ? (
+        destino(
+          actual + 1,
+          <>
+            <span className="hidden sm:inline">Siguiente</span>
+            <Icono nombre="chevron-der" tam={18} />
+          </>,
+          cn(celda, "text-ink-default hover:bg-surface-sunken"),
+          "Página siguiente",
+        )
+      ) : (
+        <span className={cn(celda, "text-ink-subtle")} aria-hidden>
+          <span className="hidden sm:inline">Siguiente</span>
+          <Icono nombre="chevron-der" tam={18} />
+        </span>
+      )}
     </nav>
   );
 }
 
-/* ─── Tabs ─── */
+/* ─── Pestañas: subrayado terracota, sin píldoras ─── */
 export function Tabs<T extends string>({ valor, opciones, onChange }: { valor: T; opciones: { id: T; label: string; count?: number }[]; onChange: (v: T) => void }) {
   return (
-    <div className="flex gap-1 overflow-x-auto rounded-full bg-ink-100 p-1" role="tablist">
+    <div className="carril -mx-1 flex gap-1 overflow-x-auto border-b border-linea px-1" role="tablist">
       {opciones.map((o) => (
         <button
           key={o.id}
@@ -189,14 +243,12 @@ export function Tabs<T extends string>({ valor, opciones, onChange }: { valor: T
           aria-selected={valor === o.id}
           onClick={() => onChange(o.id)}
           className={cn(
-            "flex items-center gap-1.5 whitespace-nowrap rounded-full px-4 py-1.5 text-sm font-medium transition-colors",
-            valor === o.id ? "bg-white text-ink-900 shadow-sm" : "text-ink-600 hover:text-ink-900",
+            "-mb-px flex min-h-11 items-center gap-2 whitespace-nowrap border-b-2 px-3 text-label transition-colors",
+            valor === o.id ? "border-brand-primary text-ink-default" : "border-transparent text-ink-muted hover:text-ink-default",
           )}
         >
           {o.label}
-          {o.count !== undefined && (
-            <span className={cn("rounded-full px-1.5 text-[11px]", valor === o.id ? "bg-brand-100 text-brand-700" : "bg-ink-200 text-ink-600")}>{o.count}</span>
-          )}
+          {o.count !== undefined && <span className="num text-caption text-ink-subtle">{o.count}</span>}
         </button>
       ))}
     </div>

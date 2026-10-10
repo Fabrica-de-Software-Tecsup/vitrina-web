@@ -42,29 +42,25 @@ export default function LoginPage() {
 
   return (
     <div className="grid min-h-[calc(100vh-4rem)] lg:grid-cols-2">
-      <div className="bg-mesh relative hidden overflow-hidden p-12 text-white lg:flex lg:flex-col lg:justify-between">
-        <div className="bg-grid absolute inset-0 opacity-50" />
-        <div className="relative">
-          <p className="text-xs font-bold uppercase tracking-[0.2em] text-white/70">Vitrina · Tecsup</p>
-          <h1 className="mt-4 max-w-md font-display text-4xl font-extrabold leading-tight">Tu proyecto merece una página, no una carpeta olvidada.</h1>
-        </div>
-        <ul className="relative space-y-3 text-sm text-white/85">
-          {["Entra con tu correo institucional. No hay contraseñas que recordar.", "Publica en 10 minutos: frase, descripción, fotos y equipo.", "Tu docente lo revisa y te avisa por correo.", "Comparte la URL en LinkedIn y en tu CV."].map((t, i) => (
-            <li key={t} className="flex gap-3 rounded-2xl border border-white/10 bg-white/5 p-3"><span className="flex h-6 w-6 shrink-0 items-center justify-center rounded-full bg-white/15 text-xs font-bold">{i + 1}</span>{t}</li>
+      <div className="hidden border-r border-linea p-12 lg:flex lg:flex-col lg:justify-between xl:p-20">
+        <p className="titular max-w-[12ch] text-ink-default">Tu proyecto merece una página, no una carpeta olvidada.</p>
+        <ol className="max-w-md divide-y divide-linea border-y border-linea">
+          {["Entra con tu correo institucional. No hay contraseñas que recordar.", "Publica en 10 minutos: frase, descripción, fotos y equipo.", "Tu docente lo revisa y te avisa por correo.", "Comparte el enlace en LinkedIn y en tu CV."].map((t, i) => (
+            <li key={t} className="flex gap-4 py-3.5 text-ink-default"><span className="num w-5 shrink-0 font-display text-title leading-none text-ink-muted">{i + 1}</span>{t}</li>
           ))}
-        </ul>
+        </ol>
       </div>
       <div className="flex items-center justify-center p-6 sm:p-12">
-        <div className="card w-full max-w-md p-8 sm:p-10">
-          <h2 className="font-display text-2xl font-bold text-ink-900">Inicia sesión</h2>
-          <p className="mt-1 text-sm text-ink-500">Usa tu cuenta <span className="font-semibold text-ink-800">@tecsup.edu.pe</span>. Si es tu primera vez, se crea tu perfil automáticamente.</p>
-          <div className="mt-8 flex justify-center">
-            <GoogleLogin onSuccess={entrar} onError={() => setError("No se pudo conectar con Google")} shape="pill" size="large" text="continue_with" width="320" />
+        <div className="w-full max-w-md">
+          <h1 className="titular-2 text-ink-default">Entrar</h1>
+          <p className="mt-3 text-ink-muted">Usa tu cuenta <span className="font-semibold text-ink-default">@tecsup.edu.pe</span>. Si es tu primera vez, se crea tu perfil automáticamente.</p>
+          <div className="mt-8">
+            <GoogleLogin onSuccess={entrar} onError={() => setError("No se pudo conectar con Google")} shape="rectangular" size="large" text="continue_with" width="320" />
           </div>
-          {cargando && <p className="mt-4 text-center text-sm text-ink-500">Verificando…</p>}
-          {error && <p className="mt-4 rounded-xl bg-rose-50 px-4 py-3 text-center text-sm text-rose-700">{error}</p>}
-          <p className="mt-8 text-center text-xs text-ink-400">
-            ¿Eres docente? Entra con tu correo: si tu administrador ya te dio de alta, verás el panel docente. <Link href="/proyectos" className="font-semibold text-brand-700">Explorar sin cuenta</Link>
+          {cargando && <p className="mt-4 text-center text-sm text-ink-muted">Verificando…</p>}
+          {error && <p className="mt-4 rounded-sm bg-surface-sunken px-4 py-3 text-center text-sm text-state-danger">{error}</p>}
+          <p className="mt-10 border-t border-linea pt-6 text-body-small text-ink-muted">
+            ¿Eres docente? Entra con tu correo: si tu administrador ya te dio de alta, verás el panel docente. <Link href="/proyectos" className="font-medium text-brand-primary hover:underline">Explorar sin cuenta</Link>
           </p>
         </div>
       </div>

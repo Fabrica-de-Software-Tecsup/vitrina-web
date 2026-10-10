@@ -2,191 +2,123 @@
 
 import { useEffect, useState } from "react";
 import Link from "next/link";
-import { useRouter } from "next/navigation";
 import Button from "@/components/ui/Button";
-import { Chip } from "@/components/ui/Badge";
-import { Container, SectionHeading } from "@/components/ui/Section";
-import { CardSkeleton, EmptyState } from "@/components/ui/Feedback";
-import CarruselProyectos from "@/components/proyectos/CarruselProyectos";
-import { getEstadisticas, listarProyectos } from "@/lib/api-proyectos";
-import { getCarreras } from "@/lib/api-catalogos";
-import type { Carrera, Estadisticas, Proyecto } from "@/lib/tipos";
+import Icono from "@/components/ui/Icono";
+import { Container } from "@/components/ui/Section";
+import { CardSkeleton } from "@/components/ui/Feedback";
+import Portada from "@/components/proyectos/Portada";
+import ProjectCard from "@/components/proyectos/ProjectCard";
 import { useSesion } from "@/components/sesion/SesionProvider";
+import { listarProyectos } from "@/lib/api-proyectos";
+import { recordarProyectos } from "@/lib/cache-proyectos";
+import { imagenPortada, type Proyecto } from "@/lib/tipos";
 
-export default function LandingPage() {
-  const router = useRouter();
+/** Portada del sitio (modo Persuadir): una lámina grande de un proyecto real, una frase y la entrada a Explorar. */
+export default function PortadaSitio() {
   const { usuario, esDocente } = useSesion();
-  const [destacados, setDestacados] = useState<Proyecto[] | null>(null);
+  const [destacado, setDestacado] = useState<Proyecto | null | undefined>(undefined);
   const [recientes, setRecientes] = useState<Proyecto[] | null>(null);
-  const [stats, setStats] = useState<Estadisticas | null>(null);
-  const [carreras, setCarreras] = useState<Carrera[]>([]);
-  const [busqueda, setBusqueda] = useState("");
 
   useEffect(() => {
-    listarProyectos({ orden: "destacados", limit: 8 }).then((r) => setDestacados(r.items)).catch(() => setDestacados([]));
-    listarProyectos({ orden: "recientes", limit: 12 }).then((r) => setRecientes(r.items)).catch(() => setRecientes([]));
-    getEstadisticas().then(setStats).catch(() => null);
-    getCarreras().then(setCarreras).catch(() => null);
+    listarProyectos({ orden: "destacados", limit: 1 })
+      .then((r) => {
+        recordarProyectos(r.items);
+        setDestacado(r.items[0] ?? null);
+      })
+      .catch(() => setDestacado(null));
+    listarProyectos({ orden: "recientes", limit: 9 })
+      .then((r) => {
+        recordarProyectos(r.items);
+        setRecientes(r.items);
+      })
+      .catch(() => setRecientes([]));
   }, []);
 
-  const carrerasConProyectos = carreras.filter((c) => c.proyectosPublicados > 0).sort((a, b) => b.proyectosPublicados - a.proyectosPublicados);
-  const areas = Array.from(new Set(carreras.map((c) => c.area)));
+  const filaRecientes = (recientes ?? []).filter((p) => p.id !== destacado?.id).slice(0, 4);
+  const lider = destacado ? ((destacado.miembros.find((m) => m.esLider) ?? destacado.miembros[0])?.usuario.nombre ?? destacado.creador?.nombre) : null;
+  const publicar = usuario ? (esDocente ? "/dashboard" : "/dashboard/proyectos/nuevo") : "/auth/login";
 
   return (
     <>
-      {/* ═══ HERO ═══ */}
-      <section className="bg-mesh relative -mt-16 overflow-hidden pt-16 text-white">
-        <div className="bg-grid absolute inset-0 opacity-60" />
-        <Container className="relative py-20 sm:py-28">
-          <div className="max-w-3xl animate-fade-up">
-            <p className="inline-flex items-center gap-2 rounded-full border border-white/15 bg-white/10 px-3 py-1 text-xs font-semibold backdrop-blur">
-              <span className="h-1.5 w-1.5 rounded-full bg-lime-500" />
-              Portafolio oficial de proyectos · {carreras.length || 26} carreras · 3 sedes
+      <Container>
+        <section className="grid gap-10 pb-16 pt-10 sm:pt-14 lg:grid-cols-[minmax(0,5fr)_minmax(0,7fr)] lg:items-end lg:gap-16 lg:pb-24 lg:pt-20">
+          <div className="lg:pb-24">
+            <h1 className="titular max-w-[12ch] text-ink-default">Lo que se construye en clase, a la vista.</h1>
+            <p className="mt-6 max-w-[34ch] text-lg leading-relaxed text-ink-muted sm:text-xl">
+              Apps, robots, plantas piloto y campañas hechos por estudiantes. Cada proyecto lo revisa un docente antes de publicarse.
             </p>
-            <h1 className="mt-6 font-display text-4xl font-extrabold leading-[1.05] sm:text-6xl">
-              Lo que construyen los estudiantes de Tecsup, <span className="text-gradient">a la vista de todos</span>.
-            </h1>
-            <p className="mt-5 max-w-xl text-base text-white/75 sm:text-lg">
-              Software, robots, plantas, drones, campañas y prototipos. Cada proyecto tiene su página, su equipo y su historia, revisada por un docente.
-            </p>
-
-            <form
-              className="mt-8 flex max-w-xl items-center gap-2 rounded-full bg-white p-1.5 shadow-lift"
-              onSubmit={(e) => {
-                e.preventDefault();
-                router.push(`/proyectos${busqueda ? `?buscar=${encodeURIComponent(busqueda)}` : ""}`);
-              }}
-            >
-              <svg className="ml-3 h-5 w-5 shrink-0 text-ink-400" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24"><path strokeLinecap="round" d="M21 21l-4.3-4.3M17 10.5a6.5 6.5 0 11-13 0 6.5 6.5 0 0113 0z" /></svg>
-              <input
-                value={busqueda}
-                onChange={(e) => setBusqueda(e.target.value)}
-                placeholder="Busca por nombre, tecnología o idea…"
-                className="h-10 flex-1 bg-transparent text-sm text-ink-900 outline-none placeholder:text-ink-400"
-                aria-label="Buscar proyectos"
-              />
-              <Button type="submit" size="md">Buscar</Button>
-            </form>
-
-            <div className="mt-5 flex flex-wrap gap-2">
-              {stats?.tecnologiasTop.slice(0, 6).map((t) => (
-                <Link key={t.id} href={`/proyectos?tecnologiaId=${t.id}`} className="rounded-full border border-white/15 bg-white/10 px-3 py-1 text-xs font-medium text-white/90 hover:bg-white/20">
-                  {t.nombre}
-                </Link>
-              ))}
+            <div className="mt-9 flex flex-wrap gap-3">
+              <Button href="/proyectos" size="lg" icon={<Icono nombre="flecha-der" tam={18} />} className="flex-row-reverse">
+                Explorar proyectos
+              </Button>
+              <Button href={publicar} size="lg" variant="outline">
+                {esDocente ? "Ir a mi panel" : "Publicar el tuyo"}
+              </Button>
             </div>
           </div>
 
-          <dl className="mt-14 grid max-w-3xl grid-cols-3 gap-3 animate-fade-up">
-            {[
-              { v: stats?.proyectosPublicados ?? "—", l: "proyectos publicados" },
-              { v: stats?.estudiantes ?? "—", l: "estudiantes" },
-              { v: stats?.carrerasConProyectos ?? "—", l: "carreras representadas" },
-            ].map((s) => (
-              <div key={s.l} className="rounded-2xl border border-white/10 bg-white/10 p-4 backdrop-blur">
-                <dt className="text-xs text-white/60">{s.l}</dt>
-                <dd className="font-display text-3xl font-bold">{s.v}</dd>
-              </div>
-            ))}
-          </dl>
-        </Container>
-      </section>
-
-      {/* ═══ DESTACADOS ═══ */}
-      {destacados === null ? (
-        <section className="py-16">
-          <Container>
-            <div className="grid gap-6 sm:grid-cols-2 lg:grid-cols-4">{[1, 2, 3, 4].map((i) => <CardSkeleton key={i} />)}</div>
-          </Container>
-        </section>
-      ) : destacados.length === 0 ? (
-        <section className="py-16">
-          <Container>
-            <EmptyState titulo="Aún no hay proyectos publicados" texto="Sé el primero: entra con tu correo Tecsup y publica el tuyo." accion={<Button href="/auth/login">Publicar mi proyecto</Button>} />
-          </Container>
-        </section>
-      ) : (
-        <CarruselProyectos eyebrow="Recién salidos de las aulas" titulo="Lo que construyeron los estudiantes" proyectos={destacados} verTodosHref="/proyectos?orden=destacados" verTodosTexto="Ver todos los proyectos" />
-      )}
-
-      {/* ═══ CARRERAS ═══ */}
-      <section className="border-y border-ink-200 bg-white py-16">
-        <Container>
-          <SectionHeading eyebrow="Todas las carreras" titulo="Explora por carrera" texto="De Diseño de Software a Operaciones Mineras: cada carrera tiene su vitrina." />
-          <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
-            {areas.map((area) => {
-              const lista = carreras.filter((c) => c.area === area);
-              const total = lista.reduce((s, c) => s + c.proyectosPublicados, 0);
-              const color = lista[0]?.color ?? "#00B3E0";
-              return (
-                <div key={area} className="card p-5">
-                  <div className="flex items-center justify-between">
-                    <h3 className="font-display text-sm font-bold text-ink-900">{area}</h3>
-                    <span className="rounded-full px-2 py-0.5 text-[11px] font-semibold" style={{ backgroundColor: `${color}1a`, color }}>{total} publicados</span>
-                  </div>
-                  <ul className="mt-3 space-y-1.5">
-                    {lista.map((c) => (
-                      <li key={c.id}>
-                        <Link href={`/proyectos?carreraId=${c.id}`} className="flex items-center justify-between rounded-lg px-2 py-1.5 text-sm text-ink-700 hover:bg-ink-50 hover:text-brand-700">
-                          <span className="line-clamp-1">{c.nombre}</span>
-                          <span className="ml-2 shrink-0 text-xs text-ink-400">{c.proyectosPublicados}</span>
-                        </Link>
-                      </li>
-                    ))}
-                  </ul>
-                </div>
-              );
-            })}
-          </div>
-        </Container>
-      </section>
-
-      {/* ═══ RECIENTES ═══ */}
-      {recientes !== null && recientes.length > 0 && (
-        <div className="bg-white">
-          <CarruselProyectos eyebrow="Lo último" titulo="Recién publicados" proyectos={recientes} verTodosHref="/proyectos" verTodosTexto="Explorar todo" />
-          {carrerasConProyectos.length > 0 && (
-            <Container className="pb-16">
-              <div className="flex flex-wrap gap-2">
-                {carrerasConProyectos.map((c) => (
-                  <Link key={c.id} href={`/proyectos?carreraId=${c.id}`}>
-                    <Chip color={c.color} size="md">{c.nombre} · {c.proyectosPublicados}</Chip>
-                  </Link>
-                ))}
-              </div>
-            </Container>
+          {destacado === undefined ? (
+            <CardSkeleton />
+          ) : destacado ? (
+            <figure>
+              <Link href={`/proyectos/${destacado.slug}`} className="lamina-enlace group block" transitionTypes={["abrir"]}>
+                <Portada
+                  id={destacado.id}
+                  nombre={destacado.nombre}
+                  imagen={imagenPortada(destacado)}
+                  sizes="(min-width: 1440px) 760px, (min-width: 1024px) 55vw, 100vw"
+                  preload
+                />
+                <figcaption className="mt-5 flex flex-wrap items-baseline justify-between gap-x-6 gap-y-1">
+                  <span className="pie-t text-[1.625rem] text-ink-default group-hover:underline group-hover:decoration-brand-primary">{destacado.nombre}</span>
+                  <span className="text-body-small text-ink-muted">{[lider, destacado.carrera?.nombre].filter(Boolean).join(" · ")}</span>
+                </figcaption>
+              </Link>
+            </figure>
+          ) : (
+            <div className="lamina grid place-items-center">
+              <p className="max-w-xs px-6 text-center text-ink-muted">Pronto verás aquí el primer proyecto publicado.</p>
+            </div>
           )}
-        </div>
+        </section>
+      </Container>
+
+      {(recientes === null || filaRecientes.length > 0) && (
+        <section aria-labelledby="recientes" className="border-t border-linea">
+          <Container className="pt-14">
+            <div className="mb-8 flex items-baseline justify-between gap-6">
+              <h2 id="recientes" className="seccion-t text-ink-default">
+                Recién publicados
+              </h2>
+              <Link href="/proyectos" className="inline-flex min-h-11 items-center gap-1.5 text-[0.9375rem] font-medium text-brand-primary hover:underline">
+                Ver todos
+                <Icono nombre="flecha-der" tam={18} />
+              </Link>
+            </div>
+            <div className="reticula">
+              {recientes === null
+                ? [0, 1, 2, 3].map((i) => <CardSkeleton key={i} />)
+                : filaRecientes.map((p) => <ProjectCard key={p.id} proyecto={p} />)}
+            </div>
+          </Container>
+        </section>
       )}
 
-      {/* ═══ CTA ═══ */}
-      <section className="pb-8">
-        <Container>
-          <div className="relative overflow-hidden rounded-3xl bg-ink-900 px-6 py-12 text-white sm:px-12">
-            <div className="bg-mesh absolute inset-0 opacity-70" />
-            <div className="relative grid gap-8 md:grid-cols-2 md:items-center">
-              <div>
-                <h2 className="font-display text-3xl font-bold">¿Hiciste un proyecto este ciclo?</h2>
-                <p className="mt-3 text-white/75">Publicarlo toma 10 minutos: una frase, una descripción, fotos y tu equipo. Tu docente lo aprueba y queda con URL propia para tu CV y LinkedIn.</p>
-                <div className="mt-6 flex flex-wrap gap-3">
-                  <Button href={usuario ? (esDocente ? "/dashboard" : "/dashboard/proyectos/nuevo") : "/auth/login"} variant="white" size="lg">
-                    {usuario ? (esDocente ? "Ir a mi panel" : "Publicar mi proyecto") : "Entrar con correo Tecsup"}
-                  </Button>
-                  <Button href="/proyectos" variant="ghost" size="lg" className="text-white hover:bg-white/10">Ver ejemplos</Button>
-                </div>
-              </div>
-              <ol className="space-y-3 text-sm">
-                {["Entra con tu correo @tecsup.edu.pe y elige tu carrera.", "Cuenta tu proyecto: frase, descripción, fotos, enlaces y equipo.", "Envíalo a revisión. Tu docente lo publica o te deja observaciones por correo.", "Comparte tu página en LinkedIn y en tu CV."].map((t, i) => (
-                  <li key={t} className="flex gap-3 rounded-2xl border border-white/10 bg-white/5 p-3">
-                    <span className="flex h-6 w-6 shrink-0 items-center justify-center rounded-full bg-white/15 text-xs font-bold">{i + 1}</span>
-                    <span className="text-white/85">{t}</span>
-                  </li>
-                ))}
-              </ol>
-            </div>
+      <Container>
+        <section aria-labelledby="publicar" className="mt-24 grid gap-6 border-t border-ink-default pt-10 md:grid-cols-[1fr_auto] md:items-end">
+          <div>
+            <h2 id="publicar" className="titular-2 text-ink-default">
+              ¿Hiciste un proyecto este ciclo?
+            </h2>
+            <p className="mt-4 max-w-[52ch] text-lg leading-relaxed text-ink-muted">
+              Cuéntalo con fotos, tu equipo y lo que aprendiste. Tu docente lo revisa y queda con una página propia para tu CV y LinkedIn.
+            </p>
           </div>
-        </Container>
-      </section>
+          <Button href={publicar} size="lg" variant="secondary">
+            {usuario ? (esDocente ? "Ir a mi panel" : "Publicar mi proyecto") : "Entrar con tu correo institucional"}
+          </Button>
+        </section>
+      </Container>
     </>
   );
 }

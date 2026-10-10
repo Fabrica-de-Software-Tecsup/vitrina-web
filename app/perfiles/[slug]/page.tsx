@@ -81,7 +81,7 @@ export default function PerfilPage() {
   };
 
   if (perfil === undefined) return <Container className="py-10"><Skeleton className="h-40" /><Skeleton className="mt-6 h-6 w-1/3" /></Container>;
-  if (perfil === null) return <Container className="py-20"><EmptyState icono="🙈" titulo="Perfil no encontrado" accion={<Button href="/estudiantes" variant="outline">Ver estudiantes</Button>} /></Container>;
+  if (perfil === null) return <Container className="py-20"><EmptyState icono="usuario" titulo="Perfil no encontrado" accion={<Button href="/estudiantes" variant="outline">Ver estudiantes</Button>} /></Container>;
 
   const enlaces = [
     { label: "GitHub", href: urlSegura(perfil.githubUrl) },
@@ -91,27 +91,26 @@ export default function PerfilPage() {
 
   return (
     <>
-      <div className="bg-mesh relative -mt-16 h-48 pt-16 sm:h-56" />
-      <Container className="-mt-16 pb-16">
-        <div className="card relative p-6 sm:p-8">
+      <Container className="pt-12 sm:pt-16">
+        <div className="border-b border-linea pb-8">
           <div className="flex flex-col gap-5 sm:flex-row sm:items-end">
-            <Avatar name={perfil.nombre} src={perfil.fotoUrl} size="xl" className="-mt-20 ring-4 ring-white shadow-lift sm:-mt-24" />
+            <Avatar name={perfil.nombre} src={perfil.fotoUrl} size="xl" />
             <div className="min-w-0 flex-1">
-              <h1 className="font-display text-2xl font-extrabold text-ink-900 sm:text-3xl">{perfil.nombre}</h1>
-              <p className="mt-1 text-sm text-ink-600">
+              <h1 className="titular-2 text-ink-default">{perfil.nombre}</h1>
+              <p className="mt-1 text-sm text-ink-muted">
                 {[esDocentePerfil ? "Docente" : null, perfil.carrera?.nombre, !esDocentePerfil && perfil.ciclo ? `Ciclo ${perfil.ciclo}` : null, perfil.sede, perfil.ciudad].filter(Boolean).join(" · ") || "Sin datos académicos"}
               </p>
               <div className="mt-3 flex flex-wrap items-center gap-2">
                 {enlaces.map((e) => (
-                  <a key={e.label} href={e.href!} target="_blank" rel="noopener noreferrer" className="rounded-full border border-ink-200 px-3 py-1 text-xs font-semibold text-ink-700 hover:border-brand-400 hover:text-brand-700">{e.label} ↗</a>
+                  <a key={e.label} href={e.href!} target="_blank" rel="noopener noreferrer" className="rounded-sm border border-surface-outline px-3 py-1.5 text-label text-ink-default hover:border-ink-muted hover:text-ink-default">{e.label}</a>
                 ))}
-                {perfil.correo && <a href={`mailto:${perfil.correo}`} className="rounded-full border border-ink-200 px-3 py-1 text-xs font-semibold text-ink-700 hover:border-brand-400 hover:text-brand-700">Correo</a>}
-                {urlSegura(perfil.cvUrl) && <a href={urlSegura(perfil.cvUrl)!} target="_blank" rel="noopener noreferrer" className="rounded-full bg-ink-900 px-3 py-1 text-xs font-semibold text-white hover:bg-ink-800">Ver CV (PDF)</a>}
+                {perfil.correo && <a href={`mailto:${perfil.correo}`} className="rounded-sm border border-surface-outline px-3 py-1.5 text-label text-ink-default hover:border-ink-muted hover:text-ink-default">Correo</a>}
+                {urlSegura(perfil.cvUrl) && <a href={urlSegura(perfil.cvUrl)!} target="_blank" rel="noopener noreferrer" className="rounded-sm bg-ink-default px-3 py-1.5 text-label text-ink-inverse hover:opacity-90">Ver CV (PDF)</a>}
               </div>
             </div>
             {esMio && !editando && (
               <div className="flex gap-2">
-                <label className="inline-flex h-10 cursor-pointer items-center rounded-full border border-ink-200 bg-white px-4 text-sm font-semibold text-ink-800 hover:border-brand-400">
+                <label className="inline-flex h-10 cursor-pointer items-center rounded-sm border border-linea bg-surface-raised px-4 text-sm font-semibold text-ink-default hover:border-ink-muted">
                   {perfil.cvUrl ? "Cambiar CV" : "Subir CV"}
                   <input type="file" accept="application/pdf" className="hidden" onChange={(e) => cambiarCV(e.target.files?.[0])} />
                 </label>
@@ -121,7 +120,7 @@ export default function PerfilPage() {
           </div>
 
           {editando ? (
-            <div className="mt-6 grid gap-4 border-t border-ink-100 pt-6 sm:grid-cols-2">
+            <div className="mt-6 grid gap-4 border-t border-linea pt-6 sm:grid-cols-2">
               <Field label="Sobre mí" htmlFor="bio" className="sm:col-span-2" contador={{ actual: form.bio.length, max: 500 }}>
                 <Textarea id="bio" value={form.bio} maxLength={500} onChange={(e) => setForm({ ...form, bio: e.target.value })} placeholder="Qué te gusta construir, en qué quieres trabajar…" />
               </Field>
@@ -133,10 +132,10 @@ export default function PerfilPage() {
                 <Button variant="ghost" onClick={() => setEditando(false)}>Cancelar</Button>
                 <Button onClick={guardar} loading={guardando}>Guardar cambios</Button>
               </div>
-              <p className="text-xs text-ink-500 sm:col-span-2">Carrera, ciclo y sede se cambian en <a href="/onboarding" className="font-semibold text-brand-700">datos académicos</a>.</p>
+              <p className="text-xs text-ink-muted sm:col-span-2">Carrera, ciclo y sede se cambian en <a href="/onboarding" className="font-semibold text-brand-primary">datos académicos</a>.</p>
             </div>
           ) : (
-            perfil.bio && <p className="mt-6 max-w-3xl border-t border-ink-100 pt-6 text-ink-700">{perfil.bio}</p>
+            perfil.bio && <p className="mt-6 max-w-3xl border-t border-linea pt-6 text-ink-default">{perfil.bio}</p>
           )}
         </div>
 
@@ -170,13 +169,13 @@ export default function PerfilPage() {
           </div>
           <aside className="space-y-4">
             <div className="card p-5">
-              <h3 className="text-xs font-bold uppercase tracking-wider text-ink-400">Tecnologías</h3>
-              {techs.length ? <div className="mt-3 flex flex-wrap gap-1.5">{techs.map((t) => <Chip key={t} size="md">{t}</Chip>)}</div> : <p className="mt-2 text-sm text-ink-500">Aparecen al publicar proyectos.</p>}
+              <h2 className="font-display text-title font-medium text-ink-default">Tecnologías</h2>
+              {techs.length ? <div className="mt-3 flex flex-wrap gap-1.5">{techs.map((t) => <Chip key={t} size="md">{t}</Chip>)}</div> : <p className="mt-2 text-sm text-ink-muted">Aparecen al publicar proyectos.</p>}
             </div>
             {perfil.experiencia && (
               <div className="card p-5">
-                <h3 className="text-xs font-bold uppercase tracking-wider text-ink-400">Experiencia</h3>
-                <p className="mt-2 whitespace-pre-line text-sm text-ink-700">{perfil.experiencia}</p>
+                <h2 className="font-display text-title font-medium text-ink-default">Experiencia</h2>
+                <p className="mt-2 whitespace-pre-line text-sm text-ink-default">{perfil.experiencia}</p>
               </div>
             )}
           </aside>

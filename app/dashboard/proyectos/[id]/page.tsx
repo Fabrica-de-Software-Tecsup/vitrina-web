@@ -12,8 +12,11 @@ import { Modal, Skeleton, Tabs, useToast } from "@/components/ui/Feedback";
 import { useSesion } from "@/components/sesion/SesionProvider";
 import {
   actualizarImagenProyecto, actualizarProyecto, agregarMiembro, eliminarImagenProyecto, eliminarProyecto, getHistorial,
-  getProyectoPorId, quitarMiembro, subirBuildProyecto, subirImagenProyecto, type DatosProyecto,
+  getProyectoPorId, quitarMiembro, subirBuildProyecto, subirImagenProyecto, actualizarPuntoFocal, type DatosProyecto,
 } from "@/lib/api-proyectos";
+import { posicionFocal } from "@/lib/imagenes";
+import { peso, reducirImagen } from "@/lib/reducir-imagen";
+import Icono from "@/components/ui/Icono";
 import { crearTecnologia, getCarreras, getCategorias, getTecnologias } from "@/lib/api-catalogos";
 import { buscarUsuarios, getDocentes, type DocenteOpcion, type UsuarioBusqueda } from "@/lib/api-usuarios";
 import { ESTADO_LABEL, type Carrera, type Categoria, type HistorialItem, type Proyecto, type Tecnologia } from "@/lib/tipos";
@@ -196,52 +199,52 @@ export default function EditarProyectoPage() {
   const progreso = Math.round((checklist.filter((c) => c.ok).length / checklist.length) * 100);
 
   if (proyecto === undefined) return <Container className="py-10"><Skeleton className="h-8 w-1/2" /><Skeleton className="mt-6 h-64" /></Container>;
-  if (proyecto === null) return <Container className="py-20 text-center"><p className="text-ink-600">No encontramos este proyecto o no tienes acceso.</p><Button href="/dashboard" variant="outline" className="mt-4">Volver</Button></Container>;
+  if (proyecto === null) return <Container className="py-20 text-center"><p className="text-ink-muted">No encontramos este proyecto o no tienes acceso.</p><Button href="/dashboard" variant="outline" className="mt-4">Volver</Button></Container>;
 
   const editable = proyecto.estado !== "POR_REVISAR" || esDocente;
   const esMiembro = !!usuario && (proyecto.creadorId === usuario.id || proyecto.miembros.some((m) => m.usuarioId === usuario.id));
 
   return (
-    <Container className="py-8">
+    <Container className="pt-8">
       {/* Cabecera */}
       <div className="flex flex-col gap-4 lg:flex-row lg:items-start lg:justify-between">
         <div className="min-w-0">
-          <nav className="text-xs text-ink-500"><Link href="/dashboard" className="hover:text-brand-700">Mis proyectos</Link> / Editar</nav>
+          <Link href="/dashboard" className="-ml-1.5 inline-flex h-11 items-center gap-1 text-[0.9375rem] font-medium text-ink-default hover:underline"><Icono nombre="chevron-izq" tam={18} />Mi espacio</Link>
           <div className="mt-1 flex flex-wrap items-center gap-3">
-            <h1 className="font-display text-2xl font-bold text-ink-900 sm:text-3xl">{proyecto.nombre}</h1>
+            <h1 className="titular-2 text-ink-default">{proyecto.nombre}</h1>
             <EstadoBadge estado={proyecto.estado} />
           </div>
-          {proyecto.estado === "PUBLICADO" && <Link href={`/proyectos/${proyecto.slug}`} className="mt-1 inline-block text-sm text-brand-700 hover:underline">Ver página pública ↗</Link>}
+          {proyecto.estado === "PUBLICADO" && <Link href={`/proyectos/${proyecto.slug}`} className="mt-2 inline-flex items-center gap-1 text-[0.9375rem] font-medium text-brand-primary hover:underline">Ver página pública<Icono nombre="externo" tam={16} /></Link>}
         </div>
         <div className="flex flex-wrap gap-2">
           {proyecto.estado === "POR_REVISAR" && !esDocente && <Button variant="outline" onClick={volverABorrador}>Retirar de revisión</Button>}
           {(proyecto.estado === "PUBLICADO" || proyecto.estado === "OCULTO") && <Button variant="outline" onClick={alternarVisibilidad}>{proyecto.estado === "PUBLICADO" ? "Ocultar" : "Volver a mostrar"}</Button>}
           {proyecto.estado === "PUBLICADO" && <Button variant="secondary" onClick={prepararNuevaVersion}>Preparar nueva versión</Button>}
           {esDocente && proyecto.estado === "POR_REVISAR" && <Button href={`/dashboard/revision/${proyecto.id}`} variant="secondary">Ir a revisar</Button>}
-          {editable && haySinGuardar && !guardando && <span className="text-xs font-medium text-amber-700">Cambios sin guardar</span>}
+          {editable && haySinGuardar && !guardando && <span className="text-xs font-medium text-ink-default">Cambios sin guardar</span>}
           {editable && <Button onClick={() => guardar()} loading={guardando} variant={proyecto.estado === "EN_DESARROLLO" ? "outline" : "primary"}>Guardar</Button>}
           {proyecto.estado === "EN_DESARROLLO" && <Button onClick={() => setConfirmarEnvio(true)} disabled={!listoParaEnviar} title={listoParaEnviar ? undefined : "Completa los requisitos de la lista"}>Enviar a revisión</Button>}
         </div>
       </div>
 
       {proyecto.observaciones && proyecto.estado === "EN_DESARROLLO" && (
-        <div className="mt-6 rounded-2xl border border-amber-200 bg-amber-50 p-4">
-          <p className="text-xs font-bold uppercase tracking-wider text-amber-700">Observaciones del docente</p>
-          <p className="mt-1 whitespace-pre-line text-sm text-amber-900">{proyecto.observaciones}</p>
+        <div className="mt-6 rounded-md border border-linea bg-surface-sunken p-4">
+          <p className="text-label text-ink-default">Observaciones del docente</p>
+          <p className="mt-1 whitespace-pre-line text-sm text-ink-default">{proyecto.observaciones}</p>
         </div>
       )}
       {proyecto.estado === "PUBLICADO" && proyecto.versionActual > 0 && (
-        <div className="mt-6 rounded-2xl border border-ink-200 bg-white p-4 text-sm text-ink-700">
+        <div className="mt-6 rounded-md border border-linea bg-surface-raised p-4 text-sm text-ink-default">
           Este proyecto está publicado como <span className="font-semibold">versión {proyecto.versionActual}</span>. Para seguir trabajándolo el próximo semestre sin borrar lo que ya se ve, usa <span className="font-semibold">Preparar nueva versión</span>: editas en borrador, lo reenvías con un resumen de cambios y, al publicarse, la versión anterior queda en la línea de tiempo.
         </div>
       )}
       {proyecto.estado === "EN_DESARROLLO" && proyecto.versionActual > 0 && (
-        <div className="mt-6 rounded-2xl border border-violet-500/30 bg-violet-500/5 p-4 text-sm text-ink-700">
+        <div className="mt-6 rounded-md border border-linea bg-surface-sunken p-4 text-sm text-ink-default">
           Estás preparando la <span className="font-semibold">versión {proyecto.versionActual + 1}</span>. El público sigue viendo la versión {proyecto.versionActual} hasta que un docente publique esta.
         </div>
       )}
       {proyecto.estado === "POR_REVISAR" && !esDocente && (
-        <div className="mt-6 rounded-2xl border border-brand-200 bg-brand-50 p-4 text-sm text-brand-900">
+        <div className="mt-6 rounded-md border border-linea bg-brand-container p-4 text-sm text-brand-on-container">
           Tu proyecto está en la cola de revisión. Mientras tanto no se puede editar; si necesitas cambiar algo, retíralo y vuelve a enviarlo.
         </div>
       )}
@@ -263,7 +266,7 @@ export default function EditarProyectoPage() {
             ]}
           />
 
-          <fieldset disabled={!editable} className="card mt-4 space-y-5 p-6 disabled:opacity-70">
+          <fieldset disabled={!editable} className="mt-6 space-y-6 disabled:opacity-70">
             {tab === "basico" && (
               <>
                 {proyecto.versionActual > 0 && (
@@ -318,7 +321,7 @@ export default function EditarProyectoPage() {
 
             {tab === "historia" && (
               <>
-                <p className="text-sm text-ink-600">Esta parte es la que más leen los reclutadores. Escribe como se lo contarías a un amigo.</p>
+                <p className="text-sm text-ink-muted">Esta parte es la que más leen los reclutadores. Escribe como se lo contarías a un amigo.</p>
                 {([
                   ["comoLoConstruyeron", "¿Cómo lo construyeron?", "Arquitectura, herramientas, cómo se organizaron."],
                   ["retosSuperados", "¿Qué retos superaron?", "Lo que salió mal y cómo lo resolvieron."],
@@ -353,14 +356,14 @@ export default function EditarProyectoPage() {
         <aside className="space-y-4 lg:sticky lg:top-24 lg:self-start">
           <div className="card p-5">
             <div className="flex items-center justify-between">
-              <h3 className="font-display text-sm font-bold text-ink-900">Listo para revisión</h3>
-              <span className="text-xs font-semibold text-ink-500">{progreso}%</span>
+              <h2 className="font-display text-title font-medium text-ink-default">Listo para revisión</h2>
+              <span className="num text-body-small text-ink-muted">{progreso} %</span>
             </div>
-            <div className="mt-2 h-2 overflow-hidden rounded-full bg-ink-100"><div className="h-full rounded-full bg-gradient-to-r from-brand-500 to-violet-500 transition-all" style={{ width: `${progreso}%` }} /></div>
+            <div className="mt-2 h-1.5 overflow-hidden rounded-full bg-surface-sunken" role="progressbar" aria-valuenow={progreso} aria-valuemin={0} aria-valuemax={100} aria-label="Avance hacia la revisión"><div className="h-full rounded-full bg-brand-primary transition-[width] duration-300" style={{ width: `${progreso}%` }} /></div>
             <ul className="mt-4 space-y-2">
               {checklist.map((c) => (
-                <li key={c.label} className={cn("flex items-start gap-2 text-sm", c.ok ? "text-ink-500 line-through decoration-ink-300" : c.opcional ? "text-ink-600" : "text-ink-800")}>
-                  <span className={cn("mt-0.5 flex h-4 w-4 shrink-0 items-center justify-center rounded-full text-[10px]", c.ok ? "bg-emerald-500 text-white" : "border border-ink-300")}>{c.ok ? "✓" : ""}</span>
+                <li key={c.label} className={cn("flex items-start gap-2 text-sm", c.ok ? "text-ink-muted line-through decoration-ink-subtle" : c.opcional ? "text-ink-muted" : "text-ink-default")}>
+                  <span className={cn("mt-0.5 flex h-4 w-4 shrink-0 items-center justify-center rounded-full", c.ok ? "bg-state-success text-state-on-success" : "border border-surface-outline")}>{c.ok && <Icono nombre="check" tam={12} />}</span>
                   {c.label}
                 </li>
               ))}
@@ -372,14 +375,14 @@ export default function EditarProyectoPage() {
 
           {historial.length > 0 && (
             <div className="card p-5">
-              <h3 className="font-display text-sm font-bold text-ink-900">Historial</h3>
-              <ol className="mt-3 space-y-3 border-l border-ink-200 pl-4">
+              <h2 className="font-display text-title font-medium text-ink-default">Historial</h2>
+              <ol className="mt-3 space-y-3 border-l border-linea pl-4">
                 {historial.map((h) => (
                   <li key={h.id} className="relative text-xs">
-                    <span className="absolute -left-[21px] top-1 h-2.5 w-2.5 rounded-full border-2 border-white bg-brand-500" />
-                    <p className="font-semibold text-ink-800">{ESTADO_LABEL[h.aEstado]}</p>
-                    <p className="text-ink-500">{h.actor?.nombre ?? "Sistema"} · {fechaCorta(h.createdAt)}</p>
-                    {h.observaciones && <p className="mt-1 rounded-lg bg-ink-50 p-2 text-ink-700">{h.observaciones}</p>}
+                    <span className="absolute -left-[21px] top-1 h-2.5 w-2.5 rounded-full border-2 border-surface-raised bg-brand-primary" />
+                    <p className="font-semibold text-ink-default">{ESTADO_LABEL[h.aEstado]}</p>
+                    <p className="text-ink-muted">{h.actor?.nombre ?? "Sistema"} · {fechaCorta(h.createdAt)}</p>
+                    {h.observaciones && <p className="mt-1 rounded-sm bg-surface-sunken p-2 text-ink-default">{h.observaciones}</p>}
                   </li>
                 ))}
               </ol>
@@ -387,9 +390,9 @@ export default function EditarProyectoPage() {
           )}
 
           {(proyecto.creadorId === usuario?.id || esDocente) && (
-            <button type="button" onClick={() => setConfirmarBorrado(true)} className="w-full text-center text-xs text-rose-600 hover:underline">Eliminar proyecto</button>
+            <button type="button" onClick={() => setConfirmarBorrado(true)} className="w-full text-center text-xs text-state-danger hover:underline">Eliminar proyecto</button>
           )}
-          {!esMiembro && esDocente && <p className="text-xs text-ink-400">Estás editando como docente.</p>}
+          {!esMiembro && esDocente && <p className="text-xs text-ink-subtle">Estás editando como docente.</p>}
         </aside>
       </div>
 
@@ -436,12 +439,12 @@ function SelectorTecnologias({ todas, seleccionadas, onChange, onNueva }: { toda
 
   return (
     <Field label="Tecnologías y herramientas" hint="Lenguajes, frameworks, hardware, software de diseño… Si no está en la lista, escríbela y pulsa Enter.">
-      <div className="rounded-2xl border border-ink-200 bg-white p-2">
+      <div className="rounded-md border border-linea bg-surface-raised p-2">
         <div className="flex flex-wrap gap-1.5">
           {elegidas.map((t) => (
-            <span key={t.id} className="inline-flex items-center gap-1 rounded-full bg-brand-50 px-2.5 py-1 text-xs font-semibold text-brand-800">
+            <span key={t.id} className="inline-flex items-center gap-1 rounded-sm bg-brand-container px-2.5 py-1 text-xs font-semibold text-brand-on-container">
               {t.nombre}
-              <button type="button" aria-label={`Quitar ${t.nombre}`} onClick={() => onChange(seleccionadas.filter((x) => x !== t.id))} className="text-brand-500 hover:text-brand-800">×</button>
+              <button type="button" aria-label={`Quitar ${t.nombre}`} onClick={() => onChange(seleccionadas.filter((x) => x !== t.id))} className="text-brand-on-container hover:text-ink-default"><Icono nombre="cerrar" tam={14} /></button>
             </span>
           ))}
           <input
@@ -459,9 +462,9 @@ function SelectorTecnologias({ todas, seleccionadas, onChange, onNueva }: { toda
           />
         </div>
         {(sugerencias.length > 0 || (texto && !existeExacta)) && (
-          <div className="mt-2 flex flex-wrap gap-1.5 border-t border-ink-100 pt-2">
+          <div className="mt-2 flex flex-wrap gap-1.5 border-t border-linea pt-2">
             {sugerencias.map((s) => <Chip key={s.id} size="md" onClick={() => agregar(s)}>{s.nombre}</Chip>)}
-            {texto && !existeExacta && <Chip size="md" onClick={crear} className="border-dashed border-brand-300 text-brand-700">{creando ? "Creando…" : `+ Crear “${q.trim()}”`}</Chip>}
+            {texto && !existeExacta && <Chip size="md" onClick={crear} className="border-dashed border-linea text-brand-primary">{creando ? "Creando…" : `Crear «${q.trim()}»`}</Chip>}
           </div>
         )}
       </div>
@@ -469,24 +472,28 @@ function SelectorTecnologias({ todas, seleccionadas, onChange, onNueva }: { toda
   );
 }
 
-/* ─── Galeria ─── */
+/* ─── Galería: reducción en el navegador, portada y punto focal ─── */
 function GaleriaEditor({ proyecto, onCambio }: { proyecto: Proyecto; onCambio: (p: Proyecto) => void }) {
   const { avisar } = useToast();
   const [subiendo, setSubiendo] = useState(0);
   const [arrastrando, setArrastrando] = useState(false);
+  const [pesos, setPesos] = useState<{ nombre: string; antes: number; despues: number }[]>([]);
+  const [foco, setFoco] = useState<string | null>(null);
 
   const subir = async (archivos: FileList | File[] | null) => {
     if (!archivos) return;
     const lista = Array.from(archivos).filter((f) => f.type.startsWith("image/"));
     if (!lista.length) return avisar("Solo se aceptan imágenes PNG, JPG, GIF o WebP", "error");
-    for (const f of lista) {
-      if (f.size > 5 * 1024 * 1024) {
-        avisar(`${f.name} supera 5 MB`, "error");
-        continue;
-      }
+    for (const original of lista) {
       setSubiendo((n) => n + 1);
       try {
-        onCambio(await subirImagenProyecto(proyecto.id, f, false));
+        const { archivo, antes, despues } = await reducirImagen(original);
+        setPesos((p) => [{ nombre: original.name, antes, despues }, ...p].slice(0, 6));
+        if (archivo.size > 5 * 1024 * 1024) {
+          avisar(`${original.name} sigue pesando más de 5 MB`, "error");
+          continue;
+        }
+        onCambio(await subirImagenProyecto(proyecto.id, archivo, false));
       } catch (e) {
         avisar(e instanceof Error ? e.message : "No se pudo subir", "error");
       } finally {
@@ -495,35 +502,105 @@ function GaleriaEditor({ proyecto, onCambio }: { proyecto: Proyecto; onCambio: (
     }
   };
 
+  const enFoco = proyecto.imagenes.find((i) => i.id === foco) ?? null;
+
+  const fijarFoco = async (e: React.MouseEvent<HTMLButtonElement>) => {
+    if (!enFoco) return;
+    const r = e.currentTarget.getBoundingClientRect();
+    const x = Math.min(1, Math.max(0, (e.clientX - r.left) / r.width));
+    const y = Math.min(1, Math.max(0, (e.clientY - r.top) / r.height));
+    const redondo = (n: number) => Math.round(n * 1000) / 1000;
+    try {
+      onCambio(await actualizarPuntoFocal(proyecto.id, enFoco.id, redondo(x), redondo(y)));
+    } catch (err) {
+      avisar(err instanceof Error ? err.message : "No se pudo guardar el punto focal", "error");
+    }
+  };
+
   return (
-    <Field label="Imágenes" required hint="Hasta 10, 5 MB cada una. La primera es la portada; puedes cambiarla.">
+    <Field label="Imágenes" required hint="Hasta 10. Las reducimos aquí antes de subirlas (2.000 px, WebP) para que cuesten pocos datos. La portada se recorta en 4:3: marca su punto focal.">
       <div
         onDragOver={(e) => { e.preventDefault(); setArrastrando(true); }}
         onDragLeave={() => setArrastrando(false)}
         onDrop={(e) => { e.preventDefault(); setArrastrando(false); void subir(e.dataTransfer.files); }}
-        className={cn("rounded-2xl border-2 border-dashed p-4 transition-colors", arrastrando ? "border-brand-500 bg-brand-50" : "border-ink-200")}
+        className={cn("rounded-md border border-dashed p-4 transition-colors", arrastrando ? "border-brand-primary bg-brand-container" : "border-surface-outline")}
       >
-        <div className="grid grid-cols-3 gap-3 sm:grid-cols-4">
+        <ul className="grid grid-cols-2 gap-x-4 gap-y-5 sm:grid-cols-3">
           {proyecto.imagenes.map((img) => (
-            <div key={img.id} className="group relative aspect-[4/3] overflow-hidden rounded-xl bg-ink-100">
-              {/* eslint-disable-next-line @next/next/no-img-element */}
-              <img src={img.url} alt="" className="h-full w-full object-cover" />
-              {img.esPortada && <span className="absolute left-2 top-2 rounded-full bg-brand-600 px-2 py-0.5 text-[10px] font-bold text-white">Portada</span>}
-              <div className="absolute inset-x-0 bottom-0 flex justify-between gap-1 bg-gradient-to-t from-black/60 p-1.5 opacity-0 transition group-hover:opacity-100">
-                {!img.esPortada && <button type="button" onClick={async () => onCambio(await actualizarImagenProyecto(proyecto.id, img.id, { esPortada: true }))} className="rounded-full bg-white/90 px-2 py-0.5 text-[10px] font-semibold text-ink-800">Portada</button>}
-                <button type="button" onClick={async () => onCambio(await eliminarImagenProyecto(proyecto.id, img.id))} className="ml-auto rounded-full bg-rose-600 px-2 py-0.5 text-[10px] font-semibold text-white">Quitar</button>
+            <li key={img.id}>
+              <div className="lamina" style={{ backgroundColor: img.colorDominante ?? undefined }}>
+                {/* eslint-disable-next-line @next/next/no-img-element -- miniatura del editor */}
+                <img src={img.url} alt="" style={{ objectPosition: posicionFocal(img) }} />
+                {img.esPortada && <span className="absolute left-2 top-2 rounded-sm bg-surface-default px-2 py-0.5 text-caption font-semibold text-ink-default shadow-[0_0_0_0.5px_var(--c-marco)]">Portada</span>}
               </div>
-            </div>
+              <div className="mt-2 flex flex-wrap gap-x-3 gap-y-1 text-body-small">
+                {!img.esPortada && (
+                  <button type="button" onClick={async () => onCambio(await actualizarImagenProyecto(proyecto.id, img.id, { esPortada: true }))} className="min-h-8 font-medium text-ink-default hover:underline">
+                    Usar de portada
+                  </button>
+                )}
+                <button type="button" onClick={() => setFoco(foco === img.id ? null : img.id)} aria-pressed={foco === img.id} className="inline-flex min-h-8 items-center gap-1 font-medium text-ink-default hover:underline">
+                  <Icono nombre="foco" tam={16} />
+                  Punto focal
+                </button>
+                <button type="button" onClick={async () => onCambio(await eliminarImagenProyecto(proyecto.id, img.id))} className="min-h-8 font-medium text-state-danger hover:underline">
+                  Quitar
+                </button>
+              </div>
+            </li>
           ))}
           {proyecto.imagenes.length < 10 && (
-            <label className="flex aspect-[4/3] cursor-pointer flex-col items-center justify-center rounded-xl border border-ink-200 bg-ink-50 text-center text-xs text-ink-500 hover:border-brand-400 hover:text-brand-700">
-              <span className="text-2xl">＋</span>
-              {subiendo ? `Subiendo ${subiendo}…` : "Subir o arrastrar"}
-              <input type="file" accept="image/png,image/jpeg,image/gif,image/webp" multiple className="hidden" onChange={(e) => { void subir(e.target.files); e.target.value = ""; }} />
-            </label>
+            <li>
+              <label className="flex aspect-[4/3] cursor-pointer flex-col items-center justify-center gap-2 rounded-lamina border border-linea bg-surface-sunken text-center text-body-small text-ink-muted hover:border-ink-muted hover:text-ink-default">
+                <Icono nombre={subiendo ? "reloj" : "subir"} tam={24} />
+                {subiendo ? `Reduciendo y subiendo ${subiendo}…` : "Subir o arrastrar"}
+                <input type="file" accept="image/png,image/jpeg,image/gif,image/webp" multiple className="sr-only" onChange={(e) => { void subir(e.target.files); e.target.value = ""; }} />
+              </label>
+            </li>
           )}
-        </div>
+        </ul>
+
+        {pesos.length > 0 && (
+          <ul className="mt-5 space-y-1 border-t border-linea pt-3 text-body-small text-ink-muted" aria-live="polite">
+            {pesos.map((p, i) => (
+              <li key={`${p.nombre}-${i}`} className="num flex flex-wrap gap-x-2">
+                <span className="max-w-[18ch] truncate text-ink-default">{p.nombre}</span>
+                <span>
+                  {peso(p.antes)} → {peso(p.despues)}
+                  {p.despues < p.antes ? ` (${Math.round((1 - p.despues / p.antes) * 100)} % menos)` : " (sin cambios)"}
+                </span>
+              </li>
+            ))}
+          </ul>
+        )}
       </div>
+
+      {enFoco && (
+        <div className="mt-4 grid gap-5 rounded-md border border-linea p-4 md:grid-cols-[3fr_2fr]">
+          <div>
+            <p className="text-label text-ink-default">Toca lo más importante de la imagen</p>
+            <button type="button" onClick={fijarFoco} className="relative mx-auto mt-2 block w-fit max-w-full cursor-crosshair overflow-hidden rounded-md" aria-label="Elegir punto focal">
+              {/* eslint-disable-next-line @next/next/no-img-element -- imagen completa para elegir el foco */}
+              <img src={enFoco.url} alt="" className="block max-h-80 max-w-full" />
+              <span
+                aria-hidden
+                className="pointer-events-none absolute h-7 w-7 -translate-x-1/2 -translate-y-1/2 rounded-full border-2 border-white shadow-[0_0_0_1.5px_rgb(0_0_0/0.6)]"
+                style={{ left: `${(enFoco.puntoFocalX ?? 0.5) * 100}%`, top: `${(enFoco.puntoFocalY ?? 0.5) * 100}%` }}
+              />
+            </button>
+          </div>
+          <div>
+            <p className="text-label text-ink-default">Así se recorta en la lámina</p>
+            <div className="lamina mt-2">
+              {/* eslint-disable-next-line @next/next/no-img-element -- vista previa del recorte */}
+              <img src={enFoco.url} alt="" style={{ objectPosition: posicionFocal(enFoco) ?? "50% 50%" }} />
+            </div>
+            <Button variant="ghost" size="sm" className="mt-3 -ml-3" onClick={() => setFoco(null)}>
+              Listo
+            </Button>
+          </div>
+        </div>
+      )}
     </Field>
   );
 }
@@ -535,7 +612,7 @@ function BuildUploader({ proyecto, onCambio }: { proyecto: Proyecto; onCambio: (
   return (
     <Field label="Build o ejecutable (opcional)" hint="ZIP de hasta 100 MB. Útil para apps de escritorio, juegos o firmware.">
       <div className="flex flex-wrap items-center gap-3">
-        <label className={cn("inline-flex h-10 cursor-pointer items-center rounded-full border border-ink-200 bg-white px-4 text-sm font-semibold text-ink-800 hover:border-brand-400", subiendo && "opacity-60")}>
+        <label className={cn("inline-flex h-10 cursor-pointer items-center rounded-sm border border-linea bg-surface-raised px-4 text-sm font-semibold text-ink-default hover:border-ink-muted", subiendo && "opacity-60")}>
           {subiendo ? "Subiendo…" : proyecto.buildUrl ? "Reemplazar ZIP" : "Subir ZIP"}
           <input type="file" accept=".zip,application/zip" className="hidden" disabled={subiendo} onChange={async (e) => {
             const f = e.target.files?.[0];
@@ -545,7 +622,7 @@ function BuildUploader({ proyecto, onCambio }: { proyecto: Proyecto; onCambio: (
             try { onCambio(await subirBuildProyecto(proyecto.id, f)); avisar("Build subido"); } catch (err) { avisar(err instanceof Error ? err.message : "No se pudo subir", "error"); } finally { setSubiendo(false); }
           }} />
         </label>
-        {proyecto.buildUrl && <a href={proyecto.buildUrl} className="text-sm text-brand-700 hover:underline" target="_blank" rel="noopener noreferrer">Descargar actual ↗</a>}
+        {proyecto.buildUrl && <a href={proyecto.buildUrl} className="text-sm text-brand-primary hover:underline" target="_blank" rel="noopener noreferrer">Descargar el actual</a>}
       </div>
     </Field>
   );
@@ -579,16 +656,16 @@ function EquipoEditor({ proyecto, onCambio, puedeEditar }: { proyecto: Proyecto;
 
   return (
     <div className="space-y-5">
-      <ul className="divide-y divide-ink-100 rounded-2xl border border-ink-200">
+      <ul className="divide-y divide-linea rounded-md border border-linea">
         {proyecto.miembros.map((m) => (
           <li key={m.usuarioId} className="flex items-center gap-3 p-3">
             <Avatar name={m.usuario.nombre} src={m.usuario.fotoUrl} size="md" />
             <div className="min-w-0 flex-1">
-              <p className="truncate text-sm font-semibold text-ink-900">{m.usuario.nombre}</p>
-              <p className="truncate text-xs text-ink-500">{m.rol}{m.esLider ? " · líder" : ""}{m.usuarioId === proyecto.creadorId ? " · creador" : ""}</p>
+              <p className="truncate text-sm font-semibold text-ink-default">{m.usuario.nombre}</p>
+              <p className="truncate text-xs text-ink-muted">{m.rol}{m.esLider ? " · líder" : ""}{m.usuarioId === proyecto.creadorId ? " · creador" : ""}</p>
             </div>
             {puedeEditar && m.usuarioId !== proyecto.creadorId && (
-              <button type="button" onClick={async () => { try { onCambio(await quitarMiembro(proyecto.id, m.usuarioId)); } catch (e) { avisar(e instanceof Error ? e.message : "No se pudo quitar", "error"); } }} className="text-xs text-rose-600 hover:underline">Quitar</button>
+              <button type="button" onClick={async () => { try { onCambio(await quitarMiembro(proyecto.id, m.usuarioId)); } catch (e) { avisar(e instanceof Error ? e.message : "No se pudo quitar", "error"); } }} className="text-xs text-state-danger hover:underline">Quitar</button>
             )}
           </li>
         ))}
@@ -598,12 +675,12 @@ function EquipoEditor({ proyecto, onCambio, puedeEditar }: { proyecto: Proyecto;
           <Field label="Agregar integrante" htmlFor="buscar" hint="Busca por nombre o correo Tecsup. Debe haber entrado a Vitrina al menos una vez.">
             <Input id="buscar" value={q} onChange={(e) => setQ(e.target.value)} placeholder="nombre o correo…" autoComplete="off" />
             {resultados.length > 0 && (
-              <ul className="mt-2 overflow-hidden rounded-xl border border-ink-200 bg-white">
+              <ul className="mt-2 overflow-hidden rounded-sm border border-linea bg-surface-raised">
                 {resultados.map((u) => (
                   <li key={u.id}>
-                    <button type="button" onClick={() => agregar(u)} className="flex w-full items-center gap-3 px-3 py-2 text-left hover:bg-ink-50">
+                    <button type="button" onClick={() => agregar(u)} className="flex w-full items-center gap-3 px-3 py-2 text-left hover:bg-surface-sunken">
                       <Avatar name={u.nombre} src={u.fotoUrl} size="sm" />
-                      <span className="min-w-0"><span className="block truncate text-sm font-medium text-ink-900">{u.nombre}</span><span className="block truncate text-xs text-ink-500">{u.correo}{u.carrera ? ` · ${u.carrera.nombre}` : ""}</span></span>
+                      <span className="min-w-0"><span className="block truncate text-sm font-medium text-ink-default">{u.nombre}</span><span className="block truncate text-xs text-ink-muted">{u.correo}{u.carrera ? ` · ${u.carrera.nombre}` : ""}</span></span>
                     </button>
                   </li>
                 ))}

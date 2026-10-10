@@ -7,35 +7,32 @@ export interface SeccionLegal {
   contenido: React.ReactNode;
 }
 
-/** Plantilla comun de /privacidad, /terminos y /eliminar-cuenta: cabecera, indice lateral y secciones. */
+/** Plantilla común de /privacidad, /terminos y /eliminar-cuenta (modo Leer): columna de lectura con índice lateral. */
 export default function PaginaLegal({
-  eyebrow,
   titulo,
   resumen,
   actualizado,
   secciones,
 }: {
-  eyebrow: string;
   titulo: string;
   resumen: React.ReactNode;
   actualizado: string;
   secciones: SeccionLegal[];
 }) {
   return (
-    <Container className="py-10">
+    <Container className="pt-12 sm:pt-16">
       <header className="max-w-3xl">
-        <p className="text-xs font-bold uppercase tracking-[0.18em] text-brand-600">{eyebrow}</p>
-        <h1 className="mt-1 font-display text-3xl font-bold text-ink-900 sm:text-4xl">{titulo}</h1>
-        <div className="mt-3 text-ink-600">{resumen}</div>
-        <p className="mt-3 text-xs text-ink-400">Última actualización: {actualizado}</p>
+        <h1 className="titular-2 text-ink-default">{titulo}</h1>
+        <div className="mt-5 max-w-[60ch] text-lg leading-relaxed text-ink-muted">{resumen}</div>
+        <p className="mt-4 text-body-small text-ink-muted">Última actualización: {actualizado}</p>
       </header>
 
-      <div className="mt-10 grid gap-8 lg:grid-cols-[220px_minmax(0,1fr)]">
+      <div className="mt-12 grid gap-10 border-t border-linea pt-10 lg:grid-cols-[15rem_minmax(0,1fr)] lg:gap-16">
         <nav aria-label="Contenido" className="hidden lg:block">
-          <ol className="sticky top-24 space-y-1 border-l border-ink-200 text-sm">
+          <ol className="sticky top-28 space-y-1 text-body-small">
             {secciones.map((s) => (
               <li key={s.id}>
-                <a href={`#${s.id}`} className="-ml-px block border-l border-transparent py-1 pl-4 text-ink-500 hover:border-brand-500 hover:text-ink-900">
+                <a href={`#${s.id}`} className="block py-1 text-ink-muted hover:text-ink-default hover:underline">
                   {s.titulo}
                 </a>
               </li>
@@ -43,11 +40,11 @@ export default function PaginaLegal({
           </ol>
         </nav>
 
-        <article className="card max-w-3xl divide-y divide-ink-100">
+        <article className="max-w-[68ch]">
           {secciones.map((s) => (
-            <section key={s.id} id={s.id} className="scroll-mt-24 p-6 sm:p-8">
-              <h2 className="text-lg font-bold text-ink-900">{s.titulo}</h2>
-              <div className="mt-3 space-y-3 text-[0.95rem] leading-relaxed text-ink-700 [&_a]:font-medium [&_a]:text-brand-700 [&_a:hover]:underline [&_li]:pl-1 [&_ul]:list-disc [&_ul]:space-y-1.5 [&_ul]:pl-5 [&_strong]:text-ink-900">
+            <section key={s.id} id={s.id} className="scroll-mt-28 pb-10">
+              <h2 className="seccion-t text-ink-default">{s.titulo}</h2>
+              <div className="mt-4 space-y-4 text-[1.0625rem] leading-relaxed text-ink-default [&_a]:font-medium [&_a]:text-brand-primary [&_a]:underline [&_li]:pl-1 [&_strong]:font-semibold [&_ul]:list-disc [&_ul]:space-y-2 [&_ul]:pl-5">
                 {s.contenido}
               </div>
             </section>
@@ -55,10 +52,10 @@ export default function PaginaLegal({
         </article>
       </div>
 
-      <p className="mt-10 text-sm text-ink-500">
-        Más información: <Link href="/privacidad" className="text-brand-700 hover:underline">Privacidad</Link> ·{" "}
-        <Link href="/terminos" className="text-brand-700 hover:underline">Términos de uso</Link> ·{" "}
-        <Link href="/eliminar-cuenta" className="text-brand-700 hover:underline">Eliminar tu cuenta</Link>
+      <p className="mt-6 border-t border-linea pt-6 text-body-small text-ink-muted">
+        Más información: <Link href="/privacidad" className="text-brand-primary hover:underline">Privacidad</Link> ·{" "}
+        <Link href="/terminos" className="text-brand-primary hover:underline">Términos de uso</Link> ·{" "}
+        <Link href="/eliminar-cuenta" className="text-brand-primary hover:underline">Eliminar tu cuenta</Link>
       </p>
     </Container>
   );

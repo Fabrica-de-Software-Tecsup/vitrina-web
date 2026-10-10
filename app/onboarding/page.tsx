@@ -56,9 +56,8 @@ export default function OnboardingPage() {
 
   return (
     <Container className="max-w-xl py-14">
-      <p className="text-xs font-bold uppercase tracking-[0.18em] text-brand-600">{usuario?.perfilCompleto ? "Datos académicos" : "Un paso más"}</p>
-      <h1 className="mt-2 font-display text-3xl font-bold text-ink-900">Hola{usuario ? `, ${usuario.nombre.split(" ")[0]}` : ""} 👋</h1>
-      <p className="mt-2 text-ink-600">Cuéntanos tu carrera para ubicar tus proyectos en la vitrina correcta. Lo demás es opcional y lo puedes completar después.</p>
+      <h1 className="mt-2 titular-2 text-ink-default">Hola{usuario ? `, ${usuario.nombre.split(" ")[0]}` : ""}</h1>
+      <p className="mt-2 text-ink-muted">Cuéntanos tu carrera para ubicar tus proyectos en la vitrina correcta. Lo demás es opcional y lo puedes completar después.</p>
 
       <div className="card mt-8 space-y-5 p-6 sm:p-8">
         <Field label="Carrera" htmlFor="carrera" required>

@@ -4,6 +4,7 @@ import { useEffect, useRef, useState } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import Button from "@/components/ui/Button";
+import { SelectorTemaSegmentado } from "@/components/ui/SelectorTema";
 import { Modal, useToast } from "@/components/ui/Feedback";
 import { useSesion } from "@/components/sesion/SesionProvider";
 import { eliminarMiCuenta } from "@/lib/api-usuarios";
@@ -54,15 +55,18 @@ export default function SeccionCuenta() {
   };
 
   return (
-    <section id="cuenta" aria-labelledby="cuenta-titulo" className="mt-16 border-t border-ink-200 pt-8">
-      <h2 id="cuenta-titulo" className="text-sm font-bold uppercase tracking-[0.14em] text-ink-500">Cuenta</h2>
-      <div className="mt-3 flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
-        <p className="max-w-xl text-sm text-ink-500">
-          Sesión iniciada como <span className="font-medium text-ink-700">{usuario?.correo}</span>. Si eliminas tu cuenta se borran tus datos
+    <section id="cuenta" aria-labelledby="cuenta-titulo" className="mt-20 border-t border-linea pt-10">
+      <h2 id="cuenta-titulo" className="seccion-t text-ink-default">Cuenta</h2>
+      <div className="mt-6">
+        <SelectorTemaSegmentado />
+      </div>
+      <div className="mt-8 flex flex-col gap-3 border-t border-linea pt-6 sm:flex-row sm:items-center sm:justify-between">
+        <p className="max-w-xl text-sm text-ink-muted">
+          Sesión iniciada como <span className="font-medium text-ink-default">{usuario?.correo}</span>. Si eliminas tu cuenta se borran tus datos
           personales; los proyectos ya publicados se conservan sin tu nombre.{" "}
-          <Link href="/eliminar-cuenta" className="text-brand-700 hover:underline">Más detalles</Link>
+          <Link href="/eliminar-cuenta" className="text-brand-primary hover:underline">Más detalles</Link>
         </p>
-        <Button variant="ghost" size="sm" className="self-start text-rose-600 hover:bg-rose-50 sm:self-auto" onClick={() => setAbierto(true)}>
+        <Button variant="ghost" size="sm" className="self-start text-state-danger hover:bg-surface-sunken sm:self-auto" onClick={() => setAbierto(true)}>
           Eliminar mi cuenta
         </Button>
       </div>
@@ -81,14 +85,14 @@ export default function SeccionCuenta() {
           </>
         }
       >
-        <ul className="list-disc space-y-1 pl-5 text-sm text-ink-600">
+        <ul className="list-disc space-y-1 pl-5 text-sm text-ink-muted">
           <li>Se borran tu nombre, correo, foto, datos de perfil y CV.</li>
           <li>Sales de los equipos y se eliminan tus borradores que no compartías con nadie.</li>
           <li>Los proyectos publicados se conservan con autor «Usuario eliminado».</li>
           <li>Se cierran tus sesiones en la web y en la app.</li>
         </ul>
-        <label className="mt-4 block text-sm font-medium text-ink-800" htmlFor="confirmar-eliminar">
-          Escribe <span className="font-mono font-bold">{PALABRA}</span> para confirmar
+        <label className="mt-4 block text-sm font-medium text-ink-default" htmlFor="confirmar-eliminar">
+          Escribe <span className="font-semibold">{PALABRA}</span> para confirmar
         </label>
         <input
           id="confirmar-eliminar"
@@ -100,7 +104,7 @@ export default function SeccionCuenta() {
           spellCheck={false}
           disabled={enviando}
         />
-        {error && <p className="mt-2 text-sm text-rose-600" role="alert">{error}</p>}
+        {error && <p className="mt-2 text-sm text-state-danger" role="alert">{error}</p>}
       </Modal>
     </section>
   );

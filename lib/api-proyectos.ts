@@ -97,3 +97,14 @@ export function subirBuildProyecto(id: string, archivo: File) {
 
 export const incrementarVistas = (id: string) => apiFetch(`/proyectos/${id}/vistas`, { method: "POST" });
 export const incrementarCompartidos = (id: string) => apiFetch(`/proyectos/${id}/compartidos`, { method: "POST" });
+
+/** Un proyecto publicado al azar («Sorpréndeme»). El API puede devolver el proyecto completo o solo su slug. */
+export const getProyectoAleatorio = () => apiFetch<Partial<Proyecto> & { slug: string }>("/proyectos/aleatorio");
+
+/** URL de la tarjeta para compartir (PNG generado por el API). */
+export function urlTarjeta(slug: string, formato: "historia" | "cuadrado") {
+  return `${process.env.NEXT_PUBLIC_API_URL}/proyectos/slug/${encodeURIComponent(slug)}/tarjeta?formato=${formato}`;
+}
+
+export const actualizarPuntoFocal = (id: string, imagenId: string, puntoFocalX: number, puntoFocalY: number) =>
+  apiFetch<Proyecto>(`/proyectos/${id}/imagenes/${imagenId}`, { method: "PATCH", ...json({ puntoFocalX, puntoFocalY }) });

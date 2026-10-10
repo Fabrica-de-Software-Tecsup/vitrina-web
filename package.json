@@ -11,14 +11,15 @@
   "dependencies": {
     "@react-oauth/google": "^0.13.5",
     "next": "^16.4.0",
-    "react": "19.2.4",
-    "react-dom": "19.2.4"
+    "react": "^19.3.0",
+    "react-dom": "^19.3.0",
+    "thumbhash": "^0.1.1"
   },
   "devDependencies": {
     "@tailwindcss/postcss": "^4",
     "@types/node": "^20",
-    "@types/react": "^19",
-    "@types/react-dom": "^19",
+    "@types/react": "^19.3.0",
+    "@types/react-dom": "^19.3.0",
     "eslint": "^9",
     "eslint-config-next": "^16.4.0",
     "tailwindcss": "^4",

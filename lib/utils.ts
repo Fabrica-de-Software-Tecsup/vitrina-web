@@ -9,26 +9,6 @@ export function getInitials(name: string): string {
     .slice(0, 2);
 }
 
-const AVATAR_PALETTE = [
-  "bg-brand-500",
-  "bg-violet-500",
-  "bg-lime-500",
-  "bg-amber-500",
-  "bg-rose-500",
-  "bg-indigo-500",
-  "bg-teal-500",
-  "bg-orange-500",
-];
-
-/** Asigna un color consistente segun el nombre */
-export function getAvatarColor(name: string): string {
-  let hash = 0;
-  for (let i = 0; i < name.length; i++) {
-    hash = name.charCodeAt(i) + ((hash << 5) - hash);
-  }
-  return AVATAR_PALETTE[Math.abs(hash) % AVATAR_PALETTE.length];
-}
-
 /** Genera un slug URL-safe a partir de un texto */
 export function slugify(text: string): string {
   return text

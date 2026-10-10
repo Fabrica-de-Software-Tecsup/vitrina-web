@@ -50,8 +50,10 @@ const nextConfig: NextConfig = {
   poweredByHeader: false,
   reactStrictMode: true,
   images: {
-    // Las imagenes viven en el storage externo; sin optimizador para no gastar cupo del hosting gratuito.
-    unoptimized: true,
+    // Sin optimizador de Vercel: cada <Image> usa un loader propio que elige la variante s/m/l que genera el API
+    // (lib/imagenes.ts) o, si la imagen no tiene variantes, se sirve tal cual con `unoptimized`.
+    deviceSizes: [480, 640, 828, 960, 1200, 1600, 2048],
+    imageSizes: [96, 160, 320],
     remotePatterns: [patronRemoto(storageUrl), { protocol: "https", hostname: "lh3.googleusercontent.com" }],
   },
   async headers() {

@@ -59,9 +59,8 @@ export default function NuevoProyectoPage() {
 
   return (
     <Container className="max-w-2xl py-12">
-      <p className="text-xs font-bold uppercase tracking-[0.18em] text-brand-600">Nuevo proyecto · paso 1 de 2</p>
-      <h1 className="mt-2 font-display text-3xl font-bold text-ink-900">¿Qué construiste?</h1>
-      <p className="mt-2 text-ink-600">Empieza con lo básico. Se guarda como borrador y nadie lo ve hasta que tú lo envíes a revisión.</p>
+      <h1 className="mt-2 titular-2 text-ink-default">¿Qué construiste?</h1>
+      <p className="mt-3 text-ink-muted">Paso 1 de 2. Empieza con lo básico. Se guarda como borrador y nadie lo ve hasta que tú lo envíes a revisión.</p>
 
       <div className="card mt-8 space-y-5 p-6 sm:p-8">
         <Field label="Nombre del proyecto" htmlFor="nombre" required contador={{ actual: nombre.length, max: 120 }}>
@@ -90,13 +89,13 @@ export default function NuevoProyectoPage() {
           </Field>
         </div>
         <DocentesSelector docentes={docentes} seleccionados={docenteIds} onChange={setDocenteIds} carreraId={carreraId || null} />
-        <p className="-mt-2 text-xs text-ink-500">Si tu docente aún no aparece, crea el borrador igual y agrégalo después desde el editor.</p>
+        <p className="-mt-2 text-xs text-ink-muted">Si tu docente aún no aparece, crea el borrador igual y agrégalo después desde el editor.</p>
         <div className="flex items-center justify-between pt-2">
           <Button variant="ghost" href="/dashboard">Cancelar</Button>
-          <Button onClick={crear} loading={creando} size="lg" disabled={nombre.trim().length < 3}>Crear borrador →</Button>
+          <Button onClick={crear} loading={creando} size="lg" disabled={nombre.trim().length < 3}>Crear borrador</Button>
         </div>
       </div>
-      {esDocente && <p className="mt-4 text-xs text-ink-400">Como docente, el proyecto quedará a tu nombre; puedes agregar alumnos al equipo en el siguiente paso.</p>}
+      {esDocente && <p className="mt-4 text-xs text-ink-subtle">Como docente, el proyecto quedará a tu nombre; puedes agregar alumnos al equipo en el siguiente paso.</p>}
     </Container>
   );
 }

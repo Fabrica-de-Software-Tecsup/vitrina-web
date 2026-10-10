@@ -75,11 +75,29 @@ export interface Miembro {
   usuario: UsuarioResumen;
 }
 
+/** Una variante redimensionada que genera el API al subir (s 480 px, m 960 px, l 1600 px). */
+export interface VarianteImagen {
+  webp?: string;
+  avif?: string;
+  ancho: number;
+  alto?: number;
+}
+
 export interface Imagen {
   id: string;
   url: string;
   esPortada: boolean;
   orden: number;
+  ancho?: number | null;
+  alto?: number | null;
+  /** Color medio de la imagen, en hex; tiñe el hueco mientras carga. */
+  colorDominante?: string | null;
+  /** ThumbHash en base64. */
+  placeholder?: string | null;
+  /** Punto focal normalizado (0–1) para el recorte 4:3. */
+  puntoFocalX?: number | null;
+  puntoFocalY?: number | null;
+  variantes?: Partial<Record<"s" | "m" | "l", VarianteImagen>> | null;
 }
 
 export interface Proyecto {
@@ -187,7 +205,12 @@ export const ESTADO_LABEL: Record<EstadoProyecto, string> = {
   OCULTO: "Oculto",
 };
 
-/** Portada del proyecto: la marcada como portada o la primera. */
+/** Imagen de portada del proyecto: la marcada como portada o la primera. */
+export function imagenPortada(p: Pick<Proyecto, "imagenes">): Imagen | null {
+  return p.imagenes.find((i) => i.esPortada) ?? p.imagenes[0] ?? null;
+}
+
+/** URL de la portada del proyecto. */
 export function portadaDe(p: Pick<Proyecto, "imagenes">): string | null {
-  return (p.imagenes.find((i) => i.esPortada) ?? p.imagenes[0])?.url ?? null;
+  return imagenPortada(p)?.url ?? null;
 }
