@@ -68,7 +68,7 @@ export default function ProyectosFiltrables({ proyectos, titulo, vacio, mostrarE
       )}
       <div className="mt-4">
         {proyectos.length === 0 ? (
-          <EmptyState icono="📁" titulo={vacio.titulo} texto={vacio.texto} accion={vacio.accion} />
+          <EmptyState icono="carpeta" titulo={vacio.titulo} texto={vacio.texto} accion={vacio.accion} />
         ) : visibles.length === 0 ? (
           <p className="rounded-2xl border border-dashed border-ink-200 p-6 text-center text-sm text-ink-500">Ningún proyecto coincide con esos filtros.</p>
         ) : (
