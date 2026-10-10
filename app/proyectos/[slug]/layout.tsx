@@ -3,7 +3,7 @@ import type { Metadata } from "next";
 /** Metadatos por proyecto generados en el servidor: titulo, descripcion y Open Graph con la portada. */
 export async function generateMetadata({ params }: { params: Promise<{ slug: string }> }): Promise<Metadata> {
   const { slug } = await params;
-  const apiUrl = process.env.API_URL_INTERNAL ?? process.env.NEXT_PUBLIC_API_URL;
+  const apiUrl = process.env.API_URL_INTERNAL || process.env.NEXT_PUBLIC_API_URL;
   const fallback: Metadata = { title: "Proyecto" };
   if (!apiUrl) return fallback;
   try {
@@ -18,7 +18,7 @@ export async function generateMetadata({ params }: { params: Promise<{ slug: str
       carrera: { nombre: string } | null;
     };
     const portada = p.imagenes.find((i) => i.esPortada) ?? p.imagenes[0];
-    const descripcion = (p.tagline ?? p.descripcion ?? "").split("\n")[0].slice(0, 160) || "Proyecto de estudiantes de Tecsup.";
+    const descripcion = (p.tagline ?? p.descripcion ?? "").split("\n")[0].slice(0, 160) || "Proyecto de estudiantes en Vitrina.";
     const titulo = p.carrera ? `${p.nombre} · ${p.carrera.nombre}` : p.nombre;
     return {
       title: titulo,
