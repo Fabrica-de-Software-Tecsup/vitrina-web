@@ -1,208 +1,99 @@
 import { apiFetch } from "./api-client";
-import type { Project } from "./mock-data";
+import type { Estadisticas, HistorialItem, Paginado, Proyecto, VersionCompleta, VersionResumen } from "./tipos";
 
-export interface ProyectoApi {
-  id: string;
-  nombre: string;
-  slug: string;
-  descripcion: string | null;
-  estado: string;
-  youtubeUrl: string | null;
-  githubUrl: string | null;
-  demoUrl: string | null;
-  figmaUrl: string | null;
-  vistas: number;
-  compartidos: number;
-  fechaEntrega: string | null;
-  comoLoConstruyeron: string | null;
-  retosSuperados: string | null;
-  leccionAprendida: string | null;
-  queHarianDiferente: string | null;
-  categorias: { categoria: { id: number; nombre: string } }[];
-  tecnologias: { tecnologia: { id: number; nombre: string } }[];
-  cursos: { curso: { id: number; nombre: string; ciclo: string } }[];
-  miembros: { usuarioId: string; rol: string; usuario: { nombre: string; fotoUrl: string | null } }[];
-  imagenes: { id: string; url: string; esPortada: boolean; orden: number }[];
-  buildUrl: string | null;
-  observaciones: string | null;
-  createdAt: string;
-}
-
-function normalizeEstado(estado: string): Project["status"] {
-  const map: Record<string, Project["status"]> = {
-    PUBLICADO: "Publicado",
-    EN_DESARROLLO: "En Desarrollo",
-    POR_REVISAR: "Por Revisar",
-    OCULTO: "Oculto",
-  };
-  return map[estado] ?? (estado as Project["status"]);
-}
-
-export function proyectoApiToProject(p: ProyectoApi): Project {
-  return {
-    id: p.id,
-    name: p.nombre,
-    course: p.cursos[0]?.curso.nombre ?? "",
-    cycle: p.cursos[0]?.curso.ciclo ?? "",
-    category: p.categorias[0]?.categoria.nombre ?? "",
-    description: p.descripcion ?? "",
-    descriptionLong: p.descripcion ?? "",
-    technologies: p.tecnologias.map((t) => t.tecnologia.nombre),
-    team: p.miembros.map((m) => ({ id: m.usuarioId, name: m.usuario.nombre, role: m.rol })),
-    images: [...p.imagenes]
-      .sort((a, b) => (b.esPortada ? 1 : 0) - (a.esPortada ? 1 : 0))
-      .map((img) => img.url),
-    views: p.vistas,
-    shares: p.compartidos,
-    status: normalizeEstado(p.estado),
-    deadline: p.fechaEntrega ?? "",
-    links: {
-      github: p.githubUrl ?? "",
-      demo: p.demoUrl ?? "",
-      figma: p.figmaUrl ?? "",
-    },
-    youtubeId: p.youtubeUrl ?? "",
-    createdAt: p.createdAt,
-    slug: p.slug,
-    buildUrl: p.buildUrl,
-    observaciones: p.observaciones,
-  };
-}
-
-export async function getProyectos(): Promise<Project[]> {
-  const data: ProyectoApi[] = await apiFetch("/proyectos");
-  return data.map(proyectoApiToProject);
-}
-
-
-export interface CrearProyectoInput {
-  nombre: string;
-  descripcion?: string;
-  categoriaIds?: number[];
-  cursoIds?: number[];
-}
-
-export async function crearProyecto(input: CrearProyectoInput): Promise<ProyectoApi> {
-  return apiFetch("/proyectos", {
-    method: "POST",
-    headers: { "Content-Type": "application/json" },
-    body: JSON.stringify(input),
-  });
-}
-
-export async function agregarMiembro(
-  proyectoId: string,
-  usuarioId: string,
-  rol: string,
-  esLider = false,
-): Promise<ProyectoApi> {
-  return apiFetch(`/proyectos/${proyectoId}/miembros`, {
-    method: "POST",
-    headers: { "Content-Type": "application/json" },
-    body: JSON.stringify({ usuarioId, rol, esLider }),
-  });
-}
-
-export async function getProyectoPorId(id: string): Promise<Project> {
-  const data: ProyectoApi = await apiFetch(`/proyectos/${id}`);
-  return proyectoApiToProject(data);
-}
-
-export interface ActualizarProyectoInput {
+export interface FiltrosProyectos {
+  buscar?: string;
+  carreraId?: number;
+  categoriaId?: number;
+  tecnologiaId?: number;
+  ciclo?: number;
+  periodo?: string;
   estado?: string;
-  observaciones?: string;
+  docenteId?: string;
+  miembroId?: string;
+  ambito?: "mios" | "asesorados" | "revision";
+  orden?: "recientes" | "vistas" | "destacados";
+  limit?: number;
+  offset?: number;
+}
+
+function query(params: Record<string, string | number | undefined>): string {
+  const qs = new URLSearchParams();
+  for (const [k, v] of Object.entries(params)) {
+    if (v !== undefined && v !== "" && v !== null) qs.set(k, String(v));
+  }
+  const s = qs.toString();
+  return s ? `?${s}` : "";
+}
+
+export function listarProyectos(filtros: FiltrosProyectos = {}): Promise<Paginado<Proyecto>> {
+  return apiFetch<Paginado<Proyecto>>(`/proyectos${query({ ...filtros })}`);
+}
+
+export const getProyectoPorSlug = (slug: string) => apiFetch<Proyecto>(`/proyectos/slug/${encodeURIComponent(slug)}`);
+export const getProyectoPorId = (id: string) => apiFetch<Proyecto>(`/proyectos/${id}`);
+export const getRelacionados = (id: string) => apiFetch<Proyecto[]>(`/proyectos/${id}/relacionados`);
+export const getHistorial = (id: string) => apiFetch<HistorialItem[]>(`/proyectos/${id}/historial`);
+export const getEstadisticas = () => apiFetch<Estadisticas>("/proyectos/estadisticas");
+export const getVersiones = (id: string) => apiFetch<VersionResumen[]>(`/proyectos/${id}/versiones`);
+export const getVersion = (id: string, numero: number) => apiFetch<VersionCompleta>(`/proyectos/${id}/versiones/${numero}`);
+
+export interface DatosProyecto {
+  nombre?: string;
+  tagline?: string;
   descripcion?: string;
+  carreraId?: number | null;
+  ciclo?: number | null;
+  periodo?: string | null;
+  docenteIds?: string[];
+  resumenCambios?: string;
+  categoriaIds?: number[];
   tecnologiaIds?: number[];
   youtubeUrl?: string;
   githubUrl?: string;
+  demoUrl?: string;
+  figmaUrl?: string;
   comoLoConstruyeron?: string;
   retosSuperados?: string;
   leccionAprendida?: string;
   queHarianDiferente?: string;
-  fechaEntrega?: string;
-  cursoIds?: number[];
-  categoriaIds?: number[];
-}
-export async function actualizarProyecto(
-  id: string,
-  cambios: ActualizarProyectoInput,
-): Promise<ProyectoApi> {
-  return apiFetch(`/proyectos/${id}`, {
-    method: "PATCH",
-    headers: { "Content-Type": "application/json" },
-    body: JSON.stringify(cambios),
-  });
+  estado?: string;
+  observaciones?: string;
+  fechaEntrega?: string | null;
+  destacado?: boolean;
 }
 
-export async function getProyectoPorSlug(slug: string): Promise<Project> {
-  const data: ProyectoApi = await apiFetch(`/proyectos/slug/${slug}`);
-  return proyectoApiToProject(data);
+const json = (body: unknown): RequestInit => ({
+  headers: { "Content-Type": "application/json" },
+  body: JSON.stringify(body),
+});
+
+export const crearProyecto = (datos: DatosProyecto) => apiFetch<Proyecto>("/proyectos", { method: "POST", ...json(datos) });
+export const actualizarProyecto = (id: string, datos: DatosProyecto) =>
+  apiFetch<Proyecto>(`/proyectos/${id}`, { method: "PATCH", ...json(datos) });
+export const eliminarProyecto = (id: string) => apiFetch<{ mensaje: string }>(`/proyectos/${id}`, { method: "DELETE" });
+
+export const agregarMiembro = (id: string, usuarioId: string, rol: string, esLider = false) =>
+  apiFetch<Proyecto>(`/proyectos/${id}/miembros`, { method: "POST", ...json({ usuarioId, rol, esLider }) });
+export const quitarMiembro = (id: string, usuarioId: string) =>
+  apiFetch<Proyecto>(`/proyectos/${id}/miembros/${usuarioId}`, { method: "DELETE" });
+
+export function subirImagenProyecto(id: string, archivo: File, esPortada = false) {
+  const fd = new FormData();
+  fd.append("archivo", archivo);
+  fd.append("esPortada", String(esPortada));
+  return apiFetch<Proyecto>(`/proyectos/${id}/imagenes`, { method: "POST", body: fd });
+}
+export const eliminarImagenProyecto = (id: string, imagenId: string) =>
+  apiFetch<Proyecto>(`/proyectos/${id}/imagenes/${imagenId}`, { method: "DELETE" });
+export const actualizarImagenProyecto = (id: string, imagenId: string, cambios: { esPortada?: boolean; orden?: number }) =>
+  apiFetch<Proyecto>(`/proyectos/${id}/imagenes/${imagenId}`, { method: "PATCH", ...json(cambios) });
+
+export function subirBuildProyecto(id: string, archivo: File) {
+  const fd = new FormData();
+  fd.append("archivo", archivo);
+  return apiFetch<Proyecto>(`/proyectos/${id}/build`, { method: "POST", body: fd });
 }
 
-export async function subirImagenProyecto(
-  proyectoId: string,
-  archivo: File,
-  esPortada: boolean,
-): Promise<ProyectoApi> {
-  const formData = new FormData();
-  formData.append("archivo", archivo);
-  formData.append("esPortada", String(esPortada));
-  return apiFetch(`/proyectos/${proyectoId}/imagenes`, {
-    method: "POST",
-    body: formData,
-  });
-}
-
-export async function subirBuildProyecto(
-  proyectoId: string,
-  archivo: File,
-): Promise<ProyectoApi> {
-  const formData = new FormData();
-  formData.append("archivo", archivo);
-  return apiFetch(`/proyectos/${proyectoId}/build`, {
-    method: "POST",
-    body: formData,
-  });
-}
-
-export async function quitarMiembro(
-  proyectoId: string,
-  usuarioId: string,
-): Promise<ProyectoApi> {
-  return apiFetch(`/proyectos/${proyectoId}/miembros/${usuarioId}`, {
-    method: "DELETE",
-  });
-}
-
-export async function getProyectoRawPorId(id: string): Promise<ProyectoApi> {
-  return apiFetch(`/proyectos/${id}`);
-}
-
-export async function actualizarImagenProyecto(
-  proyectoId: string,
-  imagenId: string,
-  cambios: { esPortada?: boolean; orden?: number },
-): Promise<ProyectoApi> {
-  return apiFetch(`/proyectos/${proyectoId}/imagenes/${imagenId}`, {
-    method: "PATCH",
-    headers: { "Content-Type": "application/json" },
-    body: JSON.stringify(cambios),
-  });
-}
-
-export async function eliminarImagenProyecto(
-  proyectoId: string,
-  imagenId: string,
-): Promise<ProyectoApi> {
-  return apiFetch(`/proyectos/${proyectoId}/imagenes/${imagenId}`, {
-    method: "DELETE",
-  });
-}
-
-export async function incrementarVistas(id: string): Promise<void> {
-  await apiFetch(`/proyectos/${id}/vistas`, { method: "POST" });
-}
-
-export async function incrementarCompartidos(id: string): Promise<void> {
-  await apiFetch(`/proyectos/${id}/compartidos`, { method: "POST" });
-}
+export const incrementarVistas = (id: string) => apiFetch(`/proyectos/${id}/vistas`, { method: "POST" });
+export const incrementarCompartidos = (id: string) => apiFetch(`/proyectos/${id}/compartidos`, { method: "POST" });

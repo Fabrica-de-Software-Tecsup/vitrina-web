@@ -1,428 +1,214 @@
 "use client";
-import Header from "@/components/layout/Header";
-import Link from "next/link";
-import { useState, useEffect } from "react";
-import { useParams } from "next/navigation";
-import Avatar from "@/components/ui/Avatar";
-import Badge from "@/components/ui/Badge";
-import { obtenerUrlEmbedYoutube } from "@/lib/youtube";
-import { getProyectoPorId, actualizarProyecto } from "@/lib/api-proyectos";
-import type { Project } from "@/lib/mock-data";
 
+import { useEffect, useState } from "react";
+import Link from "next/link";
+import { useParams, useRouter } from "next/navigation";
+import Avatar from "@/components/ui/Avatar";
+import Button from "@/components/ui/Button";
+import { Chip, EstadoBadge } from "@/components/ui/Badge";
+import { Container } from "@/components/ui/Section";
+import { Field, Textarea } from "@/components/ui/Field";
+import { Modal, Skeleton, useToast } from "@/components/ui/Feedback";
+import { useSesion } from "@/components/sesion/SesionProvider";
+import { actualizarProyecto, getHistorial, getProyectoPorId } from "@/lib/api-proyectos";
+import { obtenerUrlEmbedYoutube } from "@/lib/youtube";
+import { ESTADO_LABEL, type HistorialItem, type Proyecto } from "@/lib/tipos";
+import { cn, fechaCorta, urlSegura } from "@/lib/utils";
+
+/** Pantalla del docente: ve el proyecto tal como quedaria publicado y decide con un clic. */
 export default function RevisionPage() {
-  const params = useParams();
-  const id = params.id as string;
-  const [project, setProject] = useState<Project | null>(null);
-  const [cargando, setCargando] = useState(true);
-  const [selectedImage, setSelectedImage] = useState(0);
-  const [showChangesPanel, setShowChangesPanel] = useState(false);
+  const { id } = useParams<{ id: string }>();
+  const router = useRouter();
+  const { esDocente, cargando } = useSesion();
+  const { avisar } = useToast();
+  const [proyecto, setProyecto] = useState<Proyecto | null | undefined>(undefined);
+  const [historial, setHistorial] = useState<HistorialItem[]>([]);
   const [observaciones, setObservaciones] = useState("");
-  const [showPublishModal, setShowPublishModal] = useState(false);
-  const [showSuccessMessage, setShowSuccessMessage] = useState("");
-  const [successType, setSuccessType] = useState("");
-  const [enviando, setEnviando] = useState(false);
+  const [modal, setModal] = useState<"publicar" | "cambios" | null>(null);
+  const [trabajando, setTrabajando] = useState(false);
+  const [imagen, setImagen] = useState(0);
 
   useEffect(() => {
-    getProyectoPorId(id)
-      .then(setProject)
-      .catch(() => setProject(null))
-      .finally(() => setCargando(false));
+    if (!cargando && !esDocente) router.replace("/dashboard");
+  }, [cargando, esDocente, router]);
+  useEffect(() => {
+    getProyectoPorId(id).then(setProyecto).catch(() => setProyecto(null));
+    getHistorial(id).then(setHistorial).catch(() => null);
   }, [id]);
 
-  const handlePublish = async () => {
-    if (!project) return;
-    setEnviando(true);
+  const decidir = async (estado: "PUBLICADO" | "EN_DESARROLLO", destacado?: boolean) => {
+    if (!proyecto) return;
+    setTrabajando(true);
     try {
-      await actualizarProyecto(project.id, { estado: "PUBLICADO" });
-      setProject({ ...project, status: "Publicado" });
-      setShowPublishModal(false);
-      setSuccessType("published");
-      setShowSuccessMessage(
-        "Proyecto publicado correctamente. Ahora es visible para todos.",
-      );
-      setTimeout(() => setShowSuccessMessage(""), 4000);
-    } catch (err) {
-      console.error("Error al publicar:", err);
+      const p = await actualizarProyecto(proyecto.id, { estado, ...(estado === "EN_DESARROLLO" ? { observaciones: observaciones.trim() } : {}), ...(destacado !== undefined ? { destacado } : {}) });
+      setProyecto(p);
+      setModal(null);
+      avisar(estado === "PUBLICADO" ? "Publicado. El equipo recibirá un correo." : "Observaciones enviadas al equipo.");
+      getHistorial(id).then(setHistorial).catch(() => null);
+    } catch (e) {
+      avisar(e instanceof Error ? e.message : "No se pudo guardar", "error");
     } finally {
-      setEnviando(false);
+      setTrabajando(false);
     }
   };
 
-  const handleRequestChanges = async () => {
-    if (!project) return;
-    if (observaciones.trim().length === 0) return;
-    setEnviando(true);
+  const alternarDestacado = async () => {
+    if (!proyecto) return;
     try {
-      await actualizarProyecto(project.id, {
-        estado: "EN_DESARROLLO",
-        observaciones: observaciones.trim(),
-      });
-      setProject({ ...project, status: "En Desarrollo" });
-      setShowChangesPanel(false);
-      setObservaciones("");
-      setSuccessType("changes");
-      setShowSuccessMessage(
-        "Observaciones enviadas. El proyecto vuelve a estado En Desarrollo.",
-      );
-      setTimeout(() => setShowSuccessMessage(""), 4000);
-    } catch (err) {
-      console.error("Error al solicitar cambios:", err);
-    } finally {
-      setEnviando(false);
+      setProyecto(await actualizarProyecto(proyecto.id, { destacado: !proyecto.destacado }));
+      avisar(proyecto.destacado ? "Ya no está destacado" : "Marcado como destacado");
+    } catch (e) {
+      avisar(e instanceof Error ? e.message : "No se pudo cambiar", "error");
     }
   };
 
-  if (cargando) {
-    return (
-      <div className="bg-tecsup-gray min-h-screen flex items-center justify-center">
-        <p className="text-gray-400 text-sm">Cargando proyecto...</p>
-      </div>
-    );
-  }
+  if (proyecto === undefined) return <Container className="py-10"><Skeleton className="h-8 w-1/2" /><Skeleton className="mt-6 aspect-video" /></Container>;
+  if (proyecto === null) return <Container className="py-20 text-center"><p className="text-ink-600">No encontramos este proyecto o no tienes acceso.</p><Button href="/dashboard" variant="outline" className="mt-4">Volver al panel</Button></Container>;
 
-  if (!project) {
-    return (
-      <div className="bg-tecsup-gray min-h-screen flex items-center justify-center">
-        <div className="text-center">
-          <p className="text-6xl mb-4">🔍</p>
-          <h1 className="text-2xl font-bold text-tecsup-dark">
-            Proyecto no encontrado
-          </h1>
-          <Link href="/dashboard" className="mt-4 inline-block text-sm text-tecsup-cyan hover:underline">
-            Volver al Dashboard
-          </Link>
-        </div>
-      </div>
-    );
-  }
-
-  const categoryVariantMap: Record<string, "daw" | "iot" | "otro"> = {
-    DAW: "daw",
-    IOT: "iot",
-  };
+  const video = obtenerUrlEmbedYoutube(proyecto.youtubeUrl);
+  const enlaces = [
+    ["Demo", urlSegura(proyecto.demoUrl)],
+    ["Repositorio", urlSegura(proyecto.githubUrl)],
+    ["Figma", urlSegura(proyecto.figmaUrl)],
+    ["Build", urlSegura(proyecto.buildUrl)],
+  ].filter(([, h]) => h) as [string, string][];
+  const checklist = [
+    { ok: !!proyecto.tagline, label: "Tiene frase corta" },
+    { ok: (proyecto.descripcion ?? "").length >= 80, label: "Descripción suficiente" },
+    { ok: proyecto.imagenes.length > 0, label: `${proyecto.imagenes.length} imagen(es)` },
+    { ok: proyecto.tecnologias.length > 0, label: "Tecnologías indicadas" },
+    { ok: enlaces.length > 0, label: "Al menos un enlace (demo, repo, video)" },
+    { ok: !!proyecto.leccionAprendida, label: "Cuenta qué aprendieron" },
+    { ok: proyecto.miembros.length > 0, label: `${proyecto.miembros.length} integrante(s)` },
+    { ok: proyecto.docentes.length > 0, label: proyecto.docentes.length ? `Docentes: ${proyecto.docentes.map((d) => d.usuario.nombre.split(" ")[0]).join(", ")}` : "Sin docente asignado" },
+  ];
 
   return (
-    <div className="bg-tecsup-gray min-h-screen flex flex-col">
-      <Header />
-      <main className="flex-1">
-        {showSuccessMessage && (
-          <div
-            className={`fixed top-20 left-1/2 -translate-x-1/2 z-50 px-6 py-3 rounded-xl shadow-lg text-sm font-medium transition-all ${
-              successType === "published"
-                ? "bg-tecsup-green text-white"
-                : "bg-amber-500 text-white"
-            }`}
-          >
-            {successType === "published" ? "✅" : "📝"} {showSuccessMessage}
+    <Container className="py-8">
+      <nav className="text-xs text-ink-500"><Link href="/dashboard" className="hover:text-brand-700">Panel docente</Link> / Revisión</nav>
+      <div className="mt-2 flex flex-col gap-4 lg:flex-row lg:items-start lg:justify-between">
+        <div>
+          <div className="flex flex-wrap items-center gap-3">
+            <h1 className="font-display text-2xl font-bold text-ink-900 sm:text-3xl">{proyecto.nombre}</h1>
+            <EstadoBadge estado={proyecto.estado} />
+            {proyecto.destacado && <Chip className="border-amber-200 bg-amber-50 text-amber-800">★ Destacado</Chip>}
           </div>
-        )}
-
-        {showPublishModal && (
-          <>
-            <div
-              className="fixed inset-0 bg-black/40 z-40"
-              onClick={() => setShowPublishModal(false)}
-            />
-            <div className="fixed top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 z-50 bg-white rounded-2xl p-8 w-full max-w-md shadow-2xl">
-              <div className="text-center">
-                <div className="w-14 h-14 bg-tecsup-green/10 rounded-full flex items-center justify-center mx-auto mb-4">
-                  <span className="text-2xl">🚀</span>
-                </div>
-                <h3 className="text-lg font-bold text-tecsup-dark">
-                  ¿Publicar este proyecto?
-                </h3>
-                <p className="text-sm text-gray-500 mt-2 leading-relaxed">
-                  Esta acción lo hará visible públicamente. Se registrará tu
-                  nombre como docente publicador y la fecha de publicación.
-                </p>
-              </div>
-              <div className="flex gap-3 mt-6">
-                <button
-                  onClick={() => setShowPublishModal(false)}
-                  className="flex-1 px-4 py-2.5 border border-gray-200 text-gray-600 text-sm font-semibold rounded-xl hover:bg-gray-50 transition-colors"
-                >
-                  Cancelar
-                </button>
-                <button
-                  onClick={handlePublish}
-                  disabled={enviando}
-                  className="flex-1 px-4 py-2.5 bg-tecsup-green text-white text-sm font-semibold rounded-xl hover:bg-tecsup-green/85 transition-colors disabled:opacity-50"
-                >
-                  {enviando ? "Publicando..." : "Publicar"}
-                </button>
-              </div>
+          {proyecto.tagline && <p className="mt-1 text-ink-600">{proyecto.tagline}</p>}
+          {proyecto.versionActual > 0 && proyecto.estado !== "PUBLICADO" && (
+            <div className="mt-3 rounded-2xl border border-violet-500/30 bg-violet-500/5 p-3 text-sm">
+              <p className="font-semibold text-violet-500">Nueva versión (v{proyecto.versionActual + 1}) de un proyecto ya publicado</p>
+              <p className="mt-1 text-ink-700"><span className="font-semibold">Qué cambió según el equipo:</span> {proyecto.resumenCambios ?? "—"}</p>
+              <Link href={`/proyectos/${proyecto.slug}`} className="mt-1 inline-block text-xs text-brand-700 hover:underline">Ver la versión {proyecto.versionActual} que hoy es pública ↗</Link>
             </div>
-          </>
-        )}
+          )}
+          <p className="mt-1 text-xs text-ink-500">{[proyecto.carrera?.nombre, proyecto.ciclo ? `Ciclo ${proyecto.ciclo}` : null, proyecto.periodo].filter(Boolean).join(" · ")}</p>
+        </div>
+        <div className="flex flex-wrap gap-2">
+          <Button href={`/dashboard/proyectos/${proyecto.id}`} variant="ghost">Editar contenido</Button>
+          {proyecto.estado === "PUBLICADO" && <Button variant="outline" onClick={alternarDestacado}>{proyecto.destacado ? "Quitar destacado" : "★ Destacar"}</Button>}
+          {proyecto.estado === "PUBLICADO" && <Button href={`/proyectos/${proyecto.slug}`} variant="outline">Ver público ↗</Button>}
+          {proyecto.estado !== "PUBLICADO" && <Button variant="outline" onClick={() => setModal("cambios")}>Solicitar cambios</Button>}
+          {proyecto.estado !== "PUBLICADO" && <Button onClick={() => setModal("publicar")}>Publicar</Button>}
+        </div>
+      </div>
 
-        <div className="bg-white border-b border-gray-100">
-          <div className="max-w-7xl mx-auto px-6 py-3 flex items-center gap-2 text-xs text-gray-400">
-            <Link href="/dashboard" className="hover:text-tecsup-dark transition-colors">
-              Dashboard
-            </Link>
-            <span>/</span>
-            <span className="text-amber-600 font-medium">Por Revisar</span>
-            <span>/</span>
-            <span className="text-tecsup-dark font-medium">
-              {project.name.split(" — ")[0]}
-            </span>
+      <div className="mt-8 grid gap-8 lg:grid-cols-[1fr_320px]">
+        <div className="space-y-8">
+          <div className="overflow-hidden rounded-3xl bg-ink-100">
+            {proyecto.imagenes.length ? (
+              // eslint-disable-next-line @next/next/no-img-element
+              <img src={proyecto.imagenes[imagen]?.url} alt="" className="aspect-video w-full object-cover" />
+            ) : (
+              <div className="flex aspect-video items-center justify-center text-sm text-ink-400">Sin imágenes</div>
+            )}
           </div>
+          {proyecto.imagenes.length > 1 && (
+            <div className="-mt-5 flex gap-2 overflow-x-auto">
+              {proyecto.imagenes.map((img, i) => (
+                <button key={img.id} type="button" onClick={() => setImagen(i)} className={cn("h-14 w-20 shrink-0 overflow-hidden rounded-lg border-2", i === imagen ? "border-brand-500" : "border-transparent opacity-70")}>
+                  {/* eslint-disable-next-line @next/next/no-img-element */}
+                  <img src={img.url} alt="" className="h-full w-full object-cover" />
+                </button>
+              ))}
+            </div>
+          )}
+
+          <section className="card p-6">
+            <h2 className="font-display text-lg font-bold text-ink-900">Descripción</h2>
+            <div className="prose-vitrina mt-3 text-ink-700">{(proyecto.descripcion ?? "—").split(/\n{2,}/).map((p, i) => <p key={i}>{p}</p>)}</div>
+          </section>
+
+          {video && <div className="aspect-video overflow-hidden rounded-3xl bg-ink-900"><iframe src={video} title="Video" className="h-full w-full" loading="lazy" allowFullScreen referrerPolicy="strict-origin-when-cross-origin" /></div>}
+
+          <section className="grid gap-4 sm:grid-cols-2">
+            {([["comoLoConstruyeron", "Cómo lo construyeron"], ["retosSuperados", "Retos"], ["leccionAprendida", "Aprendizajes"], ["queHarianDiferente", "Qué harían diferente"]] as const).map(([campo, titulo]) => (
+              <div key={campo} className="card p-5">
+                <h3 className="text-xs font-bold uppercase tracking-wider text-ink-400">{titulo}</h3>
+                <p className="mt-2 whitespace-pre-line text-sm text-ink-700">{proyecto[campo] || <span className="text-ink-400">No completado</span>}</p>
+              </div>
+            ))}
+          </section>
         </div>
 
-        <div className="max-w-7xl mx-auto px-6 py-8">
-          <div className="mb-8">
-            <div className="flex flex-col md:flex-row md:items-start md:justify-between gap-4 mb-4">
-              <div>
-                <h1 className="text-2xl lg:text-3xl font-extrabold text-tecsup-dark">
-                  {project.name}
-                </h1>
-                <div className="flex items-center gap-2 mt-2">
-                  <Badge
-                    variant={categoryVariantMap[project.category] || "otro"}
-                  >
-                    Web
-                  </Badge>
-                  <Badge variant="En Desarrollo">POR REVISAR</Badge>
-                  <span className="text-xs text-gray-400 bg-gray-100 px-2 py-0.5 rounded-full font-medium">
-                    v1
-                  </span>
-                </div>
-                <p className="text-sm text-gray-400 mt-2">
-                  {project.course} · {project.cycle} ·{" "}
-                  {project.views
-                    .toString()
-                    .replace(/\B(?=(\d{3})+(?!\d))/g, ",")}{" "}
-                  vistas
-                </p>
-              </div>
-            </div>
+        <aside className="space-y-4 lg:sticky lg:top-24 lg:self-start">
+          <div className="card p-5">
+            <h3 className="font-display text-sm font-bold text-ink-900">Checklist de calidad</h3>
+            <ul className="mt-3 space-y-2">
+              {checklist.map((c) => (
+                <li key={c.label} className="flex items-start gap-2 text-sm">
+                  <span className={cn("mt-0.5 flex h-4 w-4 shrink-0 items-center justify-center rounded-full text-[10px]", c.ok ? "bg-emerald-500 text-white" : "bg-amber-100 text-amber-700")}>{c.ok ? "✓" : "!"}</span>
+                  <span className={c.ok ? "text-ink-600" : "text-ink-800"}>{c.label}</span>
+                </li>
+              ))}
+            </ul>
           </div>
-
-          <div className="grid grid-cols-1 lg:grid-cols-3 gap-8 lg:items-start">
-            <div className="lg:col-span-2 space-y-8">
-              <div className="rounded-xl overflow-hidden bg-gray-100 aspect-video">
-                <img
-                  src={project.images[selectedImage]}
-                  alt={project.name}
-                  className="w-full h-full object-cover"
-                />
-              </div>
-
-              <div className="grid grid-cols-5 gap-3">
-                {project.images.map((img, i) => (
-                  <button
-                    key={i}
-                    onClick={() => setSelectedImage(i)}
-                    className={
-                      "aspect-square rounded-lg overflow-hidden bg-gray-100 border-2 cursor-pointer transition-all " +
-                      (i === selectedImage
-                        ? "border-tecsup-cyan scale-95"
-                        : "border-transparent hover:border-gray-300")
-                    }
-                  >
-                    <img
-                      src={img}
-                      alt={"Miniatura " + (i + 1)}
-                      className="w-full h-full object-cover"
-                    />
-                  </button>
+          <div className="card p-5">
+            <h3 className="text-xs font-bold uppercase tracking-wider text-ink-400">Equipo</h3>
+            <ul className="mt-3 space-y-2">
+              {proyecto.miembros.map((m) => (
+                <li key={m.usuarioId} className="flex items-center gap-2 text-sm"><Avatar name={m.usuario.nombre} src={m.usuario.fotoUrl} size="sm" /><span className="min-w-0"><span className="block truncate font-medium text-ink-900">{m.usuario.nombre}</span><span className="block truncate text-xs text-ink-500">{m.rol}</span></span></li>
+              ))}
+            </ul>
+            {proyecto.docentes.length > 0 && <p className="mt-3 border-t border-ink-100 pt-2 text-xs text-ink-500">Docentes: {proyecto.docentes.map((d) => d.usuario.nombre).join(", ")}</p>}
+          </div>
+          {enlaces.length > 0 && (
+            <div className="card p-5">
+              <h3 className="text-xs font-bold uppercase tracking-wider text-ink-400">Enlaces</h3>
+              <ul className="mt-2 space-y-1">{enlaces.map(([l, h]) => <li key={l}><a href={h} target="_blank" rel="noopener noreferrer" className="text-sm text-brand-700 hover:underline">{l} ↗</a></li>)}</ul>
+            </div>
+          )}
+          {proyecto.tecnologias.length > 0 && <div className="card p-5"><h3 className="text-xs font-bold uppercase tracking-wider text-ink-400">Tecnologías</h3><div className="mt-2 flex flex-wrap gap-1.5">{proyecto.tecnologias.map((t) => <Chip key={t.tecnologia.id}>{t.tecnologia.nombre}</Chip>)}</div></div>}
+          {historial.length > 0 && (
+            <div className="card p-5">
+              <h3 className="font-display text-sm font-bold text-ink-900">Historial</h3>
+              <ol className="mt-3 space-y-3 border-l border-ink-200 pl-4">
+                {historial.map((h) => (
+                  <li key={h.id} className="relative text-xs"><span className="absolute -left-[21px] top-1 h-2.5 w-2.5 rounded-full border-2 border-white bg-brand-500" /><p className="font-semibold text-ink-800">{ESTADO_LABEL[h.aEstado]}</p><p className="text-ink-500">{h.actor?.nombre ?? "Sistema"} · {fechaCorta(h.createdAt)}</p>{h.observaciones && <p className="mt-1 rounded-lg bg-ink-50 p-2 text-ink-700">{h.observaciones}</p>}</li>
                 ))}
-              </div>
-
-              <div>
-                <h2 className="text-lg font-bold text-tecsup-dark mb-3">
-                  Sobre el proyecto
-                </h2>
-                <p className="text-sm text-gray-600 leading-relaxed mb-4">
-                  {project.description}
-                </p>
-                <p className="text-sm text-gray-600 leading-relaxed">
-                  {project.descriptionLong}
-                </p>
-              </div>
-
-              <div className="flex gap-4 items-end">
-                <div className="flex-1">
-                  <h2 className="text-lg font-bold text-tecsup-dark mb-3">
-                    Video demo
-                  </h2>
-                  <div className="aspect-video rounded-xl overflow-hidden bg-[#0F0F0F]">
-                    {project.youtubeId ? (
-                      <iframe
-                        src={obtenerUrlEmbedYoutube(project.youtubeId) ?? ""}
-                        className="w-full h-full"
-                        allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
-                        allowFullScreen
-                      />
-                    ) : (
-                      <div className="w-full h-full flex items-center justify-center">
-                        <p className="text-gray-500 text-sm">
-                          Video no disponible
-                        </p>
-                      </div>
-                    )}
-                  </div>
-                </div>
-                <div className="w-36 shrink-0">
-                  <div className="bg-white rounded-xl border border-gray-200 p-3 text-center">
-                    <p className="text-lg font-bold text-tecsup-dark">
-                      {project.views}
-                    </p>
-                    <p className="text-[10px] text-gray-400 mt-0.5">Vistas</p>
-                  </div>
-                  <div className="bg-white rounded-xl border border-gray-200 p-3 text-center mt-4">
-                    <p className="text-lg font-bold text-tecsup-dark">
-                      {project.shares}
-                    </p>
-                    <p className="text-[10px] text-gray-400 mt-0.5">
-                      Compartido
-                    </p>
-                  </div>
-                </div>
-              </div>
+              </ol>
             </div>
+          )}
+        </aside>
+      </div>
 
-            <div className="lg:sticky lg:top-20">
-              <div className="bg-white rounded-xl border border-gray-200 p-6">
-                <div className="mb-6">
-                  <h3 className="text-sm font-bold text-tecsup-dark mb-4">
-                    Equipo
-                  </h3>
-                  <div className="space-y-3">
-                    {project.team.map((member) => (
-                      <div
-                        key={member.name}
-                        className="flex items-center gap-3"
-                      >
-                        <Avatar name={member.name} size="md" />
-                        <div>
-                          <p className="text-sm font-semibold text-tecsup-dark">
-                            {member.name}
-                          </p>
-                          <p className="text-[11px] text-gray-400">
-                            {member.role}
-                          </p>
-                        </div>
-                      </div>
-                    ))}
-                  </div>
-                </div>
-
-                <div className="border-t border-gray-100 my-6"></div>
-
-                <div className="mb-6">
-                  <h3 className="text-sm font-bold text-tecsup-dark mb-3">
-                    Tecnologías
-                  </h3>
-                  <div className="flex flex-wrap gap-2">
-                    {project.technologies.map((tech) => (
-                      <span
-                        key={tech}
-                        className="text-xs px-3 py-1 bg-tecsup-gray rounded-full text-gray-600 font-medium"
-                      >
-                        {tech}
-                      </span>
-                    ))}
-                  </div>
-                </div>
-
-                <div className="border-t border-gray-100 my-6"></div>
-
-                <div className="mb-6">
-                  <h3 className="text-sm font-bold text-tecsup-dark mb-3">
-                    Enlaces
-                  </h3>
-                  <div className="space-y-2">
-                    <a href={project.links.github} target="_blank" className="flex items-center gap-2 text-sm text-gray-600 hover:text-tecsup-dark transition-colors">
-                      🌐 GitHub
-                    </a>
-                    <a href={project.links.demo} target="_blank" className="flex items-center gap-2 text-sm text-gray-600 hover:text-tecsup-dark transition-colors">
-                      🌐 Demo en vivo
-                    </a>
-                    <a href={project.links.figma} target="_blank" className="flex items-center gap-2 text-sm text-gray-600 hover:text-tecsup-dark transition-colors">
-                      🌐 Figma
-                    </a>
-                  </div>
-                </div>
-
-                <div className="border-t border-gray-100 my-6"></div>
-
-                <button
-                  onClick={() => setShowChangesPanel(!showChangesPanel)}
-                  className="w-full flex items-center justify-center gap-2 px-4 py-3 border-2 border-amber-300 text-amber-700 text-sm font-semibold rounded-xl hover:bg-amber-50 transition-colors"
-                >
-                  <svg
-                    className="w-4 h-4"
-                    fill="none"
-                    stroke="currentColor"
-                    viewBox="0 0 24 24"
-                  >
-                    <path
-                      strokeLinecap="round"
-                      strokeLinejoin="round"
-                      strokeWidth={2}
-                      d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z"
-                    />
-                  </svg>
-                  {showChangesPanel
-                    ? "Ocultar observaciones"
-                    : "Solicitar cambios"}
-                </button>
-
-                {showChangesPanel && (
-                  <div className="mt-4 p-4 bg-amber-50 border border-amber-200 rounded-xl space-y-3">
-                    <label className="text-xs font-bold text-amber-800 uppercase tracking-wider">
-                      Observaciones para el equipo
-                    </label>
-                    <textarea
-                      value={observaciones}
-                      onChange={(e) => setObservaciones(e.target.value)}
-                      rows={5}
-                      placeholder="Describe los cambios necesarios: completar descripción, corregir imágenes, agregar enlace al repositorio..."
-                      className="w-full px-3 py-2 text-sm bg-white border border-amber-200 rounded-lg focus:outline-none focus:border-amber-400 resize-none"
-                    />
-                    <button
-                      onClick={handleRequestChanges}
-                      disabled={observaciones.trim().length === 0 || enviando}
-                      className={`w-full px-4 py-2.5 text-sm font-semibold rounded-lg transition-colors ${
-                        observaciones.trim().length > 0
-                          ? "bg-amber-600 text-white hover:bg-amber-700"
-                          : "bg-gray-200 text-gray-400 cursor-not-allowed"
-                      }`}
-                    >
-                      {enviando ? "Enviando..." : "Enviar observaciones"}
-                    </button>
-                    <p className="text-[10px] text-amber-600/70 text-center">
-                      El proyecto volverá a estado "En Desarrollo" para que el
-                      equipo corrija.
-                    </p>
-                  </div>
-                )}
-
-                <button
-                  onClick={() => setShowPublishModal(true)}
-                  className="w-full mt-4 flex items-center justify-center gap-2 px-4 py-3 bg-tecsup-green text-white text-sm font-semibold rounded-xl hover:bg-tecsup-green/85 transition-colors"
-                >
-                  <svg
-                    className="w-5 h-5"
-                    fill="none"
-                    stroke="currentColor"
-                    viewBox="0 0 24 24"
-                  >
-                    <path
-                      strokeLinecap="round"
-                      strokeLinejoin="round"
-                      strokeWidth={2}
-                      d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"
-                    />
-                  </svg>
-                  Publicar proyecto
-                </button>
-              </div>
-            </div>
-          </div>
-        </div>
-      </main>
-    </div>
+      <Modal
+        abierto={modal === "publicar"}
+        onCerrar={() => setModal(null)}
+        titulo="Publicar este proyecto"
+        descripcion="Quedará visible para todos con su URL propia y el equipo recibirá un correo. Puedes destacarlo para que aparezca primero en la portada."
+        acciones={<><Button variant="ghost" onClick={() => setModal(null)}>Cancelar</Button><Button variant="outline" loading={trabajando} onClick={() => decidir("PUBLICADO", true)}>Publicar y destacar ★</Button><Button loading={trabajando} onClick={() => decidir("PUBLICADO")}>Publicar</Button></>}
+      />
+      <Modal
+        abierto={modal === "cambios"}
+        onCerrar={() => setModal(null)}
+        titulo="Solicitar cambios"
+        descripcion="El proyecto vuelve a borrador y el equipo recibe tus observaciones por correo. Sé concreto: qué falta y cómo mejorarlo."
+        acciones={<><Button variant="ghost" onClick={() => setModal(null)}>Cancelar</Button><Button loading={trabajando} disabled={observaciones.trim().length < 10} onClick={() => decidir("EN_DESARROLLO")}>Enviar observaciones</Button></>}
+      >
+        <Field label="Observaciones" htmlFor="obs" contador={{ actual: observaciones.length, max: 2000 }}>
+          <Textarea id="obs" rows={5} maxLength={2000} value={observaciones} onChange={(e) => setObservaciones(e.target.value)} placeholder="Ej. Falta el enlace al repositorio y una captura del panel de administración. La descripción explica el qué pero no el para quién." autoFocus />
+        </Field>
+      </Modal>
+    </Container>
   );
 }

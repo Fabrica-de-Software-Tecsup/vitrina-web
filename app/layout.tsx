@@ -1,34 +1,36 @@
 import type { Metadata } from "next";
-import { Inter } from "next/font/google";
+import { Inter, Plus_Jakarta_Sans } from "next/font/google";
 import "./globals.css";
+import Header from "@/components/layout/Header";
 import Footer from "@/components/layout/Footer";
 import { GoogleOAuthProvider } from "@react-oauth/google";
+import { SesionProvider } from "@/components/sesion/SesionProvider";
+import { ToastProvider } from "@/components/ui/Feedback";
 
-const inter = Inter({ subsets: ["latin"] });
+const inter = Inter({ subsets: ["latin"], variable: "--font-inter", display: "swap" });
+const jakarta = Plus_Jakarta_Sans({ subsets: ["latin"], variable: "--font-jakarta", display: "swap", weight: ["500", "600", "700", "800"] });
+
+const siteUrl = process.env.NEXT_PUBLIC_SITE_URL ?? "http://localhost:3000";
 
 export const metadata: Metadata = {
-  title: "Vitrina — Tecsup",
-  description: "Portafolio de proyectos estudiantiles de Tecsup.",
+  metadataBase: new URL(siteUrl),
+  title: { default: "Vitrina — Proyectos de estudiantes de Tecsup", template: "%s — Vitrina Tecsup" },
+  description: "Portafolio público de proyectos de los estudiantes de Tecsup: software, electrónica, mecánica, minería, gestión y más.",
+  openGraph: { type: "website", locale: "es_PE", siteName: "Vitrina Tecsup" },
 };
 
-export default function RootLayout({
-  children,
-}: {
-  children: React.ReactNode;
-}) {
+export default function RootLayout({ children }: { children: React.ReactNode }) {
   return (
-    <html lang="es">
-      <body className={`${inter.className} antialiased bg-white text-tecsup-dark`}>
-        <GoogleOAuthProvider clientId={process.env.NEXT_PUBLIC_GOOGLE_CLIENT_ID!}>
-          {/* h-screen asegura que mida exactamente el 100% de la pantalla */}
-          <div className="flex flex-col h-screen overflow-hidden">
-            {/* overflow-y-auto permite hacer scroll DENTRO si la página es larga (ej. Landing) */}
-            <main className="flex-1 overflow-y-auto">
-              {children}
-            </main>
-            {/* El Footer siempre se queda fijo abajo, sin importar si haces scroll arriba */}
-            <Footer />
-          </div>
+    <html lang="es" className={`${inter.variable} ${jakarta.variable}`}>
+      <body className="min-h-screen flex flex-col">
+        <GoogleOAuthProvider clientId={process.env.NEXT_PUBLIC_GOOGLE_CLIENT_ID ?? ""}>
+          <SesionProvider>
+            <ToastProvider>
+              <Header />
+              <main className="flex-1">{children}</main>
+              <Footer />
+            </ToastProvider>
+          </SesionProvider>
         </GoogleOAuthProvider>
       </body>
     </html>
