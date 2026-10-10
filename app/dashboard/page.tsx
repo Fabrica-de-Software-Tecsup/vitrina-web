@@ -9,6 +9,7 @@ import { Container, Stat } from "@/components/ui/Section";
 import { CardSkeleton, EmptyState, Tabs } from "@/components/ui/Feedback";
 import ProjectCard from "@/components/proyectos/ProjectCard";
 import { useSesion } from "@/components/sesion/SesionProvider";
+import SeccionCuenta from "@/components/sesion/SeccionCuenta";
 import { listarProyectos } from "@/lib/api-proyectos";
 import { fechaCorta, formatoNumero } from "@/lib/utils";
 import { ESTADO_LABEL, type EstadoProyecto, type Proyecto, portadaDe } from "@/lib/tipos";
@@ -104,6 +105,8 @@ function PanelAlumno() {
           </div>
         )}
       </div>
+
+      <SeccionCuenta />
     </Container>
   );
 }
@@ -206,6 +209,8 @@ function PanelDocente() {
         )}
       </div>
       <p className="mt-6 text-xs text-ink-400">¿Un estado no coincide? <EstadoBadge estado="POR_REVISAR" className="align-middle" /> significa que el equipo ya terminó y espera tu decisión.</p>
+
+      <SeccionCuenta />
     </Container>
   );
 }

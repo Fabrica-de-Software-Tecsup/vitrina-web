@@ -13,6 +13,8 @@ export interface DocenteOpcion extends UsuarioResumen {
 
 export const getMiPerfil = () => apiFetch<PerfilPropio>("/usuarios/me");
 export const getPerfil = (id: string) => apiFetch<Perfil>(`/usuarios/${id}`);
+/** Borra (anonimiza) la cuenta propia. El API responde 204 e invalida todas las sesiones. */
+export const eliminarMiCuenta = () => apiFetch<void>("/usuarios/me", { method: "DELETE" });
 export const getDocentes = () => apiFetch<DocenteOpcion[]>("/usuarios/docentes");
 
 export function buscarUsuarios(q: string): Promise<UsuarioBusqueda[]> {

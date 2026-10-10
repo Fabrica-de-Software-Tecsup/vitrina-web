@@ -28,7 +28,14 @@ export default function Footer() {
         </div>
       </div>
       <div className="border-t border-ink-100">
-        <p className="mx-auto max-w-7xl px-4 py-4 text-xs text-ink-400 sm:px-6 lg:px-8">© {new Date().getFullYear()} Vitrina · Tecsup. Los proyectos pertenecen a sus autores.</p>
+        <div className="mx-auto flex max-w-7xl flex-col gap-2 px-4 py-4 text-xs text-ink-400 sm:flex-row sm:items-center sm:justify-between sm:px-6 lg:px-8">
+          <p>© {new Date().getFullYear()} Vitrina · Tecsup. Los proyectos pertenecen a sus autores.</p>
+          <nav aria-label="Legal" className="flex flex-wrap gap-x-4 gap-y-1">
+            <Link href="/privacidad" className="hover:text-brand-700">Privacidad</Link>
+            <Link href="/terminos" className="hover:text-brand-700">Términos de uso</Link>
+            <Link href="/eliminar-cuenta" className="hover:text-brand-700">Eliminar cuenta</Link>
+          </nav>
+        </div>
       </div>
     </footer>
   );
