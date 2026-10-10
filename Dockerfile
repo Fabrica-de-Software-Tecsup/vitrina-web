@@ -4,7 +4,7 @@ WORKDIR /app
 # Misma version de npm que genero package-lock.json (ver vitrina-api/Dockerfile)
 RUN npm install -g npm@11.6.2
 COPY package*.json ./
-RUN npm ci
+RUN npm ci --no-audit --no-fund || npm install --no-audit --no-fund
 
 # ─── Etapa 2: build ───
 FROM node:24-alpine AS build
