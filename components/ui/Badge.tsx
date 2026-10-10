@@ -1,29 +1,38 @@
 import { ESTADO_LABEL, type EstadoProyecto } from "@/lib/tipos";
 import { cn } from "@/lib/utils";
 
-const estilos: Record<EstadoProyecto, string> = {
-  PUBLICADO: "bg-emerald-50 text-emerald-700 ring-emerald-200",
-  EN_DESARROLLO: "bg-amber-50 text-amber-700 ring-amber-200",
-  POR_REVISAR: "bg-brand-50 text-brand-700 ring-brand-200",
-  OCULTO: "bg-ink-100 text-ink-600 ring-ink-200",
-};
+/** Punto de estado: hueco en desarrollo, terracota por revisar, verde publicado, gris oculto. */
 const puntos: Record<EstadoProyecto, string> = {
-  PUBLICADO: "bg-emerald-500",
-  EN_DESARROLLO: "bg-amber-500",
-  POR_REVISAR: "bg-brand-500",
-  OCULTO: "bg-ink-400",
+  EN_DESARROLLO: "shadow-[inset_0_0_0_1.5px_var(--c-status-en-desarrollo)]",
+  POR_REVISAR: "bg-status-por-revisar",
+  PUBLICADO: "bg-status-publicado",
+  OCULTO: "bg-status-oculto",
 };
 
+function Punto({ estado }: { estado: EstadoProyecto }) {
+  return <span aria-hidden className={cn("h-[7px] w-[7px] shrink-0 rounded-full", puntos[estado])} />;
+}
+
+/** Estado en línea con el texto (listas, cabeceras del panel). */
 export function EstadoBadge({ estado, className }: { estado: EstadoProyecto; className?: string }) {
+  return (
+    <span className={cn("inline-flex items-center gap-1.5 rounded-sm border border-linea px-2 py-0.5 text-caption font-medium text-ink-default", className)}>
+      <Punto estado={estado} />
+      {ESTADO_LABEL[estado]}
+    </span>
+  );
+}
+
+/** Sello opaco y discreto sobre la esquina de una lámina (Mi espacio). */
+export function Sello({ estado, className }: { estado: EstadoProyecto; className?: string }) {
   return (
     <span
       className={cn(
-        "inline-flex items-center gap-1.5 rounded-full px-2.5 py-1 text-[11px] font-semibold ring-1 ring-inset",
-        estilos[estado],
+        "absolute left-2 top-2 z-[1] inline-flex h-6 items-center gap-1.5 rounded-[4px] bg-surface-default px-2 text-caption font-semibold text-ink-default shadow-[0_0_0_0.5px_var(--c-marco)]",
         className,
       )}
     >
-      <span className={cn("h-1.5 w-1.5 rounded-full", puntos[estado])} />
+      <Punto estado={estado} />
       {ESTADO_LABEL[estado]}
     </span>
   );
@@ -31,6 +40,7 @@ export function EstadoBadge({ estado, className }: { estado: EstadoProyecto; cla
 
 interface ChipProps {
   children: React.ReactNode;
+  /** Color de la categoría: se muestra como un punto, nunca como tinte de fondo. */
   color?: string | null;
   size?: "sm" | "md";
   className?: string;
@@ -38,26 +48,27 @@ interface ChipProps {
   active?: boolean;
 }
 
-/** Etiqueta para tecnologias, categorias y carreras. Si recibe `color` lo usa como tinte. */
+/** Etiqueta para tecnologías y categorías: línea fina, sin relleno; activa = tinta. */
 export function Chip({ children, color, size = "sm", className, onClick, active }: ChipProps) {
-  const estilo = color ? { backgroundColor: `${color}1a`, color, borderColor: `${color}40` } : undefined;
   const base = cn(
-    "inline-flex items-center rounded-full border font-medium whitespace-nowrap",
-    size === "sm" ? "px-2.5 py-0.5 text-[11px]" : "px-3 py-1 text-xs",
-    !color && !active && "border-ink-200 bg-ink-50 text-ink-700",
-    active && "border-brand-600 bg-brand-600 text-white",
-    onClick && "cursor-pointer transition-colors hover:border-brand-400",
+    "inline-flex items-center gap-1.5 whitespace-nowrap rounded-sm border",
+    size === "sm" ? "h-7 px-2.5 text-caption" : "h-8 px-3 text-label",
+    active ? "border-ink-default bg-ink-default text-ink-inverse" : "border-linea text-ink-default",
+    onClick && !active && "cursor-pointer transition-colors hover:border-ink-muted",
     className,
   );
+  const punto = color && !active ? <span aria-hidden className="h-2 w-2 rounded-full" style={{ backgroundColor: color }} /> : null;
   if (onClick) {
     return (
-      <button type="button" onClick={onClick} className={base} style={active ? undefined : estilo}>
+      <button type="button" onClick={onClick} className={base} aria-pressed={active}>
+        {punto}
         {children}
       </button>
     );
   }
   return (
-    <span className={base} style={estilo}>
+    <span className={base}>
+      {punto}
       {children}
     </span>
   );

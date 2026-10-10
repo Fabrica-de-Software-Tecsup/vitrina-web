@@ -1,74 +1,45 @@
 import Link from "next/link";
-import { AvatarGroup } from "@/components/ui/Avatar";
-import { Chip, EstadoBadge } from "@/components/ui/Badge";
-import { portadaDe, type Proyecto } from "@/lib/tipos";
-import { cn, formatoNumero } from "@/lib/utils";
+import { Sello } from "@/components/ui/Badge";
+import Portada from "@/components/proyectos/Portada";
+import { imagenPortada, type Proyecto } from "@/lib/tipos";
+import { cn } from "@/lib/utils";
+
+/** Anchos de la lámina según la retícula auto-fill (18 rem mínimo, columna de 1280 px). */
+export const SIZES_RETICULA = "(min-width: 1440px) 320px, (min-width: 1024px) 30vw, (min-width: 640px) 45vw, 50vw";
 
 interface Props {
   proyecto: Proyecto;
   href?: string;
+  /** Mi espacio: sello de estado sobre la lámina. */
   mostrarEstado?: boolean;
+  /** Las dos primeras láminas de la retícula se precargan. */
+  preload?: boolean;
+  sizes?: string;
   className?: string;
 }
 
-/** Tarjeta de proyecto: portada 16:10, carrera, nombre, tagline, chips de stack y equipo. */
-export default function ProjectCard({ proyecto, href, mostrarEstado, className }: Props) {
-  const portada = portadaDe(proyecto);
+/** Líder del equipo (o quien creó el proyecto). */
+function lider(p: Proyecto): string {
+  return (p.miembros.find((m) => m.esLider) ?? p.miembros[0])?.usuario.nombre ?? p.creador?.nombre ?? "";
+}
+
+/** Lámina 4:3 con pie de dos líneas: nombre en Newsreader y «Líder · Carrera». Sin chips ni contadores. */
+export default function ProjectCard({ proyecto, href, mostrarEstado, preload, sizes = SIZES_RETICULA, className }: Props) {
   const destino = href ?? `/proyectos/${proyecto.slug}`;
-  const techs = proyecto.tecnologias.slice(0, 4);
-  const resto = proyecto.tecnologias.length - techs.length;
+  const meta = [lider(proyecto), proyecto.carrera?.nombre].filter(Boolean).join(" · ");
 
   return (
-    <Link href={destino} className={cn("card card-hover group flex flex-col overflow-hidden", className)}>
-      <div className="relative aspect-[16/10] overflow-hidden bg-ink-100">
-        {portada ? (
-          // eslint-disable-next-line @next/next/no-img-element -- imagenes del storage externo
-          <img
-            src={portada}
-            alt={proyecto.nombre}
-            loading="lazy"
-            className="h-full w-full object-cover transition-transform duration-500 group-hover:scale-105"
-          />
-        ) : (
-          <div className="flex h-full w-full items-center justify-center bg-gradient-to-br from-brand-100 via-white to-violet-500/10">
-            <span className="font-display text-4xl font-bold text-brand-300">{proyecto.nombre.slice(0, 1)}</span>
-          </div>
-        )}
-        {proyecto.destacado && (
-          <span className="absolute right-3 top-3 rounded-full bg-amber-400 px-2.5 py-1 text-[11px] font-bold text-amber-950 shadow-sm">★ Destacado</span>
-        )}
-        {mostrarEstado && (
-          <div className="absolute bottom-3 left-3">
-            <EstadoBadge estado={proyecto.estado} className="bg-white/95" />
-          </div>
-        )}
-      </div>
-
-      <div className="flex flex-1 flex-col p-4">
-        {proyecto.carrera && <p className="truncate text-[11px] font-semibold text-brand-700">{proyecto.carrera.nombre}</p>}
-        <p className="mt-0.5 flex items-center gap-1.5 text-[11px] font-medium uppercase tracking-wide text-ink-400">
-          <span>{[proyecto.ciclo ? `Ciclo ${proyecto.ciclo}` : null, proyecto.periodo].filter(Boolean).join(" · ") || "Proyecto"}</span>
-          {proyecto.versionActual > 1 && <span className="rounded-full bg-violet-500/10 px-1.5 py-0.5 text-[10px] font-bold normal-case tracking-normal text-violet-500">v{proyecto.versionActual}</span>}
-        </p>
-        <h3 className="mt-1 line-clamp-1 font-display text-base font-bold text-ink-900 group-hover:text-brand-700">{proyecto.nombre}</h3>
-        <p className="mt-1 line-clamp-2 min-h-[2.5rem] text-sm leading-relaxed text-ink-600">
-          {proyecto.tagline ?? proyecto.descripcion ?? "Sin descripción todavía."}
-        </p>
-
-        {techs.length > 0 && (
-          <div className="mt-3 flex flex-wrap gap-1.5">
-            {techs.map((t) => (
-              <Chip key={t.tecnologia.id}>{t.tecnologia.nombre}</Chip>
-            ))}
-            {resto > 0 && <Chip className="text-ink-400">+{resto}</Chip>}
-          </div>
-        )}
-
-        <div className="mt-auto flex items-center justify-between border-t border-ink-100 pt-3">
-          <AvatarGroup personas={proyecto.miembros.map((m) => ({ nombre: m.usuario.nombre, fotoUrl: m.usuario.fotoUrl }))} />
-          <span className="text-[11px] text-ink-400">{formatoNumero(proyecto.vistas)} vistas</span>
+    <article className={cn("min-w-0", className)}>
+      <Link href={destino} className="lamina-enlace group outline-offset-4" transitionTypes={["abrir"]}>
+        <div className="relative">
+          <Portada id={proyecto.id} nombre={proyecto.nombre} imagen={imagenPortada(proyecto)} sizes={sizes} preload={preload} />
+          {mostrarEstado && <Sello estado={proyecto.estado} />}
         </div>
-      </div>
-    </Link>
+        <div className="mt-4">
+          <h3 className="pie-t text-ink-default">{proyecto.nombre}</h3>
+          {meta && <p className="mt-1 text-body-small text-ink-muted">{meta}</p>}
+        </div>
+      </Link>
+    </article>
   );
 }

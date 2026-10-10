@@ -1,3 +1,4 @@
+import Icono from "@/components/ui/Icono";
 import { cn } from "@/lib/utils";
 
 interface FieldProps {
@@ -16,18 +17,28 @@ export function Field({ label, htmlFor, hint, error, required, children, classNa
   return (
     <div className={cn("space-y-1.5", className)}>
       <div className="flex items-baseline justify-between gap-2">
-        <label htmlFor={htmlFor} className="text-sm font-semibold text-ink-800">
+        <label htmlFor={htmlFor} className="text-label text-ink-default">
           {label}
-          {required && <span className="ml-0.5 text-rose-500">*</span>}
+          {required && (
+            <span className="ml-1 text-state-danger" aria-hidden>
+              *
+            </span>
+          )}
         </label>
         {contador && (
-          <span className={cn("text-[11px] tabular-nums", contador.actual > contador.max ? "text-rose-500" : "text-ink-400")}>
+          <span className={cn("num text-caption", contador.actual > contador.max ? "text-state-danger" : "text-ink-subtle")}>
             {contador.actual}/{contador.max}
           </span>
         )}
       </div>
       {children}
-      {error ? <p className="text-xs text-rose-600">{error}</p> : hint ? <p className="text-xs text-ink-500">{hint}</p> : null}
+      {error ? (
+        <p className="text-body-small text-state-danger" role="alert">
+          {error}
+        </p>
+      ) : hint ? (
+        <p className="text-body-small text-ink-muted">{hint}</p>
+      ) : null}
     </div>
   );
 }
@@ -45,18 +56,11 @@ export function Textarea({ className, ...props }: TextareaProps) {
 type SelectProps = React.SelectHTMLAttributes<HTMLSelectElement>;
 export function Select({ className, children, ...props }: SelectProps) {
   return (
-    <select
-      {...props}
-      className={cn("field appearance-none pr-9", className)}
-      style={{
-        backgroundImage:
-          "url(\"data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='16' height='16' fill='none' stroke='%2364748b' stroke-width='2' viewBox='0 0 24 24'><path d='m6 9 6 6 6-6'/></svg>\")",
-        backgroundRepeat: "no-repeat",
-        backgroundPosition: "right 0.75rem center",
-        backgroundSize: "16px 16px",
-      }}
-    >
-      {children}
-    </select>
+    <span className={cn("relative block", className?.includes("w-auto") && "inline-block")}>
+      <select {...props} className={cn("field cursor-pointer appearance-none pr-9", className)}>
+        {children}
+      </select>
+      <Icono nombre="chevron-abajo" tam={16} className="pointer-events-none absolute right-3 top-1/2 -translate-y-1/2 text-ink-muted" />
+    </span>
   );
 }

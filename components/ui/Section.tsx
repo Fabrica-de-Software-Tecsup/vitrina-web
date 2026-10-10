@@ -1,42 +1,29 @@
 import { cn } from "@/lib/utils";
 
+/** Columna general del sitio: 1280 px de máximo con márgenes de 16/32/80 px. */
 export function Container({ children, className }: { children: React.ReactNode; className?: string }) {
-  return <div className={cn("mx-auto w-full max-w-7xl px-4 sm:px-6 lg:px-8", className)}>{children}</div>;
+  return <div className={cn("mx-auto w-full max-w-[90rem] px-4 sm:px-8 xl:px-20", className)}>{children}</div>;
 }
 
-export function SectionHeading({
-  eyebrow,
-  titulo,
-  texto,
-  accion,
-  align = "left",
-}: {
-  eyebrow?: string;
-  titulo: string;
-  texto?: string;
-  accion?: React.ReactNode;
-  align?: "left" | "center";
-}) {
+/** Encabezado de sección: título en Newsreader, texto opcional y acción a la derecha. Sin etiquetas sobre el título. */
+export function SectionHeading({ titulo, texto, accion, className }: { titulo: string; texto?: string; accion?: React.ReactNode; className?: string }) {
   return (
-    <div className={cn("mb-8 flex flex-col gap-4 sm:flex-row sm:items-end sm:justify-between", align === "center" && "items-center text-center sm:flex-col sm:items-center")}>
-      <div className={cn("max-w-2xl", align === "center" && "mx-auto")}>
-        {eyebrow && <p className="mb-2 text-xs font-bold uppercase tracking-[0.18em] text-brand-600">{eyebrow}</p>}
-        <h2 className="text-2xl font-bold text-ink-900 sm:text-3xl">{titulo}</h2>
-        {texto && <p className="mt-2 text-ink-600">{texto}</p>}
+    <div className={cn("mb-8 flex flex-col gap-4 sm:flex-row sm:items-end sm:justify-between", className)}>
+      <div className="max-w-2xl">
+        <h2 className="seccion-t text-ink-default">{titulo}</h2>
+        {texto && <p className="mt-2 text-ink-muted">{texto}</p>}
       </div>
       {accion}
     </div>
   );
 }
 
-export function Stat({ valor, label, icono }: { valor: string | number; label: string; icono?: React.ReactNode }) {
+/** Cifra del panel (va dentro de un <dl>): número tabular y etiqueta, separados por línea fina (sin caja ni icono). */
+export function Stat({ valor, label }: { valor: string | number; label: string }) {
   return (
-    <div className="card flex items-center gap-4 p-5">
-      {icono && <div className="flex h-11 w-11 items-center justify-center rounded-2xl bg-brand-50 text-xl text-brand-600">{icono}</div>}
-      <div>
-        <p className="font-display text-2xl font-bold text-ink-900">{valor}</p>
-        <p className="text-xs text-ink-500">{label}</p>
-      </div>
+    <div className="flex flex-col-reverse border-t border-linea pt-3">
+      <dt className="mt-0.5 text-body-small text-ink-muted">{label}</dt>
+      <dd className="num font-display text-headline text-ink-default">{valor}</dd>
     </div>
   );
 }
