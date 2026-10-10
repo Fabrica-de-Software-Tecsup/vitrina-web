@@ -40,7 +40,6 @@ html {
 
 body {
   margin: 0;
-  overflow-x: clip;
   background: var(--c-surface-default);
   color: var(--c-ink-default);
   font-family: var(--font-sans);
@@ -226,11 +225,16 @@ textarea.field {
 /* Lavado radial bajo la portada del detalle (solo oscuro, ≤ 12 % de alfa). */
 .lavado {
   position: absolute;
-  inset: -3rem -3rem auto;
+  inset: -3rem 0 auto;
   height: 135%;
   z-index: -1;
   pointer-events: none;
   background: none;
+}
+@media (min-width: 1200px) {
+  .lavado {
+    inset: -3rem -3rem auto;
+  }
 }
 [data-theme="dark"] .lavado {
   background: radial-gradient(60% 55% at 50% 45%, color-mix(in oklch, var(--dominante, transparent) 12%, transparent), transparent 75%);

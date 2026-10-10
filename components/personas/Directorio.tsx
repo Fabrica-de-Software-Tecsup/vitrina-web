@@ -98,9 +98,9 @@ export default function Directorio({ rol, titulo, texto, proyectos }: Props) {
         ) : filtrados.length === 0 ? (
           <EmptyState icono="usuario" titulo="Nadie coincide con la búsqueda" texto="Prueba sin filtros o desmarca «Solo con proyectos»." className="mt-8" />
         ) : (
-          <ul className="grid gap-x-12 md:grid-cols-2">
+          <ul className="grid grid-cols-1 gap-x-12 md:grid-cols-2">
             {filtrados.map((e) => (
-              <li key={e.id} className="border-b border-linea">
+              <li key={e.id} className="min-w-0 border-b border-linea">
                 <Link href={`/perfiles/${slugConId(e.nombre, e.id)}`} className="group flex items-center gap-4 py-4">
                   <Avatar name={e.nombre} src={e.fotoUrl} size="lg" />
                   <span className="min-w-0 flex-1">

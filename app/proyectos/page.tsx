@@ -167,9 +167,11 @@ function ExplorarContenido() {
               <option value="vistas">Más vistos</option>
               <option value="destacados">Destacados primero</option>
             </Select>
-            <Button variant="ghost" onClick={sorprender} loading={sorteando} icon={<Icono nombre="azar" tam={18} />} className="hidden sm:inline-flex">
-              Sorpréndeme
-            </Button>
+            <span className="hidden sm:block">
+              <Button variant="ghost" onClick={sorprender} loading={sorteando} icon={<Icono nombre="azar" tam={18} />}>
+                Sorpréndeme
+              </Button>
+            </span>
           </div>
         </div>
 

@@ -29,13 +29,13 @@ export default function AdminPage() {
   if (cargando || !esAdmin) return <Container className="py-10"><Skeleton className="h-8 w-1/3" /></Container>;
 
   return (
-    <Container className="py-10">
-      <h1 className="mt-1 titular-2 text-ink-default">Vitrina</h1>
-      <p className="mt-1 max-w-2xl text-sm text-ink-muted">Lo único que necesita un admin: dar de alta docentes por correo, corregir roles y mantener carreras y catálogos. Los alumnos se registran solos al entrar con Google.</p>
-      <div className="mt-6">
+    <Container className="pt-12 sm:pt-16">
+      <h1 className="titular-2 text-ink-default">Administración</h1>
+      <p className="mt-3 max-w-2xl text-ink-muted">Lo único que necesita un admin: dar de alta docentes por correo, corregir roles y mantener carreras y catálogos. Los alumnos se registran solos al entrar con Google.</p>
+      <div className="mt-10">
         <Tabs valor={tab} onChange={setTab} opciones={[{ id: "resumen", label: "Resumen" }, { id: "usuarios", label: "Usuarios" }, { id: "docentes", label: "Alta de docentes" }, { id: "carreras", label: "Carreras" }, { id: "catalogos", label: "Categorías" }]} />
       </div>
-      <div className="mt-6">
+      <div className="mt-8">
         {tab === "resumen" && <Resumen />}
         {tab === "usuarios" && <Usuarios />}
         {tab === "docentes" && <AltaDocentes />}

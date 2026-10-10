@@ -175,7 +175,7 @@ export default function Header() {
               )}
             </div>
           ) : (
-            <Button href="/auth/login" variant="outline" className="hidden sm:inline-flex">
+            <Button href="/auth/login" variant="outline">
               Entrar
             </Button>
           )}
@@ -207,11 +207,6 @@ export default function Header() {
                 {n.label}
               </Link>
             ))}
-            {!usuario && !cargando && (
-              <Button href="/auth/login" variant="outline" className="mt-4">
-                Entrar
-              </Button>
-            )}
           </nav>
         </div>
       )}
