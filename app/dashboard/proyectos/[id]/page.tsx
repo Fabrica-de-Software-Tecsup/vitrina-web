@@ -579,9 +579,9 @@ function GaleriaEditor({ proyecto, onCambio }: { proyecto: Proyecto; onCambio: (
         <div className="mt-4 grid gap-5 rounded-md border border-linea p-4 md:grid-cols-[3fr_2fr]">
           <div>
             <p className="text-label text-ink-default">Toca lo más importante de la imagen</p>
-            <button type="button" onClick={fijarFoco} className="relative mt-2 block w-full cursor-crosshair overflow-hidden rounded-md bg-surface-sunken" aria-label="Elegir punto focal">
+            <button type="button" onClick={fijarFoco} className="relative mx-auto mt-2 block w-fit max-w-full cursor-crosshair overflow-hidden rounded-md" aria-label="Elegir punto focal">
               {/* eslint-disable-next-line @next/next/no-img-element -- imagen completa para elegir el foco */}
-              <img src={enFoco.url} alt="" className="block max-h-80 w-full object-contain" />
+              <img src={enFoco.url} alt="" className="block max-h-80 max-w-full" />
               <span
                 aria-hidden
                 className="pointer-events-none absolute h-7 w-7 -translate-x-1/2 -translate-y-1/2 rounded-full border-2 border-white shadow-[0_0_0_1.5px_rgb(0_0_0/0.6)]"
