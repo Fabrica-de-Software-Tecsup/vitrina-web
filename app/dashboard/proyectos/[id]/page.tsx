@@ -43,6 +43,7 @@ export default function EditarProyectoPage() {
   const [confirmarEnvio, setConfirmarEnvio] = useState(false);
   const [confirmarBorrado, setConfirmarBorrado] = useState(false);
   const sucio = useRef(false);
+  const [haySinGuardar, setHaySinGuardar] = useState(false);
 
   const cargarDesde = useCallback((p: Proyecto) => {
     setProyecto(p);
@@ -67,6 +68,20 @@ export default function EditarProyectoPage() {
       queHarianDiferente: p.queHarianDiferente ?? "",
     });
     sucio.current = false;
+    setHaySinGuardar(false);
+  }, []);
+
+  /** Para subidas de fotos/build y cambios de equipo: refresca el proyecto sin pisar lo que se esta escribiendo en otras pestañas. */
+  const refrescarProyecto = useCallback((p: Proyecto) => setProyecto(p), []);
+
+  // Avisar antes de cerrar o recargar la pestaña con cambios sin guardar
+  useEffect(() => {
+    const alSalir = (e: BeforeUnloadEvent) => {
+      if (!sucio.current) return;
+      e.preventDefault();
+    };
+    window.addEventListener("beforeunload", alSalir);
+    return () => window.removeEventListener("beforeunload", alSalir);
   }, []);
 
   useEffect(() => {
@@ -80,6 +95,7 @@ export default function EditarProyectoPage() {
 
   const set = <K extends keyof DatosProyecto>(k: K, v: DatosProyecto[K]) => {
     sucio.current = true;
+    setHaySinGuardar(true);
     setForm((f) => ({ ...f, [k]: v }));
   };
 
@@ -202,6 +218,7 @@ export default function EditarProyectoPage() {
           {(proyecto.estado === "PUBLICADO" || proyecto.estado === "OCULTO") && <Button variant="outline" onClick={alternarVisibilidad}>{proyecto.estado === "PUBLICADO" ? "Ocultar" : "Volver a mostrar"}</Button>}
           {proyecto.estado === "PUBLICADO" && <Button variant="secondary" onClick={prepararNuevaVersion}>Preparar nueva versión</Button>}
           {esDocente && proyecto.estado === "POR_REVISAR" && <Button href={`/dashboard/revision/${proyecto.id}`} variant="secondary">Ir a revisar</Button>}
+          {editable && haySinGuardar && !guardando && <span className="text-xs font-medium text-amber-700">Cambios sin guardar</span>}
           {editable && <Button onClick={() => guardar()} loading={guardando} variant={proyecto.estado === "EN_DESARROLLO" ? "outline" : "primary"}>Guardar</Button>}
           {proyecto.estado === "EN_DESARROLLO" && <Button onClick={() => setConfirmarEnvio(true)} disabled={!listoParaEnviar} title={listoParaEnviar ? undefined : "Completa los requisitos de la lista"}>Enviar a revisión</Button>}
         </div>
@@ -234,7 +251,10 @@ export default function EditarProyectoPage() {
         <div>
           <Tabs
             valor={tab}
-            onChange={setTab}
+            onChange={(t) => {
+              setTab(t);
+              if (sucio.current && editable && !guardando) void guardar(true);
+            }}
             opciones={[
               { id: "basico", label: "Lo básico" },
               { id: "historia", label: "La historia" },
@@ -314,18 +334,18 @@ export default function EditarProyectoPage() {
 
             {tab === "multimedia" && (
               <>
-                <GaleriaEditor proyecto={proyecto} onCambio={cargarDesde} />
+                <GaleriaEditor proyecto={proyecto} onCambio={refrescarProyecto} />
                 <div className="grid gap-5 sm:grid-cols-2">
                   <Field label="Video en YouTube" htmlFor="yt" hint="Pega el enlace del video (watch o youtu.be)."><Input id="yt" value={form.youtubeUrl ?? ""} onChange={(e) => set("youtubeUrl", e.target.value)} placeholder="https://youtu.be/…" /></Field>
                   <Field label="Demo en vivo" htmlFor="demo"><Input id="demo" value={form.demoUrl ?? ""} onChange={(e) => set("demoUrl", e.target.value)} placeholder="https://" /></Field>
                   <Field label="Repositorio (GitHub, GitLab…)" htmlFor="gh"><Input id="gh" value={form.githubUrl ?? ""} onChange={(e) => set("githubUrl", e.target.value)} placeholder="https://github.com/…" /></Field>
                   <Field label="Figma u otro diseño" htmlFor="fg"><Input id="fg" value={form.figmaUrl ?? ""} onChange={(e) => set("figmaUrl", e.target.value)} placeholder="https://" /></Field>
                 </div>
-                <BuildUploader proyecto={proyecto} onCambio={cargarDesde} />
+                <BuildUploader proyecto={proyecto} onCambio={refrescarProyecto} />
               </>
             )}
 
-            {tab === "equipo" && <EquipoEditor proyecto={proyecto} onCambio={cargarDesde} puedeEditar={editable} />}
+            {tab === "equipo" && <EquipoEditor proyecto={proyecto} onCambio={refrescarProyecto} puedeEditar={editable} />}
           </fieldset>
         </div>
 
