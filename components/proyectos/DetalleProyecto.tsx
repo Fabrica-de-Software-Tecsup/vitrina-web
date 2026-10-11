@@ -13,8 +13,8 @@ import ProjectCard from "@/components/proyectos/ProjectCard";
 import Compartir from "@/components/proyectos/Compartir";
 import EsperaHistorial from "@/components/proyectos/EsperaHistorial";
 import { useSesion } from "@/components/sesion/SesionProvider";
-import { getProyectoPorSlug, getRelacionados, getVersion, getVersiones, incrementarVistas } from "@/lib/api-proyectos";
-import { proyectoEnCache, recordarProyectos, urlExplorar } from "@/lib/cache-proyectos";
+import { getRelacionados, getVersion, getVersiones, incrementarVistas, rutaProyectoPorSlug } from "@/lib/api-proyectos";
+import { enDisco, pedirPublico, proyectoEnCache, recordarProyectos, urlExplorar } from "@/lib/cache-swr";
 import { cargadorDe, placeholderDe } from "@/lib/imagenes";
 import { CORREO_CONTACTO } from "@/lib/contacto";
 import { obtenerUrlEmbedYoutube } from "@/lib/youtube";
@@ -64,11 +64,22 @@ export default function DetalleProyecto({ slug, inicial }: Props) {
 
   useEffect(() => {
     let vigente = true;
-    getProyectoPorSlug(slug)
+    const control = new AbortController();
+    const ruta = rutaProyectoPorSlug(slug);
+    // Sin datos del servidor ni de esta sesión: la última copia guardada en disco se pinta mientras llega la nueva.
+    let visible = (inicial ?? proyectoEnCache(slug)) != null;
+    if (!visible) {
+      const guardado = enDisco<Proyecto>(ruta);
+      if (guardado) {
+        visible = true;
+        Promise.resolve().then(() => vigente && setProyecto((actual) => actual ?? guardado));
+      }
+    }
+    // Solo el proyecto publicado se guarda en disco; un borrador visto con sesión se queda en memoria.
+    pedirPublico<Proyecto>(ruta, { avisar: !visible, signal: control.signal, persistir: (p) => p.estado === "PUBLICADO" })
       .then((p) => {
         if (!vigente) return;
         setProyecto(p);
-        recordarProyectos([p]);
         getRelacionados(p.id)
           .then((r) => {
             recordarProyectos(r);
@@ -85,8 +96,9 @@ export default function DetalleProyecto({ slug, inicial }: Props) {
       .catch(() => vigente && setProyecto((actual) => actual ?? null));
     return () => {
       vigente = false;
+      control.abort();
     };
-  }, [slug]);
+  }, [slug, inicial]);
 
   if (proyecto === undefined) {
     return (
