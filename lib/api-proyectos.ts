@@ -26,15 +26,43 @@ function query(params: Record<string, string | number | undefined>): string {
   return s ? `?${s}` : "";
 }
 
+/** Ruta del listado en el API. Servidor y navegador la construyen igual: es también la clave de la caché. */
+export const rutaProyectos = (filtros: FiltrosProyectos = {}) => `/proyectos${query({ ...filtros })}`;
+export const rutaProyectoPorSlug = (slug: string) => `/proyectos/slug/${encodeURIComponent(slug)}`;
+export const RUTA_ESTADISTICAS = "/proyectos/estadisticas";
+/** Las dos consultas de la portada; el servidor y el navegador piden exactamente las mismas. */
+export const RUTA_DESTACADO = rutaProyectos({ orden: "destacados", limit: 1 });
+export const RUTA_RECIENTES = rutaProyectos({ orden: "recientes", limit: 9 });
+
 export function listarProyectos(filtros: FiltrosProyectos = {}): Promise<Paginado<Proyecto>> {
-  return apiFetch<Paginado<Proyecto>>(`/proyectos${query({ ...filtros })}`);
+  return apiFetch<Paginado<Proyecto>>(rutaProyectos(filtros));
 }
 
-export const getProyectoPorSlug = (slug: string) => apiFetch<Proyecto>(`/proyectos/slug/${encodeURIComponent(slug)}`);
+/** Solo se guardan en disco listados enteramente publicados (lo que ve cualquiera). */
+export const soloPublicados = (r: Paginado<Proyecto>) => r.items.every((p) => p.estado === "PUBLICADO");
+
+/** Filtros de Explorar a partir de la URL (en el servidor, de searchParams; en el navegador, de useSearchParams). */
+export const LIMITE_EXPLORAR = 24;
+export function filtrosDeUrl(leer: (clave: string) => string | null | undefined): FiltrosProyectos {
+  const orden = leer("orden");
+  return {
+    buscar: leer("buscar") || undefined,
+    carreraId: Number(leer("carreraId")) || undefined,
+    categoriaId: Number(leer("categoriaId")) || undefined,
+    tecnologiaId: Number(leer("tecnologiaId")) || undefined,
+    periodo: leer("periodo") || undefined,
+    ciclo: Number(leer("ciclo")) || undefined,
+    orden: orden === "vistas" || orden === "destacados" ? orden : "recientes",
+    offset: Number(leer("offset")) || 0,
+    limit: LIMITE_EXPLORAR,
+  };
+}
+
+export const getProyectoPorSlug = (slug: string) => apiFetch<Proyecto>(rutaProyectoPorSlug(slug));
 export const getProyectoPorId = (id: string) => apiFetch<Proyecto>(`/proyectos/${id}`);
 export const getRelacionados = (id: string) => apiFetch<Proyecto[]>(`/proyectos/${id}/relacionados`);
 export const getHistorial = (id: string) => apiFetch<HistorialItem[]>(`/proyectos/${id}/historial`);
-export const getEstadisticas = () => apiFetch<Estadisticas>("/proyectos/estadisticas");
+export const getEstadisticas = () => apiFetch<Estadisticas>(RUTA_ESTADISTICAS);
 export const getVersiones = (id: string) => apiFetch<VersionResumen[]>(`/proyectos/${id}/versiones`);
 export const getVersion = (id: string, numero: number) => apiFetch<VersionCompleta>(`/proyectos/${id}/versiones/${numero}`);
 

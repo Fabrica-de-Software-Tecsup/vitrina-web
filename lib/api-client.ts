@@ -62,6 +62,17 @@ async function obtenerTokenValido(): Promise<string | null> {
   return token;
 }
 
+/** Error del API con su código HTTP, para distinguir un 404 de un servidor que aún no despierta (502/503/504). */
+export class ErrorApi extends Error {
+  constructor(
+    mensaje: string,
+    readonly status: number,
+  ) {
+    super(mensaje);
+    this.name = "ErrorApi";
+  }
+}
+
 /** Mensaje de error legible a partir de la respuesta del API (class-validator manda arrays). */
 function mensajeDeError(data: unknown, status: number): string {
   if (data && typeof data === "object" && "message" in data) {
@@ -104,7 +115,7 @@ export async function apiFetch<T = unknown>(
 
   if (!res.ok) {
     const data: unknown = await res.json().catch(() => ({}));
-    throw new Error(mensajeDeError(data, res.status));
+    throw new ErrorApi(mensajeDeError(data, res.status), res.status);
   }
 
   if (res.status === 204) return undefined as T;

@@ -1,13 +1,16 @@
 "use client";
 
-import { useEffect, useMemo, useState } from "react";
+import { useMemo, useState } from "react";
 import Link from "next/link";
 import Avatar from "@/components/ui/Avatar";
 import { Container } from "@/components/ui/Section";
 import { Input, Select } from "@/components/ui/Field";
 import { EmptyState, Skeleton } from "@/components/ui/Feedback";
-import { getDirectorio } from "@/lib/api-usuarios";
-import { getCarreras } from "@/lib/api-catalogos";
+import Button from "@/components/ui/Button";
+import { rutaDirectorio } from "@/lib/api-usuarios";
+import { RUTA_CARRERAS } from "@/lib/api-catalogos";
+import type { DatoInicial } from "@/lib/api-servidor";
+import { useDatoPublico } from "@/lib/usar-dato-publico";
 import { pluralizar, slugConId } from "@/lib/utils";
 import { SEDES, type Carrera, type PerfilDirectorio, type Rol } from "@/lib/tipos";
 
@@ -17,31 +20,27 @@ interface Props {
   texto: string;
   /** Texto del contador de proyectos de cada persona. */
   proyectos: [singular: string, plural: string];
+  /** Directorio sin filtros y carreras, resueltos en el servidor; null si el API no respondió a tiempo. */
+  inicial?: DatoInicial<PerfilDirectorio[]> | null;
+  carrerasIniciales?: Carrera[] | null;
 }
 
+const SIN_CARRERAS: Carrera[] = [];
+/** Con sesión el API puede incluir correos: esa respuesta no se guarda en disco. */
+const sinCorreos = (items: PerfilDirectorio[]) => items.every((e) => !e.correo);
+
 /** Directorio de personas (estudiantes o docentes) como lista con línea fina: avatar, nombre, carrera y proyectos. */
-export default function Directorio({ rol, titulo, texto, proyectos }: Props) {
-  const [datos, setDatos] = useState<{ clave: string; items: PerfilDirectorio[] } | null>(null);
-  const [carreras, setCarreras] = useState<Carrera[]>([]);
+export default function Directorio({ rol, titulo, texto, proyectos, inicial = null, carrerasIniciales = null }: Props) {
   const [q, setQ] = useState("");
   const [carreraId, setCarreraId] = useState<number | "">("");
   const [sede, setSede] = useState("");
   const [soloConProyectos, setSoloConProyectos] = useState(rol === "ALUMNO");
 
-  useEffect(() => {
-    getCarreras().then(setCarreras).catch(() => null);
-  }, []);
-  const clave = `${carreraId}|${sede}`;
-  useEffect(() => {
-    let vigente = true;
-    getDirectorio({ rol, carreraId: carreraId || undefined, sede: sede || undefined })
-      .then((items) => vigente && setDatos({ clave, items }))
-      .catch(() => vigente && setDatos({ clave, items: [] }));
-    return () => {
-      vigente = false;
-    };
-  }, [rol, carreraId, sede, clave]);
-  const lista = datos?.clave === clave ? datos.items : null;
+  const ruta = rutaDirectorio({ rol, carreraId: carreraId || undefined, sede: sede || undefined });
+  const pedido = useDatoPublico<PerfilDirectorio[]>(ruta, inicial?.ruta === ruta ? inicial.datos : null, { persistir: sinCorreos });
+  const carreras = useDatoPublico<Carrera[]>(RUTA_CARRERAS, carrerasIniciales, { silencioso: true }).datos ?? SIN_CARRERAS;
+  // Al cambiar carrera o sede no se enseña la lista anterior: vuelve el esqueleto hasta que llega la nueva.
+  const lista = pedido.actualizado ? pedido.datos : null;
 
   const filtrados = useMemo(() => {
     if (!lista) return null;
@@ -86,7 +85,19 @@ export default function Directorio({ rol, titulo, texto, proyectos }: Props) {
       </p>
 
       <div className="mt-2">
-        {filtrados === null ? (
+        {pedido.fallo ? (
+          <EmptyState
+            icono="usuario"
+            titulo="No pudimos cargar el directorio"
+            texto="El servidor no respondió. Suele bastar con intentarlo otra vez en un momento."
+            accion={
+              <Button variant="outline" onClick={pedido.reintentar}>
+                Reintentar
+              </Button>
+            }
+            className="mt-8"
+          />
+        ) : filtrados === null ? (
           <div className="divide-y divide-linea">
             {Array.from({ length: 6 }).map((_, i) => (
               <div key={i} className="flex items-center gap-4 py-4">

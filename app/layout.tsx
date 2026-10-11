@@ -2,6 +2,7 @@ import type { Metadata, Viewport } from "next";
 import { Instrument_Sans, Newsreader } from "next/font/google";
 import "./globals.css";
 import Header from "@/components/layout/Header";
+import AvisoServidor from "@/components/layout/AvisoServidor";
 import Footer from "@/components/layout/Footer";
 import { GoogleOAuthProvider } from "@react-oauth/google";
 import { SesionProvider } from "@/components/sesion/SesionProvider";
@@ -48,6 +49,7 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
           <SesionProvider>
             <ToastProvider>
               <Header />
+              <AvisoServidor />
               <main id="contenido" className="flex-1">{children}</main>
               <Footer />
             </ToastProvider>
