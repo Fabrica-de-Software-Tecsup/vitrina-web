@@ -1,9 +1,13 @@
 import { apiFetch } from "./api-client";
 import type { Carrera, Categoria, Tecnologia } from "./tipos";
 
-export const getCarreras = (todas = false) => apiFetch<Carrera[]>(`/academico/carreras${todas ? "?todas=true" : ""}`);
-export const getCategorias = () => apiFetch<Categoria[]>("/catalogos/categorias");
-export const getTecnologias = () => apiFetch<Tecnologia[]>("/catalogos/tecnologias");
+export const RUTA_CARRERAS = "/academico/carreras";
+export const RUTA_CATEGORIAS = "/catalogos/categorias";
+export const RUTA_TECNOLOGIAS = "/catalogos/tecnologias";
+
+export const getCarreras = (todas = false) => apiFetch<Carrera[]>(`${RUTA_CARRERAS}${todas ? "?todas=true" : ""}`);
+export const getCategorias = () => apiFetch<Categoria[]>(RUTA_CATEGORIAS);
+export const getTecnologias = () => apiFetch<Tecnologia[]>(RUTA_TECNOLOGIAS);
 
 const json = (body: unknown): RequestInit => ({ headers: { "Content-Type": "application/json" }, body: JSON.stringify(body) });
 

@@ -29,12 +29,15 @@ export interface FiltrosDirectorio {
   q?: string;
 }
 
-export function getDirectorio(filtros: FiltrosDirectorio = {}): Promise<PerfilDirectorio[]> {
+/** Ruta del directorio en el API (también clave de la caché del navegador). */
+export function rutaDirectorio(filtros: FiltrosDirectorio = {}): string {
   const qs = new URLSearchParams();
   for (const [k, v] of Object.entries(filtros)) if (v !== undefined && v !== "") qs.set(k, String(v));
   const s = qs.toString();
-  return apiFetch<PerfilDirectorio[]>(`/usuarios${s ? `?${s}` : ""}`);
+  return `/usuarios${s ? `?${s}` : ""}`;
 }
+
+export const getDirectorio = (filtros: FiltrosDirectorio = {}) => apiFetch<PerfilDirectorio[]>(rutaDirectorio(filtros));
 
 export interface EditarPerfilInput {
   nombre?: string;
