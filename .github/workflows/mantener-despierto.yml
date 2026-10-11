@@ -1,0 +1,20 @@
+# Mantiene despierto el API en Render Free (se duerme a los 15 min sin tráfico) y la base de Neon
+# (se suspende a los 5 min). Este repo es público, así que los minutos de Actions no se descuentan.
+# GitHub puede retrasar los crons unos minutos en horas de carga; con */5 queda margen frente a los 15 de Render.
+name: Mantener despierto el API
+on:
+  schedule:
+    - cron: "*/5 * * * *"
+  workflow_dispatch:
+jobs:
+  ping:
+    runs-on: ubuntu-latest
+    timeout-minutes: 2
+    steps:
+      - name: Llamar a /health (consulta la base de datos, así despierta también a Neon)
+        run: |
+          for i in 1 2 3; do
+            if curl -fsS --max-time 60 https://vitrina-api-3fue.onrender.com/health; then echo; exit 0; fi
+            sleep 20
+          done
+          echo "El API no respondió tras 3 intentos"; exit 1
