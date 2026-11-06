@@ -6,8 +6,8 @@ import Button from "@/components/ui/Button";
 import Icono from "@/components/ui/Icono";
 import { Chip } from "@/components/ui/Badge";
 import { Field, Input, Textarea } from "@/components/ui/Field";
-import { EmptyState, Skeleton, useToast } from "@/components/ui/Feedback";
-import { actualizarEnvioAdmin, actualizarJam, crearJam, descargarCsvJam, getEnviosAdmin, getJamsAdmin, type DatosJam, type EnvioAdmin, type JamAdmin } from "@/lib/api-admin";
+import { EmptyState, Modal, Skeleton, useToast } from "@/components/ui/Feedback";
+import { actualizarEnvioAdmin, actualizarJam, crearJam, descargarCsvJam, eliminarEnvioAdmin, getEnviosAdmin, getJamsAdmin, type DatosJam, type EnvioAdmin, type JamAdmin } from "@/lib/api-admin";
 import { rangoFechas, urlQr } from "@/lib/api-jams";
 import { cn, slugify } from "@/lib/utils";
 
@@ -297,6 +297,17 @@ function PanelJam({ jam, onCambio }: { jam: JamAdmin; onCambio: () => void }) {
     }
   };
 
+  const eliminar = async (e: EnvioAdmin) => {
+    try {
+      await eliminarEnvioAdmin(e.id);
+      setEnvios((l) => l?.filter((x) => x.id !== e.id) ?? l);
+      onCambio();
+      avisar(`«${e.nombre}» eliminado`);
+    } catch (err) {
+      avisar(mensaje(err, "No se pudo eliminar"), "error");
+    }
+  };
+
   return (
     <section aria-labelledby="panel-jam" className="space-y-6">
       <div className="flex flex-wrap items-baseline justify-between gap-3 border-t border-linea pt-8">
@@ -337,7 +348,7 @@ function PanelJam({ jam, onCambio }: { jam: JamAdmin; onCambio: () => void }) {
         ) : (
           <ul className="card mt-4 divide-y divide-linea">
             {envios.map((e) => (
-              <FilaEnvio key={e.id} envio={e} jamSlug={jam.slug} onModerar={(c) => moderar(e, c)} />
+              <FilaEnvio key={e.id} envio={e} jamSlug={jam.slug} onModerar={(c) => moderar(e, c)} onEliminar={() => eliminar(e)} />
             ))}
           </ul>
         )}
@@ -346,7 +357,15 @@ function PanelJam({ jam, onCambio }: { jam: JamAdmin; onCambio: () => void }) {
   );
 }
 
-function FilaEnvio({ envio: e, jamSlug, onModerar }: { envio: EnvioAdmin; jamSlug: string; onModerar: (c: { oculto?: boolean; reconocimiento?: string | null }) => Promise<void> }) {
+function FilaEnvio({ envio: e, jamSlug, onModerar, onEliminar }: { envio: EnvioAdmin; jamSlug: string; onModerar: (c: { oculto?: boolean; reconocimiento?: string | null }) => Promise<void>; onEliminar: () => Promise<void> }) {
+  const [confirmarBorrado, setConfirmarBorrado] = useState(false);
+  const [borrando, setBorrando] = useState(false);
+  const borrar = async () => {
+    setBorrando(true);
+    await onEliminar();
+    setBorrando(false);
+    setConfirmarBorrado(false);
+  };
   const [reconocimiento, setReconocimiento] = useState(e.reconocimiento ?? "");
   const [guardando, setGuardando] = useState(false);
   const cambiado = reconocimiento.trim() !== (e.reconocimiento ?? "");
@@ -386,9 +405,21 @@ function FilaEnvio({ envio: e, jamSlug, onModerar }: { envio: EnvioAdmin; jamSlu
           </Button>
         )}
       </form>
-      <Button size="sm" variant="ghost" onClick={() => void onModerar({ oculto: !e.oculto })} icon={<Icono nombre={e.oculto ? "ojo" : "cerrar"} tam={16} />}>
-        {e.oculto ? "Mostrar" : "Ocultar"}
-      </Button>
+      <div className="flex flex-wrap gap-1">
+        <Button size="sm" variant="ghost" onClick={() => void onModerar({ oculto: !e.oculto })} icon={<Icono nombre={e.oculto ? "ojo" : "cerrar"} tam={16} />}>
+          {e.oculto ? "Mostrar" : "Ocultar"}
+        </Button>
+        <Button size="sm" variant="ghost" className="text-state-danger" onClick={() => setConfirmarBorrado(true)} aria-label={`Eliminar ${e.nombre}`}>
+          Eliminar
+        </Button>
+      </div>
+      <Modal
+        abierto={confirmarBorrado}
+        onCerrar={() => setConfirmarBorrado(false)}
+        titulo={`Eliminar «${e.nombre}»`}
+        descripcion="Se borra el envío con sus fotos y el equipo pierde su enlace de edición. No se puede deshacer; si solo quieres sacarlo de la galería, usa Ocultar."
+        acciones={<><Button variant="ghost" onClick={() => setConfirmarBorrado(false)}>Cancelar</Button><Button variant="danger" onClick={() => void borrar()} loading={borrando}>Eliminar definitivamente</Button></>}
+      />
     </li>
   );
 }

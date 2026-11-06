@@ -92,3 +92,5 @@ export const getEnviosAdmin = (jamId: string) => apiFetch<EnvioAdmin[]>(`/admin/
 export const actualizarEnvioAdmin = (envioId: string, cambios: { oculto?: boolean; reconocimiento?: string | null }) =>
   apiFetch<EnvioAdmin>(`/admin/jams/envios/${envioId}`, { method: "PATCH", ...json(cambios) });
 export const descargarCsvJam = (jamId: string) => apiBlob(`/admin/jams/${jamId}/envios.csv`);
+/** Borra el envío y sus imágenes; irreversible (para moderar basta ocultarlo). */
+export const eliminarEnvioAdmin = (envioId: string) => apiFetch<void>(`/admin/jams/envios/${envioId}`, { method: "DELETE" });
