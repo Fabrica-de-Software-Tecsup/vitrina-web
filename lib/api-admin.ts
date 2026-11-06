@@ -1,4 +1,5 @@
-import { apiFetch } from "./api-client";
+import { apiBlob, apiFetch } from "./api-client";
+import type { Envio, Jam } from "./api-jams";
 import type { Paginado, Perfil, Rol } from "./tipos";
 
 export interface ResumenAdmin {
@@ -53,3 +54,41 @@ export interface ResultadoCorreoPrueba {
 
 /** Envía un correo de prueba al admin autenticado y devuelve qué respondió el proveedor. */
 export const enviarCorreoPrueba = () => apiFetch<ResultadoCorreoPrueba>("/admin/correo-prueba", { method: "POST" });
+
+/* ─── Jams ─── */
+
+/** La jam vista por un admin: el código de acceso no vuelve nunca (el API guarda solo su hash). */
+export interface JamAdmin extends Jam {
+  publica: boolean;
+  maxEnvios: number;
+  enviosOcultos?: number;
+  creadoEn?: string;
+}
+
+export interface DatosJam {
+  slug: string;
+  nombre: string;
+  lema?: string | null;
+  descripcion?: string | null;
+  lugar?: string | null;
+  inicioEn: string;
+  cierreEn: string;
+  categorias: string[];
+  /** Obligatorio al crear; al editar, solo si se quiere cambiar. */
+  codigo?: string;
+  publica: boolean;
+  maxEnvios?: number;
+}
+
+export interface EnvioAdmin extends Envio {
+  oculto: boolean;
+  contactoCorreo: string;
+}
+
+export const getJamsAdmin = () => apiFetch<JamAdmin[]>("/admin/jams");
+export const crearJam = (datos: DatosJam) => apiFetch<JamAdmin>("/admin/jams", { method: "POST", ...json(datos) });
+export const actualizarJam = (id: string, datos: Partial<DatosJam>) => apiFetch<JamAdmin>(`/admin/jams/${id}`, { method: "PATCH", ...json(datos) });
+export const getEnviosAdmin = (jamId: string) => apiFetch<EnvioAdmin[]>(`/admin/jams/${jamId}/envios`);
+export const actualizarEnvioAdmin = (envioId: string, cambios: { oculto?: boolean; reconocimiento?: string | null }) =>
+  apiFetch<EnvioAdmin>(`/admin/jams/envios/${envioId}`, { method: "PATCH", ...json(cambios) });
+export const descargarCsvJam = (jamId: string) => apiBlob(`/admin/jams/${jamId}/envios.csv`);

@@ -21,7 +21,7 @@ const csp = [
   `script-src 'self' 'unsafe-inline' ${esProduccion ? "" : "'unsafe-eval'"} https://accounts.google.com`,
   "style-src 'self' 'unsafe-inline' https://accounts.google.com https://fonts.googleapis.com",
   "font-src 'self' https://fonts.gstatic.com data:",
-  `img-src 'self' data: blob: ${storageUrl} https://lh3.googleusercontent.com https://*.googleusercontent.com https://i.ytimg.com`,
+  `img-src 'self' data: blob: ${storageUrl} ${apiUrl} https://lh3.googleusercontent.com https://*.googleusercontent.com https://i.ytimg.com`,
   `connect-src 'self' ${apiUrl} ${storageUrl} https://accounts.google.com ${esProduccion ? "" : "ws://localhost:* wss://localhost:* http://localhost:*"}`,
   "frame-src https://accounts.google.com https://www.youtube.com https://www.youtube-nocookie.com",
   "frame-ancestors 'none'",

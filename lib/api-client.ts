@@ -121,3 +121,14 @@ export async function apiFetch<T = unknown>(
   if (res.status === 204) return undefined as T;
   return (await res.json()) as T;
 }
+
+/** GET autenticado que devuelve el cuerpo en bruto (descargas como CSV). */
+export async function apiBlob(path: string): Promise<Blob> {
+  const token = await obtenerTokenValido();
+  const res = await fetch(`${API_URL}${path}`, { headers: token ? { Authorization: `Bearer ${token}` } : {} });
+  if (!res.ok) {
+    const data: unknown = await res.json().catch(() => ({}));
+    throw new ErrorApi(mensajeDeError(data, res.status), res.status);
+  }
+  return res.blob();
+}

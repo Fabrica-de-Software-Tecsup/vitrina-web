@@ -10,13 +10,14 @@ import { Container, Stat } from "@/components/ui/Section";
 import { Field, Input, Select, Textarea } from "@/components/ui/Field";
 import { EmptyState, Pagination, Skeleton, Tabs, useToast } from "@/components/ui/Feedback";
 import { useSesion } from "@/components/sesion/SesionProvider";
+import AdminJams from "@/components/jams/AdminJams";
 import { cambiarRol, enviarCorreoPrueba, getPreasignados, getResumenAdmin, getUsuariosAdmin, preasignarRoles, quitarPreasignado, type ResultadoCorreoPrueba, type ResumenAdmin, type RolPreasignado, type UsuarioAdmin } from "@/lib/api-admin";
 import { actualizarCarrera, crearCarrera, crearCategoria, eliminarCategoria, getCarreras, getCategorias } from "@/lib/api-catalogos";
 import { editarPerfil } from "@/lib/api-usuarios";
 import { ESTADO_LABEL, SEDES, type Carrera, type Categoria, type EstadoProyecto, type Rol } from "@/lib/tipos";
 import { fechaCorta } from "@/lib/utils";
 
-type Pestana = "resumen" | "usuarios" | "docentes" | "carreras" | "catalogos";
+type Pestana = "resumen" | "usuarios" | "docentes" | "carreras" | "catalogos" | "jams";
 
 export default function AdminPage() {
   const router = useRouter();
@@ -33,7 +34,7 @@ export default function AdminPage() {
       <h1 className="titular-2 text-ink-default">Administración</h1>
       <p className="mt-3 max-w-2xl text-ink-muted">Lo único que necesita un admin: dar de alta docentes por correo, corregir roles y mantener carreras y catálogos. Los alumnos se registran solos al entrar con Google.</p>
       <div className="mt-10">
-        <Tabs valor={tab} onChange={setTab} opciones={[{ id: "resumen", label: "Resumen" }, { id: "usuarios", label: "Usuarios" }, { id: "docentes", label: "Alta de docentes" }, { id: "carreras", label: "Carreras" }, { id: "catalogos", label: "Categorías" }]} />
+        <Tabs valor={tab} onChange={setTab} opciones={[{ id: "resumen", label: "Resumen" }, { id: "usuarios", label: "Usuarios" }, { id: "docentes", label: "Alta de docentes" }, { id: "carreras", label: "Carreras" }, { id: "catalogos", label: "Categorías" }, { id: "jams", label: "Jams" }]} />
       </div>
       <div className="mt-8">
         {tab === "resumen" && <Resumen />}
@@ -41,6 +42,7 @@ export default function AdminPage() {
         {tab === "docentes" && <AltaDocentes />}
         {tab === "carreras" && <Carreras />}
         {tab === "catalogos" && <Catalogos />}
+        {tab === "jams" && <AdminJams />}
       </div>
     </Container>
   );
