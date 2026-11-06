@@ -176,7 +176,7 @@ export default function EditarCliente({ slug, id, jamInicial }: Props) {
         {!cerrada && (
           <div className="sticky bottom-0 z-10 -mx-4 mt-8 space-y-3 border-t border-linea bg-surface-default px-4 pb-[max(1rem,env(safe-area-inset-bottom))] pt-4 sm:mx-0 sm:px-0">
             <AvisoError error={errorGuardar} />
-            <Button type="submit" size="lg" loading={guardando} disabled={!cambiado} className="w-full">
+            <Button type="submit" size="lg" variant={cambiado ? "primary" : "outline"} loading={guardando} disabled={!cambiado} className="w-full">
               {guardando ? "Guardando…" : cambiado ? "Guardar cambios" : "Sin cambios"}
             </Button>
           </div>

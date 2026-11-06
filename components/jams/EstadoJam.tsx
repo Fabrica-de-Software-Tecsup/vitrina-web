@@ -47,7 +47,7 @@ export default function EstadoJam({ jam, faseInicial }: { jam: Jam; faseInicial:
         <p className="num mt-1 font-display text-[2.5rem] font-normal leading-none tracking-tight text-ink-default sm:text-[3rem]" aria-live="off">
           {ahora ? restante(cierre - ahora) : horaLima(jam.cierreEn)}
         </p>
-        <p className="mt-2 text-body-small text-ink-muted">
+        <p className="mt-2 text-body-small text-ink-muted first-letter:uppercase">
           {diaLima(jam.cierreEn)}, {horaLima(jam.cierreEn)}
         </p>
       </div>

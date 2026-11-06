@@ -129,16 +129,17 @@ const CAMPOS: Record<string, string> = {
   video: "el enlace al video",
   presentacion: "el enlace a la presentación",
   contactoCorreo: "el correo de contacto",
-  rol: "el rol",
-  enlace: "el enlace del integrante",
 };
 
 function campoDe(ruta: string): string {
   const partes = ruta.split(".");
   const ultimo = partes[partes.length - 1];
-  const indice = partes.find((p) => /^\d+$/.test(p));
-  const base = CAMPOS[ultimo] ?? ultimo;
-  return indice && partes[0] === "integrantes" ? `${base} (integrante ${Number(indice) + 1})` : base;
+  if (partes[0] === "integrantes" && /^\d+$/.test(partes[1] ?? "")) {
+    const n = Number(partes[1]) + 1;
+    const que = ultimo === "rol" ? "el rol" : ultimo === "enlace" ? "el enlace" : "el nombre";
+    return `${que} del integrante ${n}`;
+  }
+  return CAMPOS[ultimo] ?? ultimo;
 }
 
 /** Traduce los mensajes por defecto de class-validator; si ya vienen en castellano se dejan tal cual. */
