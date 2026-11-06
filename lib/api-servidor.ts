@@ -10,9 +10,11 @@
     · proyecto:<slug>   el detalle de un proyecto
     · catalogos         carreras, categorías y tecnologías
     · personas          directorio de docentes y estudiantes
+    · jam:<slug>        una jam, sus envíos y cada envío (30 s: durante el evento entran proyectos cada minuto)
 */
 import { cache } from "react";
 import type { Proyecto } from "./tipos";
+import { rutaEnvio, rutaEnvios, rutaJam, type Envio, type Jam } from "./api-jams";
 
 export const REVALIDAR_S = 300;
 const ESPERA_MS = 8000;
@@ -27,11 +29,11 @@ export interface DatoInicial<T> {
  * GET al API con caché y tope de espera. Devuelve null si el API no responde a tiempo o responde con error:
  * la página se renderiza igual y el navegador carga los datos por su cuenta.
  */
-export async function pedirEnServidor<T>(ruta: string, tags: string[], esperaMs = ESPERA_MS): Promise<T | null> {
+export async function pedirEnServidor<T>(ruta: string, tags: string[], esperaMs = ESPERA_MS, revalidarS = REVALIDAR_S): Promise<T | null> {
   const apiUrl = process.env.API_URL_INTERNAL || process.env.NEXT_PUBLIC_API_URL;
   if (!apiUrl) return null;
   try {
-    const res = await fetch(`${apiUrl}${ruta}`, { next: { revalidate: REVALIDAR_S, tags }, signal: AbortSignal.timeout(esperaMs) });
+    const res = await fetch(`${apiUrl}${ruta}`, { next: { revalidate: revalidarS, tags }, signal: AbortSignal.timeout(esperaMs) });
     if (!res.ok) return null;
     return (await res.json()) as T;
   } catch {
@@ -60,3 +62,14 @@ export function conservarPaginaSiFaltan(...datos: unknown[]) {
   if (process.env.NODE_ENV !== "production" || process.env.NEXT_PHASE === "phase-production-build") return;
   if (datos.some((d) => d === null)) throw new Error("El API no respondió a tiempo: se conserva la página generada antes.");
 }
+
+/** Jams: 30 s de caché para que un envío nuevo aparezca casi enseguida en la galería. */
+export const REVALIDAR_JAM_S = 30;
+
+export const jamPorSlug = cache((slug: string) => pedirEnServidor<Jam>(rutaJam(slug), [`jam:${slug}`], ESPERA_MS, REVALIDAR_JAM_S));
+
+export const enviosDeJam = cache((slug: string) => pedirEnServidor<Envio[]>(rutaEnvios(slug), [`jam:${slug}`], ESPERA_MS, REVALIDAR_JAM_S));
+
+export const envioPorSlug = cache((slug: string, envioSlug: string) =>
+  pedirEnServidor<Envio>(rutaEnvio(slug, envioSlug), [`jam:${slug}`], ESPERA_MS, REVALIDAR_JAM_S),
+);

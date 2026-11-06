@@ -18,13 +18,14 @@ import { revalidateTag } from "next/cache";
     · proyecto:<slug>   el detalle de ese proyecto
     · catalogos         carreras, categorías y tecnologías
     · personas          directorios de docentes y estudiantes
+    · jam:<slug>        una jam, su galería y sus envíos
 
   Las páginas no se regeneran en el momento: quedan marcadas como caducadas, la siguiente visita recibe todavía
   la versión guardada y dispara la regeneración por detrás (así nunca se espera a un API dormido).
   El lado del API está pendiente de conectar. Sin REVALIDAR_SECRETO en el entorno la ruta no existe (404).
 */
 
-const ETIQUETA = /^(proyectos|catalogos|personas|proyecto:[^\s]{1,200})$/;
+const ETIQUETA = /^(proyectos|catalogos|personas|proyecto:[^\s]{1,200}|jam:[^\s]{1,200})$/;
 const MAX_ETIQUETAS = 50;
 
 /** Comparación en tiempo constante; se comparan los hash para no filtrar ni la longitud del secreto. */
