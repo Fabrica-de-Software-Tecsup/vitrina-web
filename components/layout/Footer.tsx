@@ -14,6 +14,7 @@ export default function Footer() {
         <nav aria-label="Pie de página" className="flex flex-wrap gap-x-6 gap-y-2 text-body-small text-ink-muted md:ml-auto">
           <Link href="/proyectos" className="hover:text-ink-default hover:underline">Explorar</Link>
           <Link href="/estudiantes" className="hover:text-ink-default hover:underline">Estudiantes</Link>
+          <Link href="/apps" className="hover:text-ink-default hover:underline">Apps móviles</Link>
           <Link href="/dashboard/proyectos/nuevo" className="hover:text-ink-default hover:underline">Publicar un proyecto</Link>
           <Link href="/privacidad" className="hover:text-ink-default hover:underline">Privacidad</Link>
           <Link href="/terminos" className="hover:text-ink-default hover:underline">Términos</Link>

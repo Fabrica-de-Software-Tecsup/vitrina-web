@@ -7,6 +7,7 @@ import { Container } from "@/components/ui/Section";
 import { CardSkeleton } from "@/components/ui/Feedback";
 import Portada from "@/components/proyectos/Portada";
 import ProjectCard from "@/components/proyectos/ProjectCard";
+import SeccionApps from "@/components/apps/SeccionApps";
 import { useSesion } from "@/components/sesion/SesionProvider";
 import { RUTA_DESTACADO, RUTA_RECIENTES, soloPublicados } from "@/lib/api-proyectos";
 import { useDatoPublico } from "@/lib/usar-dato-publico";
@@ -95,6 +96,8 @@ export default function PortadaCliente({ inicial }: Props) {
           </Container>
         </section>
       )}
+
+      <SeccionApps modo="portada" />
 
       <Container>
         <section aria-labelledby="publicar" className="mt-24 grid gap-6 border-t border-ink-default pt-10 md:grid-cols-[1fr_auto] md:items-end">

@@ -13,6 +13,8 @@ interface Props {
   sizes: string;
   /** Solo la portada del detalle y las dos primeras láminas de una retícula. */
   preload?: boolean;
+  /** En tarjetas usa recorte 4:3 (`cover`); en el detalle conviene mostrar la captura completa (`contain`). */
+  ajustar?: "cover" | "contain";
   alt?: string;
   className?: string;
 }
@@ -22,19 +24,26 @@ interface Props {
  * ThumbHash mientras carga. Es el mismo elemento en la tarjeta y en la cabecera del detalle: ambas llevan
  * `portada-${id}` y la vista se transforma de una a otra («abrir la vitrina»).
  */
-export default function Portada({ id, nombre, imagen, sizes, preload, alt = "", className }: Props) {
+export default function Portada({ id, nombre, imagen, sizes, preload, ajustar = "cover", alt = "", className }: Props) {
   const dominante = imagen?.colorDominante ?? undefined;
   const lqip = placeholderDe(imagen?.placeholder);
   const loader = imagen ? cargadorDe(imagen) : undefined;
+  const esContain = ajustar === "contain";
   const estilo = {
-    backgroundColor: dominante,
-    backgroundImage: lqip ? `url(${lqip})` : undefined,
+    backgroundColor: esContain ? undefined : dominante,
+    backgroundImage: esContain
+      ? dominante
+        ? `radial-gradient(75% 75% at 50% 50%, color-mix(in oklch, ${dominante} 14%, transparent), transparent 72%)`
+        : undefined
+      : lqip
+        ? `url(${lqip})`
+        : undefined,
     "--dominante": dominante,
   } as CSSProperties;
 
   return (
     <ViewTransition name={`portada-${id}`} share="morph" default="none">
-      <div className={cn("lamina", className)} style={estilo}>
+      <div className={cn("lamina", esContain && "bg-surface-sunken", className)} style={estilo}>
         {imagen ? (
           <Image
             src={imagen.url}
@@ -44,7 +53,7 @@ export default function Portada({ id, nombre, imagen, sizes, preload, alt = "", 
             preload={preload}
             loading={preload ? undefined : "lazy"}
             {...(loader ? { loader } : { unoptimized: true })}
-            style={{ objectFit: "cover", objectPosition: posicionFocal(imagen) }}
+            style={esContain ? { objectFit: "contain" } : { objectFit: "cover", objectPosition: posicionFocal(imagen) }}
           />
         ) : (
           <span aria-hidden className="absolute inset-0 grid place-items-center font-display text-[clamp(3rem,10cqi,6rem)] font-normal text-ink-subtle [container-type:inline-size]">

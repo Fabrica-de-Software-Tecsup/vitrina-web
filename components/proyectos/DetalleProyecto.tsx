@@ -2,12 +2,12 @@
 
 import { useEffect, useState } from "react";
 import Link from "next/link";
-import Image from "next/image";
 import Avatar from "@/components/ui/Avatar";
 import Button from "@/components/ui/Button";
 import Icono, { type NombreIcono } from "@/components/ui/Icono";
 import { EstadoBadge } from "@/components/ui/Badge";
 import { EmptyState, Modal, Skeleton, useToast } from "@/components/ui/Feedback";
+import CarruselGaleria from "@/components/proyectos/CarruselGaleria";
 import Portada from "@/components/proyectos/Portada";
 import ProjectCard from "@/components/proyectos/ProjectCard";
 import Compartir from "@/components/proyectos/Compartir";
@@ -15,7 +15,6 @@ import EsperaHistorial from "@/components/proyectos/EsperaHistorial";
 import { useSesion } from "@/components/sesion/SesionProvider";
 import { getRelacionados, getVersion, getVersiones, incrementarVistas, rutaProyectoPorSlug } from "@/lib/api-proyectos";
 import { enDisco, pedirPublico, proyectoEnCache, recordarProyectos, urlExplorar } from "@/lib/cache-swr";
-import { cargadorDe, placeholderDe } from "@/lib/imagenes";
 import { CORREO_CONTACTO } from "@/lib/contacto";
 import { obtenerUrlEmbedYoutube } from "@/lib/youtube";
 import { fechaCorta, slugConId, urlSegura } from "@/lib/utils";
@@ -192,14 +191,27 @@ export default function DetalleProyecto({ slug, inicial }: Props) {
         <header>
           <div className="relative isolate" style={{ "--dominante": dominante } as React.CSSProperties}>
             <div className="lavado" aria-hidden />
-            <Portada id={proyecto.id} nombre={proyecto.nombre} imagen={portada} sizes={SIZES_COLUMNA} preload alt={`Portada de ${proyecto.nombre}`} className="sm:rounded-cabecera" />
+            <Portada
+              id={proyecto.id}
+              nombre={proyecto.nombre}
+              imagen={portada}
+              sizes={SIZES_COLUMNA}
+              preload
+              ajustar="contain"
+              alt={`Portada de ${proyecto.nombre}`}
+              className="sm:aspect-[16/10] sm:max-h-[32rem] sm:rounded-cabecera"
+            />
             {galeria.length > 0 && (
               <button
                 type="button"
                 onClick={() => setLightbox(0)}
-                className="absolute inset-0 cursor-zoom-in rounded-lamina sm:rounded-cabecera"
+                className="group absolute inset-0 cursor-zoom-in rounded-lamina sm:rounded-cabecera"
                 aria-label={`Ampliar la portada de ${proyecto.nombre}`}
-              />
+              >
+                <span className="pointer-events-none absolute bottom-3 right-3 rounded-sm border border-linea bg-surface-default/90 px-2.5 py-1 text-caption font-medium text-ink-default backdrop-blur-sm transition group-hover:bg-surface-default">
+                  {galeria.length > 1 ? `1 / ${galeria.length} · Ampliar` : "Ampliar"}
+                </span>
+              </button>
             )}
           </div>
 
@@ -273,25 +285,13 @@ export default function DetalleProyecto({ slug, inicial }: Props) {
               </section>
             )}
 
-            {resto.map((img, i) => {
-              const loader = cargadorDe(img);
-              const lqip = placeholderDe(img.placeholder);
-              return (
-                <figure key={img.id} className="my-12">
-                  <button type="button" onClick={() => setLightbox(i + (portada ? 1 : 0))} className="block w-full cursor-zoom-in rounded-lamina" aria-label={`Ampliar imagen ${i + 2} de ${galeria.length}`}>
-                    <span
-                      className="lamina"
-                      style={{ backgroundColor: img.colorDominante ?? undefined, backgroundImage: lqip ? `url(${lqip})` : undefined, "--dominante": img.colorDominante ?? undefined } as React.CSSProperties}
-                    >
-                      <Image src={img.url} alt="" fill sizes="(min-width: 1024px) 640px, 100vw" loading="lazy" {...(loader ? { loader } : { unoptimized: true })} style={{ objectFit: "cover" }} />
-                    </span>
-                  </button>
-                  <figcaption className="mt-3 text-body-small text-ink-muted">
-                    Imagen {i + (portada ? 2 : 1)} de {galeria.length}
-                  </figcaption>
-                </figure>
-              );
-            })}
+            <CarruselGaleria
+              imagenes={resto}
+              desplazamiento={portada ? 1 : 0}
+              totalGaleria={galeria.length}
+              tituloProyecto={proyecto.nombre}
+              onAmpliar={setLightbox}
+            />
 
             {video && (
               <section id="video" aria-labelledby="titulo-video" className="my-12 scroll-mt-24">

@@ -7,6 +7,7 @@ interface Props {
   envio: Pick<Envio, "id" | "nombre" | "frase" | "equipoNombre" | "categoria" | "imagenes">;
   sizes: string;
   preload?: boolean;
+  ajustar?: "cover" | "contain";
   alt?: string;
   className?: string;
 }
@@ -15,9 +16,9 @@ interface Props {
  * Lámina 4:3 del envío. Con imagen es la misma Portada de los proyectos (ThumbHash, variantes y morph tarjeta → detalle);
  * sin imagen, una lámina editorial con categoría, nombre del proyecto, frase y equipo en los tokens de Vitrina.
  */
-export default function PortadaEnvio({ envio, sizes, preload, alt = "", className }: Props) {
+export default function PortadaEnvio({ envio, sizes, preload, ajustar = "cover", alt = "", className }: Props) {
   const imagen = portadaEnvio(envio);
-  if (imagen) return <Portada id={envio.id} nombre={envio.nombre} imagen={comoImagen(imagen)} sizes={sizes} preload={preload} alt={alt} className={className} />;
+  if (imagen) return <Portada id={envio.id} nombre={envio.nombre} imagen={comoImagen(imagen)} sizes={sizes} preload={preload} ajustar={ajustar} alt={alt} className={className} />;
   return (
     <ViewTransition name={`portada-${envio.id}`} share="morph" default="none">
       <div

@@ -2,15 +2,14 @@
 
 import { useState } from "react";
 import Link from "next/link";
-import Image from "next/image";
 import Button from "@/components/ui/Button";
 import Icono, { type NombreIcono } from "@/components/ui/Icono";
 import { EmptyState, Modal, Skeleton } from "@/components/ui/Feedback";
+import CarruselGaleria from "@/components/proyectos/CarruselGaleria";
 import PortadaEnvio from "@/components/jams/PortadaEnvio";
 import CompartirEnlace from "@/components/jams/CompartirEnlace";
 import { Reconocimiento } from "@/components/jams/TarjetaEnvio";
-import { imagenesOrdenadas, rutaEnvio, rutaJam, type Envio, type IntegranteEnvio, type Jam } from "@/lib/api-jams";
-import { cargadorDe, placeholderDe } from "@/lib/imagenes";
+import { comoImagen, imagenesOrdenadas, rutaEnvio, rutaJam, type Envio, type IntegranteEnvio, type Jam } from "@/lib/api-jams";
 import { useDatoPublico } from "@/lib/usar-dato-publico";
 import { obtenerUrlEmbedYoutube } from "@/lib/youtube";
 import { urlSegura } from "@/lib/utils";
@@ -99,9 +98,25 @@ export default function DetalleEnvio({ slug, envioSlug, envioInicial, jamInicial
         <header>
           <div className="relative isolate" style={{ "--dominante": portada?.colorDominante ?? undefined } as React.CSSProperties}>
             <div className="lavado" aria-hidden />
-            <PortadaEnvio envio={envio} sizes={SIZES_COLUMNA} preload alt={`Portada de ${envio.nombre}`} className="sm:rounded-cabecera" />
+            <PortadaEnvio
+              envio={envio}
+              sizes={SIZES_COLUMNA}
+              preload
+              ajustar="contain"
+              alt={`Portada de ${envio.nombre}`}
+              className="sm:aspect-[16/10] sm:max-h-[32rem] sm:rounded-cabecera"
+            />
             {portada && (
-              <button type="button" onClick={() => setLightbox(0)} className="absolute inset-0 cursor-zoom-in rounded-lamina sm:rounded-cabecera" aria-label={`Ampliar la portada de ${envio.nombre}`} />
+              <button
+                type="button"
+                onClick={() => setLightbox(0)}
+                className="group absolute inset-0 cursor-zoom-in rounded-lamina sm:rounded-cabecera"
+                aria-label={`Ampliar la portada de ${envio.nombre}`}
+              >
+                <span className="pointer-events-none absolute bottom-3 right-3 rounded-sm border border-linea bg-surface-default/90 px-2.5 py-1 text-caption font-medium text-ink-default backdrop-blur-sm transition group-hover:bg-surface-default">
+                  {galeria.length > 1 ? `1 / ${galeria.length} · Ampliar` : "Ampliar"}
+                </span>
+              </button>
             )}
             {envio.reconocimiento && <Reconocimiento texto={envio.reconocimiento} className="pointer-events-none absolute left-3 top-3 z-[1] h-8 px-3 text-label sm:left-4 sm:top-4" />}
           </div>
@@ -161,22 +176,13 @@ export default function DetalleEnvio({ slug, envioSlug, envioInicial, jamInicial
             ))}
           </section>
 
-          {resto.map((img, i) => {
-            const loader = cargadorDe(img);
-            const lqip = placeholderDe(img.placeholder);
-            return (
-              <figure key={img.id} className="my-12">
-                <button type="button" onClick={() => setLightbox(i + 1)} className="block w-full cursor-zoom-in rounded-lamina" aria-label={`Ampliar imagen ${i + 2} de ${galeria.length}`}>
-                  <span className="lamina" style={{ backgroundColor: img.colorDominante ?? undefined, backgroundImage: lqip ? `url(${lqip})` : undefined, "--dominante": img.colorDominante ?? undefined } as React.CSSProperties}>
-                    <Image src={img.url} alt="" fill sizes="(min-width: 1024px) 640px, 100vw" loading="lazy" {...(loader ? { loader } : { unoptimized: true })} style={{ objectFit: "cover" }} />
-                  </span>
-                </button>
-                <figcaption className="mt-3 text-body-small text-ink-muted">
-                  Imagen {i + 2} de {galeria.length}
-                </figcaption>
-              </figure>
-            );
-          })}
+          <CarruselGaleria
+            imagenes={resto.map(comoImagen)}
+            desplazamiento={1}
+            totalGaleria={galeria.length}
+            tituloProyecto={envio.nombre}
+            onAmpliar={setLightbox}
+          />
 
           {video && (
             <section id="video" aria-labelledby="titulo-video" className="my-12 scroll-mt-24">
