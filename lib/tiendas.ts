@@ -7,10 +7,11 @@ export const URL_APP_STORE =
 export interface TiendaApp {
   id: "android" | "ios";
   tienda: string;
+  sobrelinea: string;
   nombreApp: string;
   plataformas: string;
+  detalle: string;
   url: string;
-  boton: string;
   qrViewBox: string;
   qrSize: number;
   qrPath: string;
@@ -21,10 +22,11 @@ export const TIENDAS_APP: TiendaApp[] = [
   {
     id: "android",
     tienda: "Google Play",
+    sobrelinea: "Disponible en",
     nombreApp: "Vitrina",
     plataformas: "Android y Android XR",
+    detalle: "Material 3 y modo espacial para Galaxy XR",
     url: URL_GOOGLE_PLAY,
-    boton: "Abrir en Google Play",
     qrViewBox: "0 0 41 41",
     qrSize: 41,
     qrPath:
@@ -33,10 +35,11 @@ export const TIENDAS_APP: TiendaApp[] = [
   {
     id: "ios",
     tienda: "App Store",
+    sobrelinea: "Descárgalo en el",
     nombreApp: "Vitrina Estudiantil",
     plataformas: "iPhone",
+    detalle: "SwiftUI nativo con Sign in with Apple",
     url: URL_APP_STORE,
-    boton: "Abrir en App Store",
     qrViewBox: "0 0 37 37",
     qrSize: 37,
     qrPath:
